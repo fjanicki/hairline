@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const RING_GEO = new THREE.RingGeometry(0.45, 0.55, 48).rotateX(-Math.PI / 2);
+const RING_GEO = new THREE.RingGeometry(0.47, 0.51, 48).rotateX(-Math.PI / 2);
 const BEAM_GEO = new THREE.CylinderGeometry(0.5, 0.5, 1, 32, 1, true).translate(0, 0.5, 0);
 
 function beamMaterial() {
@@ -78,9 +78,9 @@ export class Hotspots {
     g.position.copy(spot.pos);
     g.position.y += 0.02;
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xffe9b0,
+      color: 0xc9b48a, // dim warm chalk; reads on dark floors without glowing
       transparent: true,
-      opacity: spot.required ? 0.95 : 0.55,
+      opacity: spot.required ? 0.16 : 0.07,
       toneMapped: false, // no effect with the composer (OutputPass tone-maps everything); kept for a canvas-only render
       depthWrite: false,
       fog: false,
@@ -187,9 +187,12 @@ export class Hotspots {
         s.marker.visible = on;
         if (on) {
           const k = 0.5 + 0.5 * Math.sin(this.t * 2.4 + s.marker.userData.phase);
-          s.marker.userData.ring.scale.setScalar(1 + k * 0.12);
-          s.marker.userData.ring.material.opacity = (s.required ? 0.7 : 0.35) + k * 0.3;
-          if (s.marker.userData.beam) s.marker.userData.beam.material.uniforms.uAlpha.value = 0.1 + k * 0.1;
+          // Faint from across the room, brighter as the player closes in.
+          const dist = player ? Math.hypot(player.root.position.x - s.pos.x, player.root.position.z - s.pos.z) : 99;
+          const near = 1 - THREE.MathUtils.smoothstep(dist, s.radius ?? 1.5, (s.radius ?? 1.5) + 1.5);
+          s.marker.userData.ring.scale.setScalar(1 + k * 0.08);
+          s.marker.userData.ring.material.opacity = (s.required ? 0.16 : 0.07) + k * 0.06 + near * 0.3;
+          if (s.marker.userData.beam) s.marker.userData.beam.material.uniforms.uAlpha.value = 0.04 + k * 0.04 + near * 0.06;
         }
       }
       if (!on || !player) continue;

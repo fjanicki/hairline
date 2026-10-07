@@ -60,7 +60,7 @@ export default {
   music: { name: 'piano', volume: 0.36, fade: 3 },
   ambience: [],
   camera: { offset: DEFAULT_CAM.offset, look: DEFAULT_CAM.look, fov: 55, lerp: 6 },
-  player: { spawn: [0, 6], facing: Math.PI, boot: true, limp: 0.7, painRate: 1 / 1.5, footsteps: 'boot' },
+  player: { spawn: [0, -16], facing: Math.PI, boot: true, limp: 0.7, painRate: 1 / 1.5, footsteps: 'boot' },
   build: (ctx) => buildScene5(ctx),
 
   async run(ctx, d) {
