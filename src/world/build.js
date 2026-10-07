@@ -1,29 +1,63 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { look } from './look.js';
+import { onLangChange } from '../story/i18n.js';
 
 // Shared, chapter-agnostic world helpers. Chapter scenes live in world/scenes/sceneN.js.
 // Conventions: metres; y up.
+//
+// Surfaces (src/world/look.js): ground(), box() and mat() take `surface: '<look name>'` (e.g.
+// 'street.asphalt', 'facade.brick') for a PBR recipe, or `surface: false` to stay flat. Untagged
+// BIG surfaces get the active chapter's recipe layered over their own colour / canvas (a "first
+// pass" so every chapter starts from real materials): large ground planes, tall wide boxes (facades),
+// thin large boxes (sidewalks, slabs), and mat() calls whose map is a grimeTexture (walls).
 
 // ------------------------------------------------------------------ basics
 
-/** New MeshStandardMaterial. opts are passed through (roughness defaults to 0.85). */
-export function mat(color = 0x888888, opts = {}) {
+function plainMat(color, opts) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...opts });
 }
 
 /**
+ * New MeshStandardMaterial. opts are passed through (roughness defaults to 0.85).
+ * opts.surface: a look surface name to layer onto it (keeps color/map/roughness; see look.enhance),
+ * or false. Untagged, a material whose map is a grimeTexture gets the chapter's wall recipe.
+ */
+export function mat(color = 0x888888, opts = {}) {
+  const { surface, ...o } = opts;
+  const m = plainMat(color, o);
+  const name = surface === false ? null : surface || (o.map?.userData?.grime ? look.chapter?.walls : null);
+  if (name) look.enhance(m, name, { albedo: o.map ? 0.55 : 0.9 });
+  return m;
+}
+
+/**
  * A box mesh whose origin is its bottom centre.
- * opts: { color, material, pos:[x,y,z], rotY, castShadow=true, receiveShadow=true, ...materialOpts }
+ * opts: { color, material, pos:[x,y,z], rotY, castShadow=true, receiveShadow=true, surface, ...materialOpts }
+ * surface: a look name ('facade.brick'...) layered over the colour / map, or false. Untagged boxes
+ * at least 2.4 m tall and 2.5 m wide get the chapter's facade recipe; thin (<= 0.35 m) boxes of 4 m2
+ * or more get its slab recipe (sidewalks, floors). An explicit `material` is never touched.
  */
 export function box(w, h, d, opts = {}) {
-  const { color = 0x888888, material, pos, rotY = 0, castShadow = true, receiveShadow = true, ...mopts } = opts;
+  const { color = 0x888888, material, pos, rotY = 0, castShadow = true, receiveShadow = true, surface, ...mopts } = opts;
   const geo = new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0);
-  const m = new THREE.Mesh(geo, material || mat(color, mopts));
-  if (pos) m.position.set(pos[0], pos[1], pos[2]);
-  m.rotation.y = rotY;
-  m.castShadow = castShadow;
-  m.receiveShadow = receiveShadow;
-  return m;
+  let m = material;
+  if (!m) {
+    m = plainMat(color, mopts);
+    let name = surface;
+    if (surface === undefined && look.chapter) {
+      if (h >= 2.4 && Math.max(w, d) >= 2.5) name = look.chapter.facade;
+      else if (h <= 0.35 && w * d >= 4 && Math.min(w, d) >= 0.8) name = look.chapter.slab;
+    }
+    if (name) look.enhance(m, name, { albedo: mopts.map ? 0.6 : 0.9, groundY: pos ? pos[1] : 0 });
+  }
+  const mesh = new THREE.Mesh(geo, m);
+  if (pos) mesh.position.set(pos[0], pos[1], pos[2]);
+  mesh.rotation.y = rotY;
+  mesh.castShadow = castShadow;
+  mesh.receiveShadow = receiveShadow;
+  return mesh;
 }
 
 /** PointLight helper. opts: { pos:[x,y,z], distance=12, decay=2, shadow=false } */
@@ -85,7 +119,10 @@ export function noiseTexture({ base = '#777777', spread = 0.12, size = 256, repe
 /**
  * Flat ground plane at y (default 0), receiving shadows.
  * opts: { size=200 | [w,d], color='#3b3f38', roughness=0.95, metalness=0, noise=true, spread=0.1,
- *         tile=4 (metres per noise tile), pos:[x,z], y=0, map (Texture) }
+ *         tile=4 (metres per noise tile), pos:[x,z], y=0, map (Texture), surface }
+ * surface: a look name layered over the colour / map ('street.asphalt'...), or false. Untagged
+ * planes of 16 m2 or more get the chapter's ground recipe (the noise canvas is then dropped: the
+ * PBR detail replaces it).
  */
 export function ground(opts = {}) {
   const {
@@ -99,14 +136,17 @@ export function ground(opts = {}) {
     pos = [0, 0],
     y = 0,
     map,
+    surface,
   } = opts;
   const [w, d] = Array.isArray(size) ? size : [size, size];
+  let name = surface === false ? null : surface;
+  if (surface === undefined && look.chapter && w * d >= 16) name = look.chapter.ground;
+  const useLook = !!(name && look.materials);
   let tex = map || null;
-  if (!tex && noise) tex = noiseTexture({ base: '#ffffff', spread, blotches: 0, repeat: [w / tile, d / tile] });
-  const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color, map: tex, roughness, metalness }),
-  );
+  if (!tex && noise && !useLook) tex = noiseTexture({ base: '#ffffff', spread, blotches: 0, repeat: [w / tile, d / tile] });
+  const material = new THREE.MeshStandardMaterial({ color, map: tex, roughness, metalness });
+  if (useLook) look.enhance(material, name, { albedo: map ? 0.6 : 1, groundY: y });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), material);
   m.position.set(pos[0], y, pos[1]);
   m.receiveShadow = true;
   m.name = 'ground';
@@ -214,6 +254,34 @@ export function sign(text, w = 2, h = 1, opts = {}) {
   mesh.userData.redraw = draw;
   mesh.userData.canvas = c;
   return mesh;
+}
+
+// ------------------------------------------------------------------ text that follows the language
+
+/**
+ * Keep a sign() (or anything with userData.redraw) in the current language: text() is read again
+ * after every i18n.setLang. Chapter-scoped: the Director drops it between chapters. Returns obj.
+ */
+export function relabel(obj, text) {
+  onLangChange(() => obj.userData.redraw?.(text()), { chapter: true });
+  return obj;
+}
+
+/**
+ * Same for a canvas texture: after a language change make() builds it again and it replaces
+ * material[keys] (the old one is disposed). Returns the material.
+ */
+export function relangTexture(material, make, keys = ['map']) {
+  onLangChange(
+    () => {
+      const old = material[keys[0]];
+      const tex = make();
+      for (const k of keys) material[k] = tex;
+      if (old && old !== tex) old.dispose();
+    },
+    { chapter: true },
+  );
+  return material;
 }
 
 // ------------------------------------------------------------------ seeded random
@@ -365,6 +433,7 @@ export function grimeTexture({
     { repeat },
   );
   tex.userData.canvas = tex.image;
+  tex.userData.grime = true; // mat() / box() layer the chapter's wall recipe under it
   return tex;
 }
 
@@ -388,9 +457,51 @@ function tube(a, b, r) {
 }
 
 /**
+ * A road saddle in metres (nose toward +Z, centred, top at about y = 0.02): a narrow nose, a wide
+ * rear that kicks up a little, a dipped middle, and two rails underneath. Non-indexed-safe for merging.
+ */
+export function saddleGeometry() {
+  const sg = new RoundedBoxGeometry(0.14, 0.036, 0.27, 4, 0.016);
+  const p = sg.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const t = THREE.MathUtils.clamp((p.getZ(i) + 0.135) / 0.27, 0, 1); // 0 = rear, 1 = nose
+    const w = 1 - 0.72 * THREE.MathUtils.smoothstep(t, 0.22, 0.95);
+    p.setX(i, p.getX(i) * w);
+    const top = p.getY(i) > 0 ? 1 : 0;
+    p.setY(i, p.getY(i) * (top ? 1 : 0.6) + 0.014 * (1 - t) * (1 - t) - 0.006 * Math.sin(t * Math.PI) * top);
+  }
+  sg.computeVertexNormals();
+  const rails = [-1, 1].map((sx) => tube(new THREE.Vector3(sx * 0.025, -0.022, -0.09), new THREE.Vector3(sx * 0.012, -0.018, 0.1), 0.0035));
+  for (const r of rails) r.deleteAttribute('uv');
+  sg.deleteAttribute('uv');
+  const flat = (x) => (x.index ? x.toNonIndexed() : x);
+  return mergeGeometries([flat(sg), ...rails.map(flat)]);
+}
+
+/** Closed chain path (metres, in the x = cx plane) round a chainring and a rear cog. */
+function chainCurve(cx, ring, rr, cog, cr) {
+  const pts = [];
+  const d = new THREE.Vector2(cog.z - ring.z, cog.y - ring.y);
+  const L = d.length();
+  const base = Math.atan2(d.y, d.x);
+  const off = Math.acos(THREE.MathUtils.clamp((rr - cr) / L, -1, 1)); // external tangents
+  const arc = (c, r, a0, a1, n) => {
+    for (let i = 0; i <= n; i++) {
+      const a = a0 + ((a1 - a0) * i) / n;
+      pts.push(new THREE.Vector3(cx, c.y + Math.sin(a) * r, c.z + Math.cos(a) * r));
+    }
+  };
+  // Round the cog from the top tangent to the bottom one, then round the ring back.
+  arc(cog, cr, base + off, base - off, 10);
+  arc(ring, rr, base - off, base + off - Math.PI * 2, 24);
+  return new THREE.CatmullRomCurve3(pts, true, 'catmullrom', 0.2);
+}
+
+/**
  * A procedural road bike, ~1.0 m wheelbase, 0.68 m wheels, standing on y = 0. Its long axis is Z:
  * the front wheel is toward +Z (so rotation.y works like a character's facing), centred on x = 0.
- * opts: { frame='#8a2b22', rust=0 (0..1: orange frame, dull rims, brown chain), scale=1 }
+ * opts: { frame='#8a2b22', rust=0 (0..1: orange frame, dull rims, brown chain), scale=1,
+ *         saddle=true (false: leave the box saddle off, for a caller that fits its own at userData.seat) }
  * Returns a Group with userData:
  *   wheels: [front, rear]  Groups at the axles; spin with wheel.rotation.x -= speed * dt / 0.34
  *   rims:   [front, rear]  rim meshes (wobble a rim with rim.rotation.z / position.x, recolour it)
@@ -399,7 +510,7 @@ function tube(a, b, r) {
  *   seat: Vector3, bars: Vector3   local seat / handlebar points (for posing a rider)
  * About 10 draw calls (+ shadows).
  */
-export function bicycle({ frame = '#8a2b22', rust = 0, scale = 1 } = {}) {
+export function bicycle({ frame = '#8a2b22', rust = 0, scale = 1, saddle = true } = {}) {
   const k = THREE.MathUtils.clamp(rust, 0, 1);
   const g = new THREE.Group();
   g.name = 'bicycle';
@@ -439,35 +550,71 @@ export function bicycle({ frame = '#8a2b22', rust = 0, scale = 1 } = {}) {
   const frameMesh = new THREE.Mesh(frameGeo, frameMaterial);
   frameMesh.name = 'bike-frame';
 
-  // Seatpost, stem, bars, cranks, chainring (metal) and saddle / bar tape (black).
+  // Seatpost, stem, bars, cranks, chainring, cassette, mech (metal) and saddle / bar tape (black).
   const seatPostTop = V(0, 0.93, -0.28);
   const stemEnd = V(0, 0.88, 0.47);
   const barsC = V(0, 0.88, 0.49);
-  const metalGeo = mergeGeometries([
-    tube(seatTop, seatPostTop, 0.012),
-    tube(headTop, V(0, 0.87, 0.39), 0.014),
-    tube(V(0, 0.87, 0.39), stemEnd, 0.012),
-    new THREE.TorusGeometry(0.095, 0.006, 6, 28).rotateY(Math.PI / 2).translate(-0.06, bb.y, bb.z),
-    tube(V(-0.07, bb.y, bb.z), V(-0.07, bb.y - 0.16, bb.z + 0.03), 0.01),
-    tube(V(0.07, bb.y, bb.z), V(0.07, bb.y + 0.16, bb.z - 0.03), 0.01),
-    tube(V(-0.08, bb.y, bb.z), V(0.08, bb.y, bb.z), 0.014),
-  ]);
+  const cog = V(-0.06, R, rearAxle.z);
+  const ring = V(-0.06, bb.y, bb.z);
+  const metalGeo = mergeGeometries(
+    [
+      tube(seatTop, seatPostTop, 0.012),
+      tube(headTop, V(0, 0.87, 0.39), 0.014),
+      tube(V(0, 0.87, 0.39), stemEnd, 0.012),
+      new THREE.CylinderGeometry(0.1, 0.1, 0.004, 32).rotateZ(Math.PI / 2).translate(ring.x, ring.y, ring.z), // chainring
+      new THREE.CylinderGeometry(0.084, 0.084, 0.004, 28).rotateZ(Math.PI / 2).translate(ring.x + 0.008, ring.y, ring.z),
+      ...[0, 1, 2, 3, 4, 5, 6].map((i) => new THREE.CylinderGeometry(0.03 + i * 0.006, 0.03 + i * 0.006, 0.0025, 20).rotateZ(Math.PI / 2).translate(cog.x + 0.012 - i * 0.004, cog.y, cog.z)), // cassette
+      tube(V(-0.07, bb.y, bb.z), V(-0.07, bb.y - 0.16, bb.z + 0.03), 0.01),
+      tube(V(0.07, bb.y, bb.z), V(0.07, bb.y + 0.16, bb.z - 0.03), 0.01),
+      tube(V(-0.08, bb.y, bb.z), V(0.08, bb.y, bb.z), 0.014),
+      // Rear mech: a hanger and the cage with its two jockey wheels below the cassette.
+      tube(V(-0.055, R - 0.02, rearAxle.z + 0.01), V(-0.065, R - 0.07, rearAxle.z + 0.02), 0.008),
+      new THREE.BoxGeometry(0.008, 0.075, 0.03).translate(-0.066, R - 0.105, rearAxle.z + 0.025),
+      ...[0.075, 0.135].map((dy) => new THREE.CylinderGeometry(0.014, 0.014, 0.008, 12).rotateZ(Math.PI / 2).translate(-0.06, R - dy, rearAxle.z + 0.025)),
+      // Brake calipers.
+      new THREE.BoxGeometry(0.06, 0.03, 0.025).translate(0, R + 0.32, frontAxle.z - 0.02),
+      new THREE.BoxGeometry(0.06, 0.03, 0.025).translate(0, seatStayTop.y - 0.07, seatStayTop.z - 0.03),
+    ].map((g) => (g.index ? g.toNonIndexed() : g)),
+  );
+  for (const k of ['uv']) if (metalGeo.attributes[k]) metalGeo.deleteAttribute(k);
   const metalMesh = new THREE.Mesh(metalGeo, metal);
   const chainCol = new THREE.Color('#5a5c60').lerp(new THREE.Color('#7a4022'), k);
   const chainMat = new THREE.MeshStandardMaterial({ color: chainCol, roughness: 0.6 + 0.3 * k, metalness: 0.5 * (1 - k) });
-  const chainGeo = mergeGeometries([
-    tube(V(-0.06, bb.y + 0.095, bb.z), V(-0.06, R + 0.035, rearAxle.z), 0.004),
-    tube(V(-0.06, bb.y - 0.095, bb.z), V(-0.06, R - 0.035, rearAxle.z), 0.004),
-  ]);
+  // The chain: one closed loop round the chainring and the middle cog.
+  const chainGeo = new THREE.TubeGeometry(chainCurve(-0.06, ring, 0.1, cog, 0.045), 120, 0.0042, 4, true);
   const chainMesh = new THREE.Mesh(chainGeo, chainMat);
-  const blackGeo = mergeGeometries([
-    new THREE.BoxGeometry(0.11, 0.035, 0.25).translate(0, seatPostTop.y + 0.02, seatPostTop.z + 0.02),
-    tube(V(-0.21, barsC.y, barsC.z), V(0.21, barsC.y, barsC.z), 0.013),
-    ...[-1, 1].map((s) => tube(V(s * 0.2, barsC.y, barsC.z), V(s * 0.2, barsC.y - 0.12, barsC.z + 0.08), 0.013)),
-    ...[-1, 1].map((s) => tube(V(s * 0.2, barsC.y - 0.12, barsC.z + 0.08), V(s * 0.2, barsC.y - 0.16, barsC.z - 0.02), 0.013)),
+  // Drop bars: a straight top, then a smooth forward-and-down drop on each side (bar tape), with hoods.
+  const drop = (sx) =>
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        V(sx * 0.06, barsC.y, barsC.z),
+        V(sx * 0.17, barsC.y, barsC.z),
+        V(sx * 0.205, barsC.y + 0.005, barsC.z + 0.05),
+        V(sx * 0.21, barsC.y - 0.02, barsC.z + 0.1),
+        V(sx * 0.21, barsC.y - 0.09, barsC.z + 0.105),
+        V(sx * 0.21, barsC.y - 0.135, barsC.z + 0.06),
+        V(sx * 0.21, barsC.y - 0.14, barsC.z - 0.03),
+      ]),
+      28,
+      0.012,
+      8,
+    );
+  const hood = (sx) => new THREE.BoxGeometry(0.03, 0.05, 0.045).rotateX(-0.5).translate(sx * 0.208, barsC.y + 0.01, barsC.z + 0.105);
+  const parts = [
+    ...(saddle ? [saddleGeometry().translate(seatPostTop.x, seatPostTop.y + 0.024, seatPostTop.z + 0.02)] : []),
+    tube(V(-0.07, barsC.y, barsC.z), V(0.07, barsC.y, barsC.z), 0.014),
+    drop(-1),
+    drop(1),
+    hood(-1),
+    hood(1),
     new THREE.BoxGeometry(0.09, 0.02, 0.05).translate(-0.12, bb.y - 0.16, bb.z + 0.03),
     new THREE.BoxGeometry(0.09, 0.02, 0.05).translate(0.12, bb.y + 0.16, bb.z - 0.03),
-  ]);
+  ].map((g) => {
+    const n = g.index ? g.toNonIndexed() : g;
+    if (n.attributes.uv) n.deleteAttribute('uv');
+    return n;
+  });
+  const blackGeo = mergeGeometries(parts);
   const blackMesh = new THREE.Mesh(blackGeo, black);
   g.add(frameMesh, metalMesh, chainMesh, blackMesh);
 
@@ -657,11 +804,125 @@ export function scatter(geometry, material, count, place, { castShadow = true, r
   return im;
 }
 
+// ------------------------------------------------------------------ atmosphere
+
+const _cv = new THREE.Vector3();
+const _cw = new THREE.Vector3();
+const _cq = new THREE.Quaternion();
+const _down = new THREE.Vector3(0, -1, 0);
+
+/**
+ * A soft, additive light cone (fake volumetric shaft) under a lamp. One draw call, no lighting, no
+ * depth write; it fades at its rim (view angle), towards its foot and near the camera, and takes
+ * the scene fog. The apex sits at the mesh origin and the cone points down -Y (rotate it to aim).
+ * opts: { length=4, radius=1.4 (foot), apex=0.06 (top radius), color='#ffd9a0', opacity=0.25,
+ *         softness=1.2 (rim falloff power), pos:[x,y,z], dir:Vector3|[x,y,z] (aim; default down) }
+ * Returns the Mesh; mesh.material.uniforms.uOpacity drives it (0 hides; flicker it with the lamp).
+ */
+export function lightCone({ length = 4, radius = 1.4, apex = 0.06, color = '#ffd9a0', opacity = 0.25, softness = 1.2, pos, dir } = {}) {
+  const geo = new THREE.CylinderGeometry(apex, radius, length, 28, 1, true).translate(0, -length / 2, 0);
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(color) },
+      uOpacity: { value: opacity },
+      uSoft: { value: softness },
+      uLen: { value: length },
+      fogColor: { value: new THREE.Color() },
+      fogDensity: { value: 0 },
+      fogNear: { value: 1 },
+      fogFar: { value: 1000 },
+    },
+    vertexShader: /* glsl */ `
+      uniform float uLen;
+      varying float vAlong;
+      varying vec3 vN, vV;
+      varying float vFogDepth;
+      void main() {
+        vAlong = clamp(-position.y / uLen, 0.0, 1.0);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vN = normalize(normalMatrix * normal);
+        vV = normalize(-mv.xyz);
+        vFogDepth = -mv.z;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor, fogColor;
+      uniform float uOpacity, uSoft, fogDensity;
+      varying float vAlong;
+      varying vec3 vN, vV;
+      varying float vFogDepth;
+      void main() {
+        float rim = pow(abs(dot(normalize(vN), normalize(vV))), uSoft);
+        float foot = (1.0 - vAlong) * (1.0 - vAlong);
+        float top = smoothstep(0.0, 0.08, vAlong);
+        float near = smoothstep(0.6, 2.5, vFogDepth);
+        float fog = exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
+        float a = uOpacity * rim * foot * top * near * mix(0.35, 1.0, fog);
+        gl_FragColor = vec4(uColor * a, 1.0);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    fog: true,
+  });
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.name = 'light-cone';
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  mesh.renderOrder = 3;
+  if (pos) mesh.position.set(pos[0], pos[1], pos[2]);
+  if (dir) {
+    const v = Array.isArray(dir) ? _cv.set(dir[0], dir[1], dir[2]) : _cv.copy(dir);
+    mesh.quaternion.setFromUnitVectors(_down, v.normalize());
+  }
+  return mesh;
+}
+
+/**
+ * Add soft cones under the practical lights of a built scene (first-pass atmosphere, main.js runs
+ * it after each build when the chapter look has `cones`): every SpotLight gets a cone along its
+ * aim, and every PointLight hung at 3 m or higher with a reach of 14 m or more (street lamps) gets
+ * one straight down to the ground. Skips lights with userData.noCone. Returns the cones added.
+ * opts: { opacity=0.28, spotOpacity=0.16 }
+ */
+export function addLightCones(group, { opacity = 0.28, spotOpacity = 0.16 } = {}) {
+  if (!group) return [];
+  group.updateMatrixWorld(true);
+  const lights = [];
+  group.traverse((o) => {
+    if (o.isLight && !o.userData.noCone && (o.isSpotLight || o.isPointLight)) lights.push(o);
+  });
+  const out = [];
+  for (const l of lights) {
+    l.getWorldPosition(_cw);
+    const col = '#' + l.color.getHexString();
+    let cone = null;
+    if (l.isSpotLight) {
+      l.target.updateMatrixWorld();
+      const aim = l.target.getWorldPosition(new THREE.Vector3()).sub(_cw).normalize();
+      const len = Math.min(l.distance || 6, _cw.y > 0.5 ? _cw.y / Math.max(0.3, -aim.y) : 6, 6);
+      cone = lightCone({ length: len, radius: Math.tan(Math.min(l.angle, 1.0)) * len * 0.75, color: col, opacity: spotOpacity, dir: aim });
+    } else if (_cw.y >= 3 && (l.distance === 0 || l.distance >= 14)) {
+      cone = lightCone({ length: _cw.y, radius: _cw.y * 0.42, color: col, opacity });
+    }
+    if (!cone) continue;
+    // Place in the group's space at the light's world position (the group may be offset).
+    cone.position.copy(group.worldToLocal(_cw.clone()));
+    group.getWorldQuaternion(_cq);
+    cone.quaternion.premultiply(_cq.invert());
+    cone.userData.light = l;
+    group.add(cone);
+    out.push(cone);
+  }
+  return out;
+}
+
 // ------------------------------------------------------------------ disposal
 
 /**
- * Dispose geometries, materials, textures and light shadow maps under group (skips objects with userData.noDispose)
- * and remove it from its parent.
+ * Dispose geometries, materials, textures and light shadow maps under group (skips objects with userData.noDispose,
+ * and materials / textures marked userData.shared) and remove it from its parent.
  */
 export function disposeGroup(group) {
   if (!group) return;
@@ -671,13 +932,17 @@ export function disposeGroup(group) {
     if (o.geometry && !o.userData.sharedGeometry) o.geometry.dispose();
     const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
     for (const m of mats) {
+      if (m.userData.shared) continue; // ctx.materials / look.surface cache: lives across chapters
       for (const v of Object.values(m)) if (v && v.isTexture) textures.add(v);
       if (m.uniforms) for (const u of Object.values(m.uniforms)) if (u.value?.isTexture) textures.add(u.value);
       m.dispose();
     }
     if (o.isInstancedMesh) o.dispose();
-    if (o.isLight) o.dispose?.(); // frees shadow maps (Ch1's TV cube shadow)
+    if (o.isLight) {
+      if (o.map?.isTexture) textures.add(o.map); // a SpotLight's projected map (Ch1's rain on the wall)
+      o.dispose?.(); // frees shadow maps (Ch1's TV cube shadow)
+    }
   });
-  for (const t of textures) t.dispose();
+  for (const t of textures) if (!t.userData.shared) t.dispose();
   group.removeFromParent();
 }

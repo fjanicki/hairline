@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ground } from '../world/build.js';
+import { releaseChapterListeners } from './i18n.js';
 
 /** True for a light CSS hex colour ('#fff', '#f4efe6', ...). */
 function isLightColor(css) {
@@ -259,6 +260,7 @@ export class Director {
     world.unload();
     ui.clearTransient();
     player.clearListeners();
+    releaseChapterListeners(); // the old scene's live canvas text
     engine.timeScale = 1;
     input.enabled = true;
     audio.restore();
@@ -337,6 +339,7 @@ export class Director {
       }
       ui.objective(ch.objective);
       this._seedHud(this.index);
+      await ctx.engine.precompile?.(); // shaders for the whole chapter, while the screen is covered
       await ui.fade(0, this.skipCards ? 0.3 : 1.2);
       if (showTitle && lightFade) showTitle();
       this.state = 'play';
@@ -350,6 +353,9 @@ export class Director {
     this.state = 'transition';
     await ui.fade(1, 1.2);
     this._resetBetweenChapters();
+    // The end card draws no 3D scene worth keeping: free every material set and prop on the GPU.
+    ctx.materials?.retain([]);
+    ctx.assets?.releaseProps([]);
     audio.music('piano', { volume: 0.4, fade: 3 });
     this.state = 'end';
     await ui.endCard();
@@ -358,6 +364,8 @@ export class Director {
   /** Debug: reload at chapter i with debug flags. */
   goto(i) {
     const q = new URLSearchParams({ debug: '1', autostart: '1', skipcards: '1', chapter: String(i) });
+    const lang = new URLSearchParams(location.search).get('lang');
+    if (lang) q.set('lang', lang);
     location.href = `${location.pathname}?${q}`;
   }
 }

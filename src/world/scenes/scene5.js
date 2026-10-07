@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import * as B from '../build.js';
 import { buildScene2 } from './scene2.js';
+import { finishStreet } from './scene5/street.js';
+import { dressWallside } from './scene5/wallside.js';
+import { buildWorkshop } from './scene5/workshop.js';
+import { makeCast, makeRider } from './scene5/cast.js';
+import { makeMotes } from './scene5/fx.js';
 
 // Ch5 "The Wall": Rue des Tanneurs by day (Week 12), then golden hour.
 //
@@ -11,10 +16,14 @@ import { buildScene2 } from './scene2.js';
 // same layout is built instead, so Ch5 always runs.
 //
 // Scene5 adds the Ch5-only pieces on top: the chalk guide, the paint ribbon and the brush (THE LINE),
-// drop cloths, buckets and a stepladder along the wall, Odile's folding chair, the neighbours,
-// Sami and his bike, the run club, the PUNCTURES card, and the open workshop interior (workbench,
-// pegboard with the painted watch outline, the nail, the 3D watch, the OPEN sign, the clean race bike
-// on its stand).
+// and, from src/world/scenes/scene5/:
+//   street.js    the cross street and the row of houses that closes the far (+Z) end
+//   wallside.js  drop cloths, paint tins, the trestle table, the stepladder, Odile's painted chair
+//   workshop.js  the open workshop (bench, pegboard with the painted watch outline, the nail, the
+//                3D watch, the bench lamp, the clean race bike on its stand, the OPEN sign)
+//   cast.js      Odile, Sami (riding with hands and feet on the bike), the neighbours with their
+//                brushes / tin / camera, the run club
+//   fx.js        dust in the low sun
 //
 // Layout (metres, the street runs along -Z):
 //   blind wall face   x = WALL_X (measured by raycast, contract -5.95), z -12 ... -32, h 8
@@ -28,7 +37,6 @@ export const LINE_Z0 = -12;
 export const LINE_Z1 = -32;
 export const LINE_Y = 1.55;
 const LINE_COLOR = '#d9a441';
-const DOOR_HOUSING_W = 3.4;
 
 const DEFAULT_SPOTS = {
   bench: [-5.32, -36.5],
@@ -39,9 +47,6 @@ const DEFAULT_SPOTS = {
   shop: [4.55, -34],
   boltHoles: [-4.6, -18],
 };
-
-const NEIGHBOUR_TINTS = ['#8a7a6a', '#c24a6a', '#9a6a48', '#6f7f8a', '#7a8a6a', '#8a6f7f'];
-const CLUB_TINTS = ['#d6e04a', '#e0a040', '#8fb0c8', '#c4c86a', '#a8b890'];
 
 // ---------------------------------------------------------------------------------- small helpers
 
@@ -239,8 +244,8 @@ function speckle(g, w, h, R, n = 900, alpha = 0.08) {
   }
 }
 
-/** The five neighbours' panels (local street only; Ch2's variant brings its own). */
-function panelArt(id, w, h, seed) {
+/** The five neighbours' panels (local street only; Ch2's variant brings its own). words: Marco's two words. */
+function panelArt(id, w, h, seed, words) {
   const R = rngOf(seed);
   return canvas(w, h, (g) => {
     const bg = { benali: '#2f4256', ines: '#e6dccb', sami: '#e9dfc4', odile: '#3a3530', marco: '#d98a3a' }[id] || '#ccc';
@@ -377,8 +382,9 @@ function panelArt(id, w, h, seed) {
       g.font = `900 ${Math.round(h * 0.13)}px Impact, "Arial Black", sans-serif`;
       g.textAlign = 'center';
       g.fillStyle = '#f4ead0';
-      g.fillText('GREAT', w * 0.2, h * 0.5);
-      g.fillText('KEBAB', w * 0.8, h * 0.5);
+      const [w1, w2] = words || ['GREAT', 'KEBAB'];
+      g.fillText(w1, w * 0.2, h * 0.5);
+      g.fillText(w2, w * 0.8, h * 0.5);
     }
     // weather the paint a touch so it sits on a real wall
     g.globalCompositeOperation = 'multiply';
@@ -389,109 +395,6 @@ function panelArt(id, w, h, seed) {
       g.fill();
     }
     g.globalCompositeOperation = 'source-over';
-  });
-}
-
-/** Pegboard: hardboard with holes, painted tool outlines, and a small wristwatch outline at (u, v). */
-function pegboardCanvas(w, h, watchU, watchV, outlines) {
-  const R = rngOf(1414);
-  return canvas(w, h, (g) => {
-    g.fillStyle = '#8a6a48';
-    g.fillRect(0, 0, w, h);
-    speckle(g, w, h, R, 2500, 0.07);
-    g.fillStyle = 'rgba(30,20,12,0.85)';
-    for (let y = 12; y < h; y += 22) for (let x = 12; x < w; x += 22) g.fillRect(x - 2, y - 2, 4, 4);
-    // grime: a handprint band at working height and oil smudges
-    g.fillStyle = 'rgba(40,28,18,0.18)';
-    for (let i = 0; i < 26; i++) {
-      g.beginPath();
-      g.arc(R() * w, h * (0.6 + R() * 0.35), 8 + R() * 30, 0, Math.PI * 2);
-      g.fill();
-    }
-    g.strokeStyle = '#efe8d6';
-    g.lineWidth = 5;
-    g.lineJoin = 'round';
-    for (const o of outlines) {
-      g.save();
-      g.translate(o.u * w, o.v * h);
-      g.rotate(o.rot || 0);
-      g.beginPath();
-      if (o.kind === 'hammer') {
-        g.rect(-8, -90, 16, 150);
-        g.rect(-38, -110, 76, 26);
-      } else if (o.kind === 'saw') {
-        g.moveTo(-22, -100);
-        g.lineTo(22, -100);
-        g.lineTo(26, -40);
-        g.lineTo(40, 100);
-        g.lineTo(-10, 100);
-        g.lineTo(-26, -40);
-        g.closePath();
-      } else if (o.kind === 'spanner') {
-        g.rect(-7, -70, 14, 140);
-        g.arc(0, -80, 18, 0, Math.PI * 2);
-      } else if (o.kind === 'axe') {
-        g.rect(-7, -80, 14, 170);
-        g.moveTo(7, -80);
-        g.lineTo(46, -96);
-        g.lineTo(46, -40);
-        g.lineTo(7, -52);
-      } else if (o.kind === 'brush') {
-        g.rect(-6, -60, 12, 80);
-        g.rect(-14, 20, 28, 40);
-      }
-      g.stroke();
-      g.restore();
-    }
-    // The wristwatch outline, painted small, as if it had always been there.
-    const x = watchU * w;
-    const y = watchV * h;
-    g.lineWidth = 4;
-    g.strokeStyle = '#efe8d6';
-    g.beginPath();
-    g.ellipse(x, y + 26, 22, 44, 0, 0, Math.PI * 2);
-    g.stroke();
-    g.beginPath();
-    g.arc(x, y + 66, 17, 0, Math.PI * 2);
-    g.stroke();
-    // nail hole
-    g.fillStyle = '#2a1e14';
-    g.beginPath();
-    g.arc(x, y, 3, 0, Math.PI * 2);
-    g.fill();
-  });
-}
-
-/** Paint-spattered drop cloth. */
-function dropClothCanvas(seed) {
-  const R = rngOf(seed);
-  return canvas(256, 512, (g, w, h) => {
-    g.fillStyle = '#cfc8b6';
-    g.fillRect(0, 0, w, h);
-    speckle(g, w, h, R, 1200, 0.07);
-    g.strokeStyle = 'rgba(90,80,60,0.25)';
-    g.lineWidth = 2;
-    for (let i = 0; i < 9; i++) {
-      g.beginPath();
-      g.moveTo(R() * w, 0);
-      g.bezierCurveTo(R() * w, h * 0.3, R() * w, h * 0.6, R() * w, h);
-      g.stroke();
-    }
-    const cols = ['#c24a3a', '#e8c27a', '#2f4f6a', '#c24a6a', '#d98a3a', '#9a7a4e', '#3b3a36'];
-    for (let i = 0; i < 70; i++) {
-      g.fillStyle = cols[(R() * cols.length) | 0];
-      g.globalAlpha = 0.5 + R() * 0.5;
-      g.beginPath();
-      g.arc(R() * w, R() * h, 1 + R() * 6, 0, Math.PI * 2);
-      g.fill();
-    }
-    g.globalAlpha = 1;
-    g.fillStyle = 'rgba(60,50,40,0.18)';
-    for (let i = 0; i < 6; i++) {
-      g.beginPath();
-      g.arc(R() * w, R() * h, 18 + R() * 40, 0, Math.PI * 2);
-      g.fill();
-    }
   });
 }
 
@@ -636,7 +539,10 @@ async function buildLocalStreet(ctx, T2, T5) {
       s.position.set(side * (5.95 - 0.06), 3.25, (z0 + z1) / 2);
       s.rotation.y = rot;
       group.add(s);
-      if (ex.neon) neonMat = s.material;
+      if (ex.neon) {
+        neonMat = s.material;
+        B.relabel(s, () => T2.signs?.kebab ?? "MARCO'S");
+      }
     }
     if (ex.ghost) {
       const gs = B.sign(T2.signs?.ghost ?? 'MARCHAL & FILLE — ENSEIGNES — DORURE', 6.4, 0.8, {
@@ -696,11 +602,13 @@ async function buildLocalStreet(ctx, T2, T5) {
     const p = P[i] || { id: `p${i}`, color: '#c0a070' };
     const z0 = LINE_Z0 - i * 4 - 0.1;
     const z1 = z0 - 3.8;
-    const tex = texFrom(panelArt(p.id, 608, 512, 90 + i));
+    const art = () => texFrom(panelArt(p.id, 608, 512, 90 + i, T5.signs?.marcoPanel));
+    const tex = art();
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(3.8, 3.2),
       new THREE.MeshStandardMaterial({ color: '#ffffff', map: tex, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
     );
+    if (p.id === 'marco') B.relangTexture(mesh.material, art);
     mesh.position.set(WX + 0.012, 2.15 + 1.6, (z0 + z1) / 2);
     mesh.rotation.y = Math.PI / 2;
     mesh.receiveShadow = true;
@@ -722,6 +630,7 @@ async function buildLocalStreet(ctx, T2, T5) {
   fascia.position.set(0, 3.35, -47.93);
   group.add(fascia);
   const num = B.sign(T2.signs?.number ?? 'No. 14', 0.5, 0.22, { bg: '#d8d0bc', fg: '#2b2b2e' });
+  B.relabel(num, () => T2.signs?.number ?? 'No. 14');
   num.position.set(2.3, 2.2, -47.93);
   group.add(num);
   // The deep awning over the workshop door (sign painting in the rain, Ch2).
@@ -743,10 +652,10 @@ async function buildLocalStreet(ctx, T2, T5) {
   const litter = [
     ['kenney/retro/detail-dumpster-closed.glb', { height: 1.3 }, [5.15, -21.5], -Math.PI / 2],
     ['kenney/retro/pallet-small.glb', { height: 0.15 }, [5.0, -24.4], 0.4],
-    ['kenney/survival/box-open.glb', { height: 0.42 }, [4.9, -7.2], 0.3],
+    ['props/cardboard_box.glb', { height: 0.42 }, [4.9, -7.2], 0.3],
     ['kenney/survival/bottle-large.glb', { height: 0.3 }, [4.6, -12.1], 0],
     ['kenney/survival/bottle-large.glb', { height: 0.3 }, [-4.85, -35.2], 0],
-    ['kenney/furniture/cardboardBoxClosed.glb', { height: 0.4 }, [5.05, -41.5], 0.8],
+    ['props/cardboard_box.glb', { height: 0.4 }, [5.05, -41.5], 0.8],
     ['kenney/retro/detail-bench.glb', { height: 0.82 }, [-5.32, -36.5], Math.PI / 2],
   ];
   const lp = await Promise.all(litter.map(([path, o]) => assets.prop(path, o)));
@@ -948,185 +857,6 @@ function makeLineKit(wallX) {
   return kit;
 }
 
-// ---------------------------------------------------------------------------------- workshop interior
-
-async function buildWorkshop(ctx, group, spots, { local, T5, openSign, wallZ }) {
-  const { assets } = ctx;
-  const [nx, nz] = spots.nail;
-  // Pegboard plane: 0.95 m beyond the stand point, but never behind the Ch2 room's back wall.
-  const pbZ = Number.isFinite(wallZ) ? Math.max(nz - 0.95, wallZ + 0.03) : nz - 0.95;
-  const backZ = pbZ - 0.08;
-  const W = 3.4;
-
-  // Interior shell (local street only has an opening; the Ch2 street may bring its own room).
-  if (local) {
-    const inTex = B.grimeTexture({ w: 512, h: 256, base: '#8a8072', seed: 140, stains: 9, drips: 4, tags: 0, posters: 1 });
-    group.add(B.box(W, 2.66, 0.1, { pos: [nx, 0, backZ - 0.05], color: '#ffffff', map: inTex }));
-    for (const s of [-1, 1]) group.add(B.box(0.06, 2.66, 3.6, { pos: [nx + s * 1.72, 0, -48 - 1.8], color: '#ffffff', map: inTex }));
-    group.add(B.box(W + 0.1, 0.05, 3.6, { pos: [nx, 2.62, -49.8], color: '#6a6258', castShadow: false }));
-    const floor = B.ground({ size: [W, 3.6], pos: [nx, -49.8], y: 0.01, color: '#6e6a62', spread: 0.18 });
-    group.add(floor);
-    // the rolled-up garage door housing
-    group.add(B.box(DOOR_HOUSING_W, 0.26, 0.34, { pos: [0, 2.4, -48.1], color: '#6a6e72', metalness: 0.4, roughness: 0.5 }));
-  }
-
-  // Pegboard with tool outlines (some tools present, some missing) and the painted watch outline.
-  const PB_W = 1.6;
-  const PB_H = 1.0;
-  const pbCx = nx - 0.35;
-  const pbCy = 1.45;
-  const watchU = (nx - pbCx) / PB_W + 0.5;
-  const nailY = 1.62;
-  const watchV = 0.5 - (nailY - pbCy) / PB_H;
-  const outlines = [
-    { kind: 'hammer', u: 0.12, v: 0.5 },
-    { kind: 'saw', u: 0.3, v: 0.5 },
-    { kind: 'spanner', u: 0.46, v: 0.52 },
-    { kind: 'axe', u: 0.6, v: 0.5, rot: 0.05 },
-    { kind: 'brush', u: 0.9, v: 0.58 },
-  ];
-  const pbTex = texFrom(pegboardCanvas(640, 400, watchU, watchV, outlines));
-  const peg = new THREE.Mesh(new THREE.PlaneGeometry(PB_W, PB_H), new THREE.MeshStandardMaterial({ color: '#ffffff', map: pbTex, roughness: 0.85 }));
-  peg.position.set(pbCx, pbCy, pbZ);
-  peg.receiveShadow = true;
-  group.add(peg);
-
-  // Tools in some of the outlines (the saw and the brush are out).
-  const tools = await Promise.all([
-    assets.prop('kenney/survival/tool-hammer.glb', { height: 0.36 }),
-    assets.prop('kenney/survival/tool-axe.glb', { height: 0.4 }),
-  ]);
-  tools[0].position.set(pbCx + (0.12 - 0.5) * PB_W, pbCy - 0.2, pbZ + 0.055);
-  tools[1].position.set(pbCx + (0.6 - 0.5) * PB_W, pbCy - 0.22, pbZ + 0.055);
-  for (const t of tools) group.add(t);
-
-  // The nail.
-  const nail = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 6).rotateX(Math.PI / 2), B.mat('#9a9ca0', { metalness: 0.8, roughness: 0.4 }));
-  nail.position.set(nx, nailY, pbZ + 0.025);
-  group.add(nail);
-
-  // The 3D watch (hidden until he hangs it): strap loop, case, a dim face reading 0.0.
-  const watch = new THREE.Group();
-  const strap = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 6, 20), B.mat('#2a2c30', { roughness: 0.7 }));
-  strap.scale.set(0.55, 1.05, 0.5);
-  strap.position.set(0, -0.045, 0);
-  const watchCase = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.012, 16).rotateX(Math.PI / 2), B.mat('#3a3d42', { metalness: 0.5, roughness: 0.4 }));
-  watchCase.position.set(0, -0.088, 0.008);
-  const faceTex = texFrom(
-    canvas(64, 64, (g) => {
-      g.fillStyle = '#0d1410';
-      g.fillRect(0, 0, 64, 64);
-      g.fillStyle = '#9fb59a';
-      g.font = '700 22px ui-monospace, Menlo, monospace';
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText('0.0', 32, 34);
-    }),
-  );
-  const face = new THREE.Mesh(new THREE.CircleGeometry(0.018, 16), new THREE.MeshBasicMaterial({ map: faceTex, toneMapped: false }));
-  face.position.set(0, -0.088, 0.0146);
-  watch.add(strap, watchCase, face);
-  watch.position.set(nx, nailY, pbZ + 0.03);
-  watch.visible = false;
-  group.add(watch);
-
-  // Workbench (procedural, real proportions) with paint tins and a jar of brushes.
-  const benchZ = pbZ + 0.36;
-  const top = B.box(1.8, 0.06, 0.62, { pos: [pbCx, 0.86, benchZ], color: '#8a6a4a', roughness: 0.8 });
-  group.add(top);
-  const legs = [];
-  for (const sx of [-0.84, 0.84]) for (const sz of [-0.26, 0.26]) legs.push({ pos: [pbCx + sx, 0, benchZ + sz], size: [0.07, 0.86, 0.07], color: '#6a4e36' });
-  legs.push({ pos: [pbCx, 0.18, benchZ], size: [1.7, 0.04, 0.55], color: '#6a4e36' }); // shelf
-  group.add(B.instancedBoxes(legs, B.mat('#ffffff', { roughness: 0.85 })));
-  const benchProps = await Promise.all([
-    assets.prop('kenney/survival/bucket.glb', { height: 0.2 }),
-    assets.prop('kenney/survival/bucket.glb', { height: 0.16 }),
-    assets.prop('kenney/survival/bottle-large.glb', { height: 0.22 }),
-    assets.prop('kenney/survival/box-open.glb', { height: 0.3 }),
-  ]);
-  benchProps[0].position.set(pbCx - 0.6, 0.92, benchZ + 0.05);
-  benchProps[1].position.set(pbCx - 0.38, 0.92, benchZ + 0.12);
-  benchProps[2].position.set(pbCx + 0.55, 0.92, benchZ - 0.1);
-  benchProps[3].position.set(pbCx - 0.2, 0.2, benchZ);
-  for (const p of benchProps) group.add(p);
-
-  // Hugo's old race bike, clean, on a work stand to the right of the bench (front wheel to the door).
-  const race = B.bicycle({ frame: '#8a2b22', rust: 0 });
-  const chain = race.children[2];
-  if (chain?.material) {
-    chain.material.color.set('#d4d7db');
-    chain.material.metalness = 0.85;
-    chain.material.roughness = 0.22;
-  }
-  race.rotation.y = 0;
-  race.position.set(nx + 1.2, 0.3, pbZ + 1.0);
-  group.add(race);
-  const standZ = pbZ + 1.0 - 0.08; // under the bottom bracket
-  const stand = [
-    { pos: [nx + 1.2, 0, standZ], size: [0.04, 0.58, 0.04], color: '#3a3d42' },
-    { pos: [nx + 1.2, 0, standZ], size: [0.5, 0.03, 0.06], color: '#3a3d42' },
-    { pos: [nx + 1.2, 0, standZ], size: [0.06, 0.03, 0.5], color: '#3a3d42' },
-  ];
-  group.add(B.instancedBoxes(stand, B.mat('#ffffff', { roughness: 0.5, metalness: 0.4 })));
-
-  // The OPEN sign, hung from the awning on the door side (+Z), from Ch4's board if we have it.
-  let signTex = null;
-  if (openSign) {
-    const img = openSign.isTexture ? openSign.image : openSign;
-    if (img && (img.width || img.naturalWidth)) signTex = texFrom(img);
-  }
-  let openMesh;
-  if (signTex) {
-    const img = signTex.image;
-    const aspect = (img.width || 2) / (img.height || 1);
-    openMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.62 * aspect, 0.62), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.75 }));
-  } else {
-    openMesh = B.sign(T5.signs?.open ?? 'OPEN', 1.1, 0.48, { bg: '#e8dfc8', fg: '#8a2b22', font: 'Georgia, serif', border: '#3b3a36' });
-  }
-  const SX = -2.4; // beside the opening, under the awning
-  openMesh.position.set(SX, 2.05, -47.72);
-  group.add(openMesh);
-  const strings = new THREE.LineSegments(
-    new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(SX - 0.25, 2.3, -47.72),
-      new THREE.Vector3(SX - 0.25, 2.92, -47.72),
-      new THREE.Vector3(SX + 0.25, 2.3, -47.72),
-      new THREE.Vector3(SX + 0.25, 2.92, -47.72),
-    ]),
-    new THREE.LineBasicMaterial({ color: '#2a2622' }),
-  );
-  group.add(strings);
-
-  // Warm bulb inside, and a fluorescent tube that is going.
-  const bulb = B.pointLight('#ffb36b', 5.5, { pos: [nx, 2.3, pbZ + 0.9], distance: 6 });
-  group.add(bulb);
-  const tubeMat = new THREE.MeshBasicMaterial({ color: '#cfe6d0', toneMapped: false });
-  const tube = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.04, 0.05), tubeMat);
-  tube.position.set(nx - 0.2, 2.55, pbZ + 0.5);
-  group.add(tube);
-
-  return { pegboard: peg, nail, watch, race, bulb, tubeMat, nailPoint: new THREE.Vector3(nx, nailY, pbZ + 0.03) };
-}
-// ---------------------------------------------------------------------------------- cast
-
-function makeCast(ctx, group) {
-  const A = ctx.assets;
-  const mk = (o) => {
-    const c = A.makeCharacter(o);
-    group.add(c.root);
-    return c;
-  };
-  const odile = mk({ tint: '#9a7a4e', scale: 0.94, name: 'Odile' });
-  const sami = mk({ tint: '#c24a3a', scale: 0.72, name: 'Sami' });
-  const neighbours = NEIGHBOUR_TINTS.map((tint, i) => mk({ tint, scale: [0.95, 0.88, 1.02, 0.97, 1.0, 0.92][i], name: `neighbour-${i}` }));
-  const club = CLUB_TINTS.map((tint, i) => {
-    const c = mk({ tint, scale: [1.0, 0.97, 1.02, 0.95, 0.99][i], name: i === 0 ? 'Bastien' : `runner-${i}` });
-    c.root.visible = false;
-    return c;
-  });
-  return { odile, sami, neighbours, club };
-}
-
 // ---------------------------------------------------------------------------------- builder
 
 export async function buildScene5(ctx) {
@@ -1158,78 +888,47 @@ export async function buildScene5(ctx) {
 
   const wallX = local ? CONTRACT_WALL_X : measureWallX(group);
   const lineX = wallX + 0.65; // where Hugo walks while painting
+  const disposers = [];
+  const safe = async (what, fn, fallback = null) => {
+    try {
+      return await fn();
+    } catch (err) {
+      console.warn(`[hairline] scene5: ${what} failed; continuing without it`, err?.message || err);
+      return fallback;
+    }
+  };
+
+  // ---- the far (+Z) end of the street, which the crane-up looks back at
+  const street = await safe('far end', () => finishStreet(ctx), { groundAt: () => 0 });
+  if (street.root) group.add(street.root);
+  if (street.dispose) disposers.push(street.dispose);
+  // groundAt: where feet go (scene2 keeps them at y 0 on road and pavement alike).
+  // surfaceAt: the real top of whatever is there, for props set down on the pavement.
+  const groundAt = street.groundAt;
+  group.updateMatrixWorld(true);
+  const surfaceAt = (x, z) => groundY(group, x, z, 0.3);
 
   // Panels -> colour controls (grey until the line passes under them).
   const panels = (base.panels || []).map((p) => panelControl(p));
   for (const p of panels) p.set(0);
+  const panelMid = (i, dflt) => {
+    const p = panels[i];
+    return p && Number.isFinite(p.z0) && Number.isFinite(p.z1) ? (p.z0 + p.z1) / 2 : dflt;
+  };
 
   const extras = new THREE.Group();
   extras.name = 'scene5-extras';
   group.add(extras);
 
-  // ---- along the wall: drop cloths, buckets, a stepladder, scaffold planks
-  const clothY = (x, z) => groundY(group, x, z) + 0.008;
-  for (const [z, len, s] of [[-14.5, 4.2, 61], [-21.8, 4.6, 62], [-28.4, 4.4, 63]]) {
-    const tex = texFrom(dropClothCanvas(s));
-    const cloth = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.25, len).rotateX(-Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: '#ffffff', map: tex, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    );
-    const cx = wallX + 0.72;
-    cloth.position.set(cx, clothY(cx, z), z);
-    cloth.rotation.y = (s - 62) * 0.03;
-    cloth.receiveShadow = true;
-    extras.add(cloth);
-  }
-  const P = (path, o) => ctx.assets.prop(path, o);
-  const dress = await Promise.all([
-    P('kenney/survival/bucket.glb', { height: 0.32, tint: '#e8c27a' }),
-    P('kenney/survival/bucket.glb', { height: 0.3, tint: '#c24a6a' }),
-    P('kenney/survival/bucket.glb', { height: 0.32, tint: '#d98a3a' }),
-    P('kenney/survival/bucket.glb', { height: 0.3, tint: '#2f4f6a' }),
-    P('kenney/retro/scaffolding-floor.glb', { width: 2.2 }),
-    P('kenney/retro/scaffolding-floor.glb', { width: 2.2 }),
-    P('kenney/furniture/chair.glb', { height: 0.86, tint: '#9aa0a4' }),
-  ]);
-  const [b1, b2, b3, b4, plank1, plank2, chair] = dress;
-  b1.position.set(wallX + 0.45, 0, -10.9);
-  b2.position.set(wallX + 2.15, 0, -19.6);
-  b3.position.set(wallX + 0.5, 0, -33.0);
-  b4.position.set(wallX + 2.3, 0, -26.2);
-  plank1.position.set(wallX + 0.7, 0.02, -9.4);
-  plank2.position.set(wallX + 0.72, 0.09, -9.5);
-  plank2.rotation.y = 0.06;
-  extras.add(b1, b2, b3, b4, plank1, plank2);
-  // A stepladder (procedural A-frame) at the kebab end.
-  {
-    const lad = new THREE.Group();
-    const lm = B.mat('#9a9c9e', { roughness: 0.5, metalness: 0.5 });
-    const rail = new THREE.BoxGeometry(0.04, 1.7, 0.03).translate(0, 0.85, 0);
-    for (const [s, tilt] of [[1, 0.2], [-1, -0.2]]) {
-      for (const x of [-0.22, 0.22]) {
-        const r = new THREE.Mesh(rail, lm);
-        r.position.set(x, 0, s * 0.18);
-        r.rotation.x = -tilt;
-        lad.add(r);
-      }
-    }
-    for (let i = 1; i <= 4; i++) {
-      const step = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.025, 0.1), lm);
-      step.position.set(0, i * 0.36, 0.18 - i * 0.075);
-      lad.add(step);
-    }
-    lad.position.set(wallX + 0.55, 0, -34.0);
-    lad.rotation.y = Math.PI / 2;
-    lad.traverse((o) => (o.castShadow = true));
-    extras.add(lad);
-  }
-
-  // ---- Odile's folding chair (faces up the street toward the mural)
-  const [cx, cz] = spots.odileChair;
-  const chairFacing = Math.atan2(wallX - cx, (LINE_Z0 + LINE_Z1) / 2 - cz);
-  chair.position.set(cx, 0, cz);
-  chair.rotation.y = chairFacing;
-  extras.add(chair);
+  // ---- along the wall: cloths, tins, the trestle table, the stepladder, Odile's chair
+  const ladderZ = panelMid(2, -22) + 0.6;
+  const side = await safe('wall dressing', () => dressWallside(ctx, extras, { wallX, groundAt: surfaceAt, spots, panels, lineZ0: LINE_Z0, lineZ1: LINE_Z1, ladderZ }));
+  if (side?.dispose) disposers.push(side.dispose);
+  const [chX, chZ] = spots.odileChair;
+  const chair = side?.chair || {
+    seat: new THREE.Vector3(chX, surfaceAt(chX, chZ), chZ),
+    facing: Math.atan2(wallX - chX, (LINE_Z0 + LINE_Z1) / 2 - chZ),
+  };
 
   // ---- PUNCTURES card in the bike shop window
   const card = B.sign(T5.signs?.shopCard ?? 'PUNCTURES FIXED — ASK AT No. 14', 0.78, 0.3, {
@@ -1239,8 +938,10 @@ export async function buildScene5(ctx) {
     weight: 600,
     font: '"Bradley Hand", "Segoe Print", "Noteworthy", cursive',
   });
+  B.relabel(card, () => T5.signs?.shopCard ?? 'PUNCTURES FIXED — ASK AT No. 14');
   card.position.set(5.84, 1.35, spots.shop[1] + 0.4);
   card.rotation.y = -Math.PI / 2;
+  card.rotation.z = -0.03;
   extras.add(card);
 
   // ---- the line kit (ribbon, chalk, brush, tip) and the initials
@@ -1253,61 +954,59 @@ export async function buildScene5(ctx) {
   extras.add(initials);
 
   // ---- the workshop interior
-  const shop = await buildWorkshop(ctx, extras, spots, { local, T5, openSign: ctx.minigames?.memory?.openSign, wallZ: base.interior?.minZ });
+  const shop = await buildWorkshop(ctx, extras, { spots, wallZ: base.interior?.minZ, openSign: ctx.minigames?.memory?.openSign, T5, local, shell: local || !base.interior });
+  disposers.push(shop.dispose);
 
   // ---- cast: Odile, Sami + bike, neighbours, run club
-  const cast = makeCast(ctx, extras);
+  const cast = makeCast(ctx, extras, { wallX, groundAt: surfaceAt, panelMid, ladderZ, ladderStep: side?.muralLadder ? 0.62 : 0 });
   const samiRig = new THREE.Group();
   samiRig.name = 'sami-rig';
   extras.add(samiRig);
   const samiBike = B.bicycle({ frame: '#8a2b22', rust: 0.05 });
+  const BIKE_SCALE = 0.82; // a kid's frame
+  samiBike.scale.setScalar(BIKE_SCALE);
+  samiBike.userData.kidScale = BIKE_SCALE;
   samiRig.add(samiBike);
   samiRig.add(cast.sami.root); // reparented from extras (still disposed with the group)
+  const rider = makeRider(cast.sami, samiBike, aimBone);
+  const neighbourHome = cast.homes;
 
-  // Neighbours: three with hotspots (Benali, Ines, Marco) and three more, idle, facing the wall.
-  const panelMid = (i, dflt) => {
-    const p = panels[i];
-    return p && Number.isFinite(p.z0) && Number.isFinite(p.z1) ? (p.z0 + p.z1) / 2 : dflt;
-  };
-  const nPos = [
-    { id: 'benali', pos: [wallX + 2.3, panelMid(0, -14)] },
-    { id: 'ines', pos: [wallX + 2.6, panelMid(1, -18) - 0.4] },
-    { id: 'marco', pos: [wallX + 2.25, panelMid(4, -30)] },
-    { id: null, pos: [wallX + 2.9, panelMid(2, -22) + 0.6] },
-    { id: null, pos: [wallX + 2.5, panelMid(3, -26) - 0.5] },
-    { id: null, pos: [wallX + 3.3, -16.2] },
-  ];
-  const neighbourHome = nPos.map((n, i) => {
-    const c = cast.neighbours[i];
-    c.root.position.set(n.pos[0], 0, n.pos[1]);
-    c.root.rotation.y = -Math.PI / 2 + (i % 2 ? 0.25 : -0.2); // facing the wall
-    c.play('idle', 0);
-    if (c.actions?.idle) c.actions.idle.time = i * 0.7;
-    return { id: n.id, char: c, pos: n.pos.slice(), rot: c.root.rotation.y };
-  });
+  // ---- golden hour: the low sun comes down the street from No. 14's end, so the right-hand roofs
+  // shade the wall; a warm, soft bounce off the facades opposite keeps the finished mural in the light.
+  const muralBounce = new THREE.SpotLight('#ffbf7a', 0, 30, 0.8, 1, 1.2);
+  muralBounce.position.set(5.4, 7.5, -15.5);
+  muralBounce.target.position.set(wallX, 2.8, -23.5);
+  muralBounce.userData.noCone = true;
+  group.add(muralBounce, muralBounce.target);
+
+  // ---- dust in the sun
+  const motes = makeMotes();
+  motes.opacity = 0.35;
+  extras.add(motes.object);
 
   // Bounds: the street plus the workshop doorway / interior around the nail.
   const bounds = [...(base.bounds || [])];
   const [nx, nz] = spots.nail;
   bounds.push({ minX: nx - 1.35, maxX: nx + 1.35, minZ: nz - 0.15, maxZ: -46.6 });
 
-  // Draw-call budget (250 incl. the shadow pass): small dressing and the background neighbours
-  // don't cast shadows. Odile, Sami, the club and the big props still do.
+  // Draw-call budget (300 incl. the shadow pass): small dressing doesn't cast sun shadows.
   {
     const sphere = new THREE.Sphere();
     group.updateMatrixWorld(true);
     group.traverse((o) => {
-      if (!o.isMesh || o.isSkinnedMesh || !o.castShadow || !o.geometry) return;
+      if (!o.isMesh || o.isSkinnedMesh || !o.castShadow || !o.geometry || o.userData.character) return;
       if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       sphere.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
-      if (sphere.radius < 0.6) o.castShadow = false;
+      if (sphere.radius < 0.45) o.castShadow = false;
     });
-    for (const c of cast.neighbours) c.root.traverse((o) => o.isMesh && (o.castShadow = false));
   }
 
   let t = 0;
   let tubeNext = 2;
   let tubeFlick = 0;
+  const tubeBase = shop.tubeMat.color.clone();
+  const _c = new THREE.Vector3();
+  let golden = false;
   return {
     group,
     bounds,
@@ -1321,16 +1020,32 @@ export async function buildScene5(ctx) {
     cast,
     samiRig,
     samiBike,
+    rider,
+    chair,
+    muralLadder: side?.muralLadder || null,
     neighbourHome,
+    groundAt,
+    surfaceAt,
+    motes,
+    muralBounce,
     local,
     setGolden() {
+      golden = true;
       try {
         base.setGolden?.();
       } catch (err) {
         console.error('[hairline] scene2 setGolden failed', err);
       }
       for (const p of panels) p.set(1);
-      shop.bulb.intensity = 7;
+      // The workshop glows, but the low sun outside is the warm key now: softer, paler bulbs.
+      shop.bulb.intensity = 2.2;
+      shop.bulb.color.set('#ffd4a8');
+      if (base.lights?.interior) {
+        base.lights.interior.intensity = 4.5;
+        base.lights.interior.color.set('#ffd2a4');
+      }
+      muralBounce.intensity = 45;
+      motes.opacity = 0.7;
       for (const n of neighbourHome) n.char.root.visible = false;
     },
     update(dt, raw) {
@@ -1340,6 +1055,7 @@ export async function buildScene5(ctx) {
         console.error('[hairline] scene2 update failed', err);
       }
       t += raw;
+      // The workshop tube stutters now and then.
       tubeNext -= raw;
       if (tubeNext <= 0) {
         tubeFlick = 0.3 + Math.random() * 0.6;
@@ -1348,11 +1064,26 @@ export async function buildScene5(ctx) {
       let k = 1;
       if (tubeFlick > 0) {
         tubeFlick -= raw;
-        k = Math.sin(t * 53) > 0.1 ? 1 : 0.18;
+        k = Math.sin(t * 53) > 0.1 ? 1 : 0.12;
       }
-      shop.tubeMat.color.setRGB(0.81 * k, 0.9 * k, 0.82 * k);
+      shop.tubeMat.color.copy(tubeBase).multiplyScalar(k);
+      shop.update(ctx.camera);
+      // Motes ride with the camera's look target (a few metres ahead of the lens).
+      const cam = ctx.camera;
+      if (cam) {
+        cam.getWorldDirection(_c).multiplyScalar(golden ? 5 : 4).add(cam.position);
+        _c.y = 0;
+        motes.update(raw, _c, ctx.renderer);
+      }
     },
     dispose() {
+      for (const f of disposers) {
+        try {
+          f();
+        } catch {
+          /* ignore */
+        }
+      }
       try {
         base.dispose?.();
       } catch (err) {

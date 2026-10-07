@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { L } from './script.js';
 import { rhythm } from './minigames.js';
+import { PRESETS } from '../render/Mood.js';
 import { buildScene3, LAYOUT } from '../world/scenes/scene3.js';
 
 // Ch3 "The Long Run" (flashback): three training blocks on the same dawn ring-road straight,
@@ -9,6 +10,7 @@ import { buildScene3, LAYOUT } from '../world/scenes/scene3.js';
 // going, and over black: GREAT EFFORT, 170.2 -> 212.4, the doctor, and Odile in the present.
 
 const T = L.ch3;
+const KIT_GREEN = '#c6f432';
 const G = T.gauge;
 
 const BAND = [2.3, 3.3]; // alternations/s (x60 = 138-198 spm)
@@ -21,6 +23,11 @@ const HOPE = [1.15, 1.0, 0.85];
 const PAIN = [0, 0.2, 0.4];
 const RACE_HOPE = 0.75;
 const RACE_PAIN = 0.5;
+// The red pain vignette is linear in painOverride (the player's own pain is squared): scale the
+// DESIGN values (0 / 0.2 / 0.4 / 0.5, crack 0.6) so the memory keeps its colour and the red reads as
+// a creeping edge, not a wash.
+const PAIN_VIS = 0.34;
+const painVis = (v) => clamp(v * PAIN_VIS, 0, 1);
 const STORY_QUIET = 4.2; // s after a story thought during which cadence feedback stays quiet
 const CAPTION_SECS = 4.2; // the caption shares the lower third with the gauge: one at a time
 const RACE_PACE = 245; // s/km up to KM 31 (the lap readout; 3:04:51 at the finish)
@@ -31,12 +38,18 @@ const CAM_LIMP = { offset: [1.55, 1.2, 3.3], look: [-0.3, 0.8, -2.6], lerp: 2.2 
 
 // Each block darker than the last (the old life quietly going out). Overrides on 'dawnrun'.
 const BLOCK_MOOD = [
-  {},
-  { skyTop: '#16223a', skyBottom: '#40597a', fogColor: '#40597a', fogDensity: 0.026, sunIntensity: 1.3, hemiIntensity: 0.85, fillIntensity: 2.2, exposure: 0.97 },
-  { skyTop: '#0b1222', skyBottom: '#26364d', fogColor: '#26364d', fogDensity: 0.03, sunColor: '#9db4d6', sunIntensity: 0.45, hemiSky: '#7f93b0', hemiIntensity: 0.62, fillIntensity: 2.0, exposure: 0.95 },
+  { skyTop: '#16253f', skyBottom: '#5a7898', fogColor: '#55718f', fogDensity: 0.022, heightFog: 0.03, sunColor: '#d6e6ff', sunIntensity: 1.6, hemiIntensity: 1.0, envIntensity: 0.16, fillIntensity: 2.2 },
+  { skyTop: '#121d32', skyBottom: '#3c5574', fogColor: '#3d5573', fogDensity: 0.027, heightFog: 0.035, sunIntensity: 1.1, hemiIntensity: 0.82, envIntensity: 0.12, fillIntensity: 2.2, exposure: 0.97 },
+  { skyTop: '#0a1120', skyBottom: '#243349', fogColor: '#243349', fogDensity: 0.03, heightFog: 0.03, sunColor: '#9db4d6', sunIntensity: 0.4, hemiSky: '#7f93b0', hemiIntensity: 0.6, envIntensity: 0.08, fillIntensity: 2.0, exposure: 0.95 },
 ];
 const BLOCK_RAIN = [0.35, 0.5, 0.4];
-const RACE_MOOD = { skyTop: '#2a4466', skyBottom: '#7f9bb6', fogColor: '#7f9bb6', fogDensity: 0.016, sunIntensity: 2.4, hemiIntensity: 1.25, exposure: 1.08 };
+// Sunday: the haze has burnt off, a low sun straight down the course; vivid, a little too bright.
+const RACE_MOOD = {
+  skyTop: '#2f5f9a', skyBottom: '#a6bfd4', fogColor: '#a3b8ca', fogDensity: 0.009, heightFog: 0.012,
+  sunColor: '#fff0dc', sunIntensity: 2.7, sunDir: [0.22, 0.32, -1], hemiSky: '#b8cce4', hemiIntensity: 1.2,
+  envIntensity: 0.28, fillIntensity: 2.2, exposure: 1.06, contrast: 1.16, splitHigh: '#fff1dc', split: 0.16, vignette: 0.36,
+};
+const CRACK_MOOD = { contrast: 1.08, fogDensity: 0.012, heightFog: 0.02, sunIntensity: 1.6, exposure: 0.98 }; // the light goes flat
 
 const clamp = THREE.MathUtils.clamp;
 const fmtKm = (km) => `${km.toFixed(1)} km`;
@@ -47,7 +60,7 @@ const fmtLap = (sec) => {
 /** Fire-and-forget audio calls must never surface as unhandled rejections. */
 const quiet = (p) => p?.catch?.(() => {});
 /** STRIDE prompt text for the watch notification (the menu shows the full prompt). */
-const notif = (prompt) => String(prompt).replace(/^STRIDE:\s*/, '');
+const notif = (prompt) => String(prompt).replace(/^STRIDE\s*:\s*/, ''); // 'STRIDE : ' in French
 
 async function run(ctx, d) {
   const { engine, audio, mood, ui, cam, player, world } = ctx;
@@ -86,7 +99,9 @@ async function run(ctx, d) {
     let a = null;
     if (M.v > 0.35) {
       a = hugo.play('run', 0.25);
-      if (a) a.timeScale = clamp(M.limp ? 0.72 : M.rate > 0.5 ? M.rate / 2.8 : M.v / 3.9, 0.6, 1.45);
+      // Cadence from ground speed (Character.strideRate), so the planted foot stays put; the A/D
+      // rate sets the target speed. The limp keeps a slower, laboured cycle the pitch bumps ride on.
+      if (a) a.timeScale = clamp(hugo.strideRate('run', M.v), 0.45, 1.45);
     } else hugo.play('idle', 0.4);
     let pitch = 0;
     let y = 0;
@@ -159,7 +174,7 @@ async function run(ctx, d) {
         // Mashing is fast but costs (cosmetic): the pain vignette creeps up, then settles.
         if (s.mashing && !s.auto) painExtra = Math.min(0.35, painExtra + 0.15 * dt);
         else painExtra = Math.max(0, painExtra - 0.08 * dt);
-        mood.painOverride = clamp(basePain + painExtra, 0, 1);
+        mood.painOverride = painVis(basePain + painExtra);
         drawGauge(s);
         extra.onFrame?.(dt, s);
       },
@@ -173,7 +188,7 @@ async function run(ctx, d) {
     d.hope(HOPE[i], 0);
     basePain = PAIN[i];
     painExtra = 0;
-    mood.painOverride = basePain;
+    mood.painOverride = painVis(basePain);
     quiet(audio.ambience('rain', true, { volume: BLOCK_RAIN[i], fade: 1.2 }));
   };
 
@@ -203,7 +218,7 @@ async function run(ctx, d) {
     ui.caption(null);
     ui.gauge(null);
     ui.watch(fmtKm(wk.total), { tick: true });
-    mood.painOverride = basePain;
+    mood.painOverride = painVis(basePain);
 
     // STRIDE. He doesn't stop to answer it: every option is more running.
     M.rate = 0;
@@ -238,7 +253,7 @@ async function run(ctx, d) {
 
   // Week 9 (the chapter preset and hope are already Week 9's).
   S.setBlock?.(0);
-  mood.painOverride = basePain;
+  mood.painOverride = painVis(basePain);
   await block(0);
   // Week 20, Week 31.
   for (let i = 1; i < 3; i++) {
@@ -259,7 +274,10 @@ async function run(ctx, d) {
       d.hope(RACE_HOPE, 0);
       basePain = RACE_PAIN;
       painExtra = 0;
-      mood.painOverride = basePain;
+      mood.painOverride = painVis(basePain);
+      // Race morning: the short-sleeved kit (the dawn blocks were in long sleeves and tights).
+      hugo.setOutfit?.('runner');
+      hugo.setTint?.(KIT_GREEN);
       player.teleport(LAYOUT.raceX, LAYOUT.raceZ, Math.PI);
       M.x = LAYOUT.raceX;
       M.v = V_FLOOR;
@@ -311,8 +329,8 @@ async function run(ctx, d) {
     engine.timeScale = 1;
   });
   mood.drain(0, 3);
-  mood.tweak({ grain: 0.12 }, 1);
-  mood.painOverride = 0.6;
+  mood.tweak({ grain: 0.12, ...CRACK_MOOD }, 1);
+  mood.painOverride = painVis(0.6);
   S.crowd?.(0.1);
   S.releaseRunners?.(V_BAND);
   M.limp = true;
@@ -386,18 +404,23 @@ async function run(ctx, d) {
 
 export default {
   id: 'longrun',
-  title: T.title,
+  get title() {
+    return T.title;
+  },
   hope: HOPE[0],
-  preset: 'dawnrun',
-  objective: T.objectives.run,
+  preset: { ...PRESETS.dawnrun, ...BLOCK_MOOD[0] }, // Week 9's dawn (setBlock re-applies 'dawnrun' + overrides)
+  get objective() {
+    return T.objectives.run;
+  },
   music: null,
   ambience: ['rain'],
+  sounds: ['crowd'], // the race (preloaded with the chapter)
   camera: { offset: CAM_RUN.offset, look: CAM_RUN.look, fov: 55, lerp: CAM_RUN.lerp },
   player: {
     spawn: [LAYOUT.trainX, LAYOUT.trainZ],
     facing: Math.PI,
     boot: false,
-    tint: '#c6f432', // STRIDE green: the old kit
+    tint: KIT_GREEN, outfit: 'runner_dawn', // STRIDE green: the old kit (long sleeves for the dawn blocks)
     limp: 0,
     painRate: 0,
     canJog: false,
@@ -414,12 +437,12 @@ export default {
       const pr = S.preroll;
       if (!pr || ctx.director.state !== 'transition') return;
       const pl = ctx.player;
-      if (!pl.scripted) pl.scripted = true; // configure() ran after build: take over for the fade
+      pl.scripted = true; // configure() ran after build: take over for the fade
       pr.v += (V_FLOOR - pr.v) * (1 - Math.exp(-3 * dt));
       pl.root.position.z -= pr.v * dt;
       pl.root.rotation.y = Math.PI;
       const a = pl.char.play('run', 0.3);
-      if (a) a.timeScale = clamp(pr.v / 3.9, 0.6, 1.2);
+      if (a) a.timeScale = clamp(pl.char.strideRate('run', pr.v), 0.45, 1.2);
     };
     return S;
   },

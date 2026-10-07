@@ -30,6 +30,9 @@ export default {
     shopCard: 'PUNCTURES FIXED — ASK AT No. 14',
     open: 'OPEN', // fallback if minigames.memory.openSign is missing
     initials: 'H.R.',
+    marcoPanel: ['GREAT', 'KEBAB'], // painted either side of Marco's kebab
+    sketch: '20 m — measure twice', // Odile's chalk-blue plan on the workbench
+    rest: 'rest', // painted under the watch outline by the nail
     // Mural panels, along the wall from z -12 to -32 (bakery end to kebab end).
     panels: [
       { id: 'benali', label: 'a croissant that came out a moon', color: '#e8c27a' },

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { L } from '../story/script.js';
+import { retext } from '../story/i18n.js';
 
 const RING_GEO = new THREE.RingGeometry(0.47, 0.51, 48).rotateX(-Math.PI / 2);
 const BEAM_GEO = new THREE.CylinderGeometry(0.5, 0.5, 1, 32, 1, true).translate(0, 0.5, 0);
@@ -46,8 +48,10 @@ export class Hotspots {
   }
 
   /**
-   * opts: { id, pos:[x,z]|[x,y,z]|Vector3, radius=1.6, prompt='Interact', required=false,
-   *         enabled:()=>bool, once=true, auto=false, marker=true, onInteract: async (spot)=>{} }
+   * opts: { id, pos:[x,z]|[x,y,z]|Vector3, radius=1.6, prompt=L.ui.interact, required=false,
+   *         enabled:()=>bool, once=true, auto=false, marker=true, onInteract: async (spot)=>{},
+   *         ringColor=0xc9b48a (floor ring tint), ringOpacity=1 (multiplies the ring's pulse/proximity
+   *         opacity; < 1 for dark floors where the stock chalk ring glares) }
    */
   add(opts) {
     if (!opts?.id) throw new Error('hotspot needs an id');
@@ -56,7 +60,7 @@ export class Hotspots {
       id: opts.id,
       pos: toV3(opts.pos),
       radius: opts.radius ?? 1.6,
-      prompt: opts.prompt ?? 'Interact',
+      prompt: opts.prompt ?? null, // null = L.ui.interact
       required: !!opts.required,
       enabled: opts.enabled ?? (() => true),
       once: opts.once ?? true,
@@ -66,21 +70,22 @@ export class Hotspots {
       busy: false,
       count: 0,
       marker: null,
+      ringOpacity: opts.ringOpacity ?? 1,
     };
     this.fired.delete(spot.id);
-    if (opts.marker ?? !spot.auto) spot.marker = this._marker(spot);
+    if (opts.marker ?? !spot.auto) spot.marker = this._marker(spot, opts.ringColor);
     this.spots.set(spot.id, spot);
     return spot;
   }
 
-  _marker(spot) {
+  _marker(spot, ringColor = 0xc9b48a) {
     const g = new THREE.Group();
     g.position.copy(spot.pos);
     g.position.y += 0.02;
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xc9b48a, // dim warm chalk; reads on dark floors without glowing
+      color: ringColor, // default: dim warm chalk; reads on dark floors without glowing
       transparent: true,
-      opacity: spot.required ? 0.16 : 0.07,
+      opacity: (spot.required ? 0.16 : 0.07) * spot.ringOpacity,
       toneMapped: false, // no effect with the composer (OutputPass tone-maps everything); kept for a canvas-only render
       depthWrite: false,
       fog: false,
@@ -191,7 +196,7 @@ export class Hotspots {
           const dist = player ? Math.hypot(player.root.position.x - s.pos.x, player.root.position.z - s.pos.z) : 99;
           const near = 1 - THREE.MathUtils.smoothstep(dist, s.radius ?? 1.5, (s.radius ?? 1.5) + 1.5);
           s.marker.userData.ring.scale.setScalar(1 + k * 0.08);
-          s.marker.userData.ring.material.opacity = (s.required ? 0.16 : 0.07) + k * 0.06 + near * 0.3;
+          s.marker.userData.ring.material.opacity = ((s.required ? 0.16 : 0.07) + k * 0.06 + near * 0.3) * s.ringOpacity;
           if (s.marker.userData.beam) s.marker.userData.beam.material.uniforms.uAlpha.value = 0.04 + k * 0.04 + near * 0.06;
         }
       }
@@ -209,7 +214,8 @@ export class Hotspots {
       }
     }
     this.current = canAct ? best : null;
-    this.ui._spotPrompt(this.current ? this.current.prompt : null);
+    // retext: a prompt captured before a language change shows in the current language.
+    this.ui._spotPrompt(this.current ? retext(this.current.prompt) ?? L.ui.interact : null);
     if (this.current && this.input.pressed.has('KeyE')) {
       this.input.consume('KeyE');
       this._fire(this.current);

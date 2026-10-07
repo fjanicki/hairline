@@ -1,0 +1,46 @@
+/* Objective pointer (src/ui/ObjectivePointer.js): a small chevron at the screen edge, or over a far
+   target, with the distance, on small dark chips so it reads on light scenes too. */
+.objptr {
+  --s: 1; /* set from the viewport height by ObjectivePointer (about 0.95 at 800 px, 1.2 at 1080 px) */
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  color: var(--ink, #f2efe8);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  will-change: transform, opacity;
+  z-index: 13; /* above the HUD (10) and the docked watch (12); under the letterbox (15), fade (20), dialogue and menus */
+}
+.objptr.show { opacity: 0.96; }
+/* Dark chips behind the chevron and the label, so both read over a bright street or sky. */
+.objptr .chev {
+  position: absolute;
+  left: calc(-15px * var(--s));
+  top: calc(-15px * var(--s));
+  width: calc(30px * var(--s));
+  height: calc(30px * var(--s));
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(12, 12, 14, 0.52);
+  box-shadow: 0 0 0 1px rgba(242, 239, 232, 0.16), 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+.objptr .chev svg { display: block; width: calc(20px * var(--s)); height: calc(20px * var(--s)); }
+.objptr .dist {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: calc(3px * var(--s)) calc(6px * var(--s));
+  border-radius: 3px;
+  background: rgba(12, 12, 14, 0.55);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: calc(12.5px * var(--s));
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink, #f2efe8);
+  transform: translate(-50%, -50%);
+}

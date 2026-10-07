@@ -1,7 +1,10 @@
 import './style.css';
+import { LANGS, getLang, setLang, onLangChange, retext, english, num } from '../story/i18n.js';
 
 // All DOM is created here. Every blocking element (dialogue, choices, card, driveRing)
 // returns a Promise and has a matching skip*/cancel* method used by Director.skip().
+// Language changes (i18n.setLang) re-render whatever is on screen at once (_relang), except a
+// dialogue line or card already showing. In debug, this.textLog collects every string shown.
 
 const el = (tag, cls, parent, html) => {
   const e = document.createElement(tag);
@@ -47,9 +50,12 @@ function promptHtml(text) {
   return esc(text);
 }
 
-/** CSS class for a speaker: the first word of `who`, lowercased ('Dr Okafor' -> 'dr', "Dr Okafor's office" -> 'dr'). */
+/**
+ * CSS class for a speaker: the first word of the English `who`, lowercased ('Dr Okafor' -> 'dr',
+ * "Dr Okafor's office" -> 'dr'; a translated label maps back through i18n.english).
+ */
 function speakerClass(who) {
-  return String(who || '')
+  return String(english(who) || '')
     .toLowerCase()
     .split(/[\s(']/)[0]
     .replace(/[^a-z0-9-]/g, '');
@@ -99,7 +105,9 @@ export class UI {
     Object.defineProperty(this.notebook, 'visible', { get: () => this._nb.shown });
     Object.defineProperty(this.notebook, 'isOpen', { get: () => this._nb.open });
 
+    this.textLog = null; // main sets an array in debug mode (__game.debug.textLog)
     this._build();
+    onLangChange(() => this._relang());
 
     document.addEventListener('pointerdown', (e) => {
       if (e.button !== 0 || this.paused) return;
@@ -118,7 +126,8 @@ export class UI {
     this.bannerEl = el('div', 'banner', this.hud);
     this.captionEl = el('div', 'caption', this.hud, '<div class="bar"></div><div class="text"></div>');
     this.promptEl = el('div', 'prompt', this.hud);
-    this.painEl = el('div', 'pain', this.hud, '<div class="label">PAIN</div><div class="track"><div class="fill"></div></div>');
+    this.painEl = el('div', 'pain', this.hud, '<div class="label"></div><div class="track"><div class="fill"></div></div>');
+    this.painEl.querySelector('.label').textContent = this.L.ui.pain;
     this.painFill = this.painEl.querySelector('.fill');
     this.gaugeEl = el(
       'div',
@@ -126,7 +135,8 @@ export class UI {
       this.hud,
       '<div class="glabel"></div><div class="gtrack"><div class="gband"></div><div class="gneedle"></div></div><div class="gtext"></div>',
     );
-    this.driveEl = el('div', 'drive', this.hud, '<div class="target"></div><div class="ring"></div><div class="key">SPACE</div>');
+    this.driveEl = el('div', 'drive', this.hud, '<div class="target"></div><div class="ring"></div><div class="key"></div>');
+    this.driveEl.querySelector('.key').textContent = this.L.ui.space;
     this.notebookEl = el(
       'div',
       'notebook',
@@ -146,8 +156,9 @@ export class UI {
        <div class="case"><div class="btn-l"></div><div class="btn-r"></div>
          <div class="screen"><div class="wlabel"></div><div class="wface"></div><div class="wlap"></div></div>
        </div>
-       <div class="notif"><div class="ntitle">STRIDE</div><div class="ntext"></div></div>`,
+       <div class="notif"><div class="ntitle"></div><div class="ntext"></div></div>`,
     );
+    this.watchEl.querySelector('.ntitle').textContent = this.L.names.stride;
     this.thoughtEl = el('div', 'thought', r);
     this.chapterEl = el('div', 'chapter-title', r, '<div class="num"></div><div class="name"></div>');
     this.dialogueEl = el('div', 'dialogue', r, '<div class="who"></div><div class="text"></div><div class="next">E ▸</div>');
@@ -184,22 +195,25 @@ export class UI {
     setTimeout(() => this.loadingEl.classList.add('hidden'), 900);
   }
 
-  /** Title screen. Resolves on click / E / Enter. onBegin runs inside the gesture (audio resume). */
-  title({ onBegin } = {}) {
-    const T = this.L.title;
-    this.titleEl.innerHTML = `
-      <h1>${esc(T.name)}</h1>
-      <div class="hairline-rule"></div>
-      <div class="tagline">${esc(T.tagline)}</div>
-      <div class="controls">${T.controls.map(([k, v]) => `<div><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</div>
-      <div class="begin">${esc(T.begin)}</div>`;
+  /**
+   * Title screen with the language switch and an Options button. Resolves on click / E / Enter
+   * (not on its buttons, nor while Options is open). onBegin runs inside the gesture (audio resume).
+   * quality: as for showPause (the Options panel's graphics row).
+   */
+  title({ onBegin, quality } = {}) {
+    this._title = { quality };
+    this._renderTitle();
     this.titleEl.classList.remove('hidden');
     requestAnimationFrame(() => this.titleEl.classList.add('show'));
     return new Promise((resolve) => {
       const go = (e) => {
+        if (e.type === 'keydown' && e.code === 'Escape' && this._optionsEl) return this._closeOptions();
         if (e.type === 'keydown' && !['Enter', 'KeyE', 'Space'].includes(e.code)) return;
+        if (this._optionsEl || (e.type === 'pointerdown' && e.target.closest?.('button'))) return;
+        if (e.type === 'keydown' && e.code !== 'KeyE' && document.activeElement?.closest?.('.title button')) return; // Enter/Space press a focused button
         this.titleEl.removeEventListener('pointerdown', go);
         window.removeEventListener('keydown', go);
+        this._title = null;
         onBegin?.();
         this.titleEl.classList.remove('show');
         setTimeout(() => this.titleEl.classList.add('hidden'), 1300);
@@ -208,6 +222,83 @@ export class UI {
       this.titleEl.addEventListener('pointerdown', go);
       window.addEventListener('keydown', go);
     });
+  }
+
+  _renderTitle() {
+    const T = this.L.title;
+    this.titleEl.innerHTML = `
+      <h1>${esc(T.name)}</h1>
+      <div class="hairline-rule"></div>
+      <div class="tagline">${esc(T.tagline)}</div>
+      <div class="controls">${T.controls.map(([k, v]) => `<div><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</div>
+      <div class="begin">${esc(T.begin)}</div>
+      <div class="title-foot"></div>`;
+    if (this.titleEl.classList.contains('show')) this.titleEl.querySelector('.hairline-rule').style.transition = 'none';
+    const foot = this.titleEl.querySelector('.title-foot');
+    this._langButtons(foot);
+    const opts = el('button', 'quality-opt title-options', foot, esc(this.L.options.title));
+    opts.addEventListener('click', () => this._openOptions({ quality: this._title?.quality }));
+    this._log(T.tagline);
+    this._log(T.begin);
+  }
+
+  /** English / Français buttons (native names), the current one highlighted. */
+  _langButtons(parent) {
+    const btns = LANGS.map(({ code, label }) => {
+      const b = el('button', 'quality-opt lang-opt', parent, esc(label));
+      b.lang = code;
+      b.dataset.lang = code;
+      b.classList.toggle('on', code === getLang());
+      b.addEventListener('click', () => setLang(code)); // _relang re-renders (and re-highlights)
+      return b;
+    });
+    return btns;
+  }
+
+  /** The Options rows: language, then graphics quality (when given). */
+  _optionsRows(parent, quality) {
+    const O = this.L.options;
+    const P = this.L.pause;
+    const lang = el('div', 'quality', parent);
+    el('span', 'quality-label', lang, esc(O.language));
+    this._langButtons(lang);
+    if (quality?.tiers?.length) {
+      const row = el('div', 'quality', parent);
+      el('span', 'quality-label', row, esc(P.quality));
+      const btns = quality.tiers.map((t) => {
+        const b = el('button', 'quality-opt', row, esc(P.tiers?.[t] ?? t));
+        b.dataset.tier = t;
+        b.addEventListener('click', () => {
+          quality.set(t);
+          for (const x of btns) x.classList.toggle('on', x.dataset.tier === quality.get());
+        });
+        return b;
+      });
+      for (const x of btns) x.classList.toggle('on', x.dataset.tier === quality.get());
+    }
+  }
+
+  /** Options panel over the title screen (the pause menu shows the same rows in place). */
+  _openOptions({ quality } = {}) {
+    this._closeOptions();
+    const o = (this._optionsEl = el('div', 'ui-layer overlay options', this.root));
+    o._quality = quality;
+    this._renderOptions();
+  }
+
+  _renderOptions() {
+    const o = this._optionsEl;
+    if (!o) return;
+    o.innerHTML = `<h2>${esc(this.L.options.title)}</h2>`;
+    this._optionsRows(o, o._quality);
+    const back = el('button', 'btn', o, esc(this.L.options.back));
+    back.addEventListener('click', () => this._closeOptions());
+    back.focus({ preventScroll: true });
+  }
+
+  _closeOptions() {
+    this._optionsEl?.remove();
+    this._optionsEl = null;
   }
 
   // ------------------------------------------------------------- fade
@@ -263,6 +354,7 @@ export class UI {
     if (mono) c.classList.add('mono');
     if (italic) c.classList.add('italic');
     c.innerHTML = lines.map((l) => `<div class="line">${renderSegments(segments(l))}</div>`).join('');
+    lines.forEach((l) => this._log(l));
     if (color) c.style.color = color;
     else c.style.color = '';
     if (skippable && !this.skipCards) el('div', 'skip', c, 'E ▸');
@@ -332,8 +424,12 @@ export class UI {
 
   /** Non-blocking chapter title over the opening fade. */
   chapterTitle(num, name, secs = 3.2) {
-    this.chapterEl.querySelector('.num').textContent = num ? `CHAPTER ${num}` : '';
+    this._chapterNum = num;
+    const label = num ? this.L.ui.chapter.replace('{n}', num) : '';
+    this.chapterEl.querySelector('.num').textContent = label;
     this.chapterEl.querySelector('.name').textContent = name || '';
+    this._log(label);
+    this._log(name);
     this.chapterEl.classList.add('show');
     this._later(secs, () => this.chapterEl.classList.remove('show'), 'chapter');
   }
@@ -374,7 +470,12 @@ export class UI {
     const line = d.lines[d.i];
     const who = line.who || '';
     this.whoEl.className = 'who ' + speakerClass(who);
-    this.whoEl.innerHTML = line.inner ? '' : (line.voicemail ? '<span class="tag">VOICEMAIL</span>' : '') + esc(who);
+    this.whoEl.innerHTML = line.inner ? '' : (line.voicemail ? `<span class="tag">${esc(this.L.ui.voicemail)}</span>` : '') + esc(who);
+    if (!line.inner) {
+      if (line.voicemail) this._log(this.L.ui.voicemail);
+      this._log(who);
+    }
+    this._log(line.text);
     this.dialogueEl.classList.toggle('inner', !!line.inner);
     this.dialogueEl.classList.toggle('voicemail', !!line.voicemail);
     d.segs = segments(line.text);
@@ -440,10 +541,12 @@ export class UI {
     const c = this.choicesEl;
     c.innerHTML = '';
     if (menu.prompt) el('div', 'q', c, esc(menu.prompt));
+    this._log(menu.prompt);
     const opts = menu.options || [];
     return new Promise((resolve) => {
       this._choices = { menu, resolve, opened: performance.now(), buttons: [] };
       opts.forEach((o, i) => {
+        this._log(o.text);
         const b = el('button', '', c, `<span class="kbd">${i + 1}</span>${esc(o.text)}`);
         if (o._used) b.classList.add('used');
         b.addEventListener('click', () => this._pick(i));
@@ -503,8 +606,9 @@ export class UI {
     this._objective = text;
     e.classList.remove('show');
     this._later(0.25, () => {
-      e.textContent = text;
+      e.textContent = this._objective ?? text;
       e.classList.add('show');
+      this._log(this._objective ?? text);
     }, 'objective');
   }
 
@@ -524,7 +628,10 @@ export class UI {
   _renderPrompt() {
     const t = this._chapterPrompt || this._spotText;
     if (t) {
-      if (this._promptShown !== t) this.promptEl.innerHTML = promptHtml(t);
+      if (this._promptShown !== t) {
+        this.promptEl.innerHTML = promptHtml(t);
+        this._log(t);
+      }
       this.promptEl.classList.add('show');
     } else this.promptEl.classList.remove('show');
     this._promptShown = t;
@@ -532,8 +639,10 @@ export class UI {
 
   /** Small transient tip at the top (e.g. "Hold Shift to jog"). */
   hint(text, secs = 5) {
+    this._hint = text;
     this.hintEl.innerHTML = promptHtml(text);
     this.hintEl.classList.add('show');
+    this._log(text);
     this._later(secs, () => this.hintEl.classList.remove('show'), 'hint');
   }
 
@@ -549,6 +658,17 @@ export class UI {
       return;
     }
     const e = this.thoughtEl;
+    this._thought = { text, who };
+    this._log(who);
+    this._log(text);
+    this._renderThought();
+    e.classList.add('show');
+    this._later(secs, () => e.classList.remove('show'), 'thought');
+  }
+
+  _renderThought() {
+    const { text, who } = this._thought;
+    const e = this.thoughtEl;
     const body = renderSegments(segments(text));
     if (who) {
       e.innerHTML = `<div class="who ${speakerClass(who)}">${esc(who)}</div><div class="said">${body}</div>`;
@@ -557,8 +677,6 @@ export class UI {
       e.innerHTML = body;
       e.classList.remove('spoken');
     }
-    e.classList.add('show');
-    this._later(secs, () => e.classList.remove('show'), 'thought');
   }
 
   /** Pain meter 0..1. */
@@ -584,6 +702,7 @@ export class UI {
     }
     this.captionEl.querySelector('.text').textContent = text;
     this.captionEl.classList.add('show');
+    this._log(text);
     if (secs > 0) this._later(secs, () => this.captionEl.classList.remove('show'), 'caption');
   }
 
@@ -595,9 +714,17 @@ export class UI {
       return;
     }
     e.className = 'banner' + (xl ? ' xl' : '');
-    e.innerHTML = (label ? `<small>${esc(label)}</small>` : '') + (mono ? `<span class="mono">${esc(text)}</span>` : esc(text));
+    this._banner = { text, label, mono };
+    this._renderBanner();
+    this._log(label);
+    this._log(text);
     requestAnimationFrame(() => e.classList.add('show'));
     if (secs > 0) this._later(secs, () => e.classList.remove('show'), 'banner');
+  }
+
+  _renderBanner() {
+    const { text, label, mono } = this._banner;
+    this.bannerEl.innerHTML = (label ? `<small>${esc(label)}</small>` : '') + (mono ? `<span class="mono">${esc(text)}</span>` : esc(text));
   }
 
   // ------------------------------------------------------------- GPS watch
@@ -629,18 +756,19 @@ export class UI {
     e.classList.remove('off');
     const faceEl = e.querySelector('.wface');
     if (face !== w.face) {
-      const m = String(face).match(/^(.*?)(\s*(?:km|m|spm))$/);
-      faceEl.innerHTML = m ? `${esc(m[1])}<small>${esc(m[2].trim())}</small>` : esc(face);
+      this._renderFace(face);
       if (tick && w.face !== null && w.shown) retick(faceEl, 'tick');
       w.face = face;
     }
     if (label !== undefined && label !== w.label) {
       e.querySelector('.wlabel').textContent = label ?? '';
       w.label = label ?? null;
+      this._log(label);
     }
     if (lap !== undefined && lap !== w.lap) {
       const lapEl = e.querySelector('.wlap');
-      lapEl.textContent = lap ?? '';
+      this._renderLap(lap ?? '');
+      if (/[a-z]/i.test(lap ?? '')) this._log(lap); // not the per-frame clock
       if (tick && w.lap !== null && w.shown) retick(lapEl, 'tick');
       w.lap = lap ?? null;
     }
@@ -654,6 +782,20 @@ export class UI {
       void e.offsetWidth;
     }
     e.classList.add('show');
+  }
+
+  /** Lap line in the language's decimal mark; a long one ('SEM. PRÉC. 212,4') is set tighter to clear the round screen. */
+  _renderLap(lap) {
+    const e = this.watchEl.querySelector('.wlap');
+    e.textContent = num(lap);
+    e.classList.toggle('long', lap.length > 15);
+  }
+
+  /** Face text in the language's decimal mark ('0,32 km'), a trailing unit drawn small. */
+  _renderFace(face) {
+    const s = num(String(face));
+    const m = s.match(/^(.*?)(\s*(?:km|m|spm))$/);
+    this.watchEl.querySelector('.wface').innerHTML = m ? `${esc(m[1])}<small>${esc(m[2].trim())}</small>` : esc(s);
   }
 
   /**
@@ -716,6 +858,9 @@ export class UI {
     const w = this._watch;
     e.querySelector('.ntitle').textContent = title || '';
     e.querySelector('.ntext').innerHTML = renderSegments(segments(text));
+    w.buzz = { text, title };
+    this._log(title);
+    this._log(text);
     if (!w.shown) {
       w.buzzTemp = true;
       e.classList.remove('off');
@@ -751,10 +896,19 @@ export class UI {
       return;
     }
     n.entries = entries.map((x) => (typeof x === 'string' ? { text: x } : { ...x }));
-    this.nbList.innerHTML = '';
-    for (const it of n.entries) this.nbList.appendChild(this._nbRow(it, false));
+    this._nbRender();
     this._nbShow();
     this._nbDock();
+  }
+
+  /** Rebuild the rows from the entries (no write-on animation). */
+  _nbRender() {
+    this.nbList.innerHTML = '';
+    for (const it of this._nb.entries) {
+      this.nbList.appendChild(this._nbRow(it, false));
+      this._log(it.text);
+      this._log(it.note);
+    }
   }
 
   _nbRow(it, animate) {
@@ -771,7 +925,8 @@ export class UI {
   }
 
   _nbFind(text) {
-    const i = this._nb.entries.findIndex((e) => e.text === text);
+    // An entry written before a language change still matches its key in the new language.
+    const i = this._nb.entries.findIndex((e) => e.text === text || retext(e.text) === retext(text));
     return { i, it: this._nb.entries[i], li: i >= 0 ? this.nbList.children[i] : null };
   }
 
@@ -785,6 +940,7 @@ export class UI {
   _nbAdd(text, { hand = 'hugo' } = {}) {
     const it = { text, hand };
     this._nb.entries.push(it);
+    this._log(text);
     const li = this._nbRow(it, true);
     this.nbList.appendChild(li);
     this._nbShow();
@@ -815,6 +971,7 @@ export class UI {
     const { it, li } = this._nbFind(text);
     if (!it) return Promise.resolve();
     it.note = note || undefined;
+    this._log(note);
     if (li) {
       const n = li.querySelector('.nb-note');
       n.textContent = note || '';
@@ -875,6 +1032,7 @@ export class UI {
     if (g.label !== label) {
       e.querySelector('.glabel').textContent = label;
       g.label = label;
+      this._log(label);
     }
     const bandEl = e.querySelector('.gband');
     if (band) {
@@ -908,11 +1066,13 @@ export class UI {
    * The perfect moment is at 0.75 * duration. Resolves { hit, error } where error is
    * |press - perfect| in seconds (null if no press).
    */
-  driveRing({ duration = 2.4, window = 0.18, guard = 0.4, cue = '[Space]', shout = null, missText = null } = {}) {
+  driveRing({ duration = 2.4, window = 0.18, guard = 0.4, cue = `[${this.L.hints.space}]`, shout = null, missText = null } = {}) {
     this.cancelDrive();
     const e = this.driveEl;
     e.classList.remove('hit', 'miss');
     e.querySelector('.key').innerHTML = promptHtml(cue);
+    this._cue = cue;
+    this._log(cue);
     e.classList.add('show');
     return new Promise((resolve) => {
       this._drive = { t: 0, duration, perfect: duration * 0.75, window, guard, shout, missText, resolve };
@@ -968,22 +1128,53 @@ export class UI {
   // ------------------------------------------------------------- overlays
 
   /** Pause overlay. handlers: { onResume, onRestart } */
-  showPause({ onResume, onRestart }) {
+  /**
+   * Pause overlay. quality (optional): { get() -> tier, set(tier), tiers: ['low', 'medium', 'high'] }
+   * adds a graphics-quality switch (applied at once; remembered for the next visit).
+   */
+  showPause({ onResume, onRestart, quality }) {
     if (this.pauseEl) return;
-    const P = this.L.pause;
     this.pauseEl = el('div', 'ui-layer overlay', this.root);
-    this.pauseEl.innerHTML = `<h2>${esc(P.title)}</h2>`;
-    const resume = el('button', 'btn', this.pauseEl, esc(P.resume));
-    const restart = el('button', 'btn', this.pauseEl, esc(P.restart));
-    el('div', 'small', this.pauseEl, `ESC · ${esc(P.muteHint)}`);
-    resume.addEventListener('click', () => onResume?.());
-    restart.addEventListener('click', () => onRestart?.());
+    this._pause = { onResume, onRestart, quality, view: 'main' };
+    this._renderPause();
+  }
+
+  /** Pause menu: Resume / Restart chapter / Options, or the Options rows (language, graphics) + Back. */
+  _renderPause() {
+    const k = this._pause;
+    const p = this.pauseEl;
+    if (!p || !k) return;
+    const P = this.L.pause;
+    p.classList.toggle('options', k.view === 'options');
+    if (k.view === 'options') {
+      p.innerHTML = `<h2>${esc(this.L.options.title)}</h2>`;
+      this._optionsRows(p, k.quality);
+      const back = el('button', 'btn', p, esc(this.L.options.back));
+      back.addEventListener('click', () => {
+        k.view = 'main';
+        this._renderPause();
+      });
+      back.focus({ preventScroll: true });
+      return;
+    }
+    p.innerHTML = `<h2>${esc(P.title)}</h2>`;
+    const resume = el('button', 'btn', p, esc(P.resume));
+    const restart = el('button', 'btn', p, esc(P.restart));
+    const options = el('button', 'btn', p, esc(P.options));
+    el('div', 'small', p, `${esc(P.escKey)} · ${esc(P.muteHint)}`);
+    resume.addEventListener('click', () => k.onResume?.());
+    restart.addEventListener('click', () => k.onRestart?.());
+    options.addEventListener('click', () => {
+      k.view = 'options';
+      this._renderPause();
+    });
     resume.focus({ preventScroll: true });
   }
 
   hidePause() {
     this.pauseEl?.remove();
     this.pauseEl = null;
+    this._pause = null;
   }
 
   /** Mobile / small-screen warning. Resolves on "Continue anyway". */
@@ -1007,11 +1198,12 @@ export class UI {
       this.L.opening.map((l) => `<div class="line">${esc(l)}</div>`).join('') + `<div class="msg">${esc(this.L.noWebGL)}</div>`;
   }
 
-  contextLost() {
+  /** Fatal "context lost" card. `onReload` (main.js) reloads at the current chapter, like Restart. */
+  contextLost(onReload = () => location.reload()) {
     const f = el('div', 'ui-layer overlay fatal', this.root);
     f.innerHTML = `<p>${esc(this.L.contextLost)}</p>`;
     const b = el('button', 'btn', f, esc(this.L.reload));
-    b.addEventListener('click', () => location.reload());
+    b.addEventListener('click', () => onReload());
   }
 
   /**
@@ -1029,8 +1221,11 @@ export class UI {
     const again = el('button', 'btn again', e, esc(E.playAgain));
     again.id = 'play-again';
     const credits = el('div', 'credits', e, esc(E.credits));
+    this._end = { E, again, credits };
+    [E.thanks, E.playAgain, E.credits].forEach((s) => this._log(s));
     again.addEventListener('click', () => {
-      location.href = location.pathname;
+      const lang = new URLSearchParams(location.search).get('lang');
+      location.href = location.pathname + (lang ? `?lang=${encodeURIComponent(getLang())}` : '');
     });
     e.classList.remove('hidden');
     requestAnimationFrame(() => e.classList.add('show'));
@@ -1041,7 +1236,8 @@ export class UI {
     const wait = (s) => new Promise((r) => setTimeout(r, (fast ? Math.min(s, 0.15) : s) * 1000));
     await wait(1.1);
     for (const b of E.bigs || []) {
-      big.textContent = b;
+      big.textContent = num(b);
+      this._log(num(b));
       big.classList.add('show');
       await wait(1.6);
       big.classList.remove('show');
@@ -1076,6 +1272,99 @@ export class UI {
     this.hintEl.classList.remove('show');
     this.thoughtEl.classList.remove('show');
     this._pendingThought = null;
+  }
+
+  // ------------------------------------------------------------- language
+
+  /** Debug text log (__game.debug.textLog): every string the UI shows, capped. */
+  _log(s) {
+    const t = this.textLog;
+    if (!t || s === null || s === undefined || s === '') return;
+    t.push(String(s));
+    if (t.length > 2000) t.splice(0, t.length - 2000);
+  }
+
+  /** After i18n.setLang: re-render everything on screen except a dialogue line or card already up. */
+  _relang() {
+    const L = this.L;
+    const $ = (sel, root = this.root) => root.querySelector(sel);
+    $('.label', this.painEl).textContent = L.ui.pain;
+    $('.nb-head', this.notebookEl).textContent = L.notebook?.heading || '';
+    $('.mark', this.loadingEl).textContent = L.title?.name || '';
+    if (this._title) this._renderTitle();
+    if (this._optionsEl) this._renderOptions();
+    if (this._pause) this._renderPause();
+    if (this._objective) {
+      this._objective = retext(this._objective);
+      if (this.objectiveEl.classList.contains('show')) {
+        this.objectiveEl.textContent = this._objective;
+        this._log(this._objective);
+      }
+    }
+    this._chapterPrompt = retext(this._chapterPrompt);
+    this._spotText = retext(this._spotText);
+    this._promptShown = null;
+    this._renderPrompt();
+    if (this._hint) {
+      this._hint = retext(this._hint);
+      this.hintEl.innerHTML = promptHtml(this._hint);
+    }
+    if (this._thought) {
+      this._thought = { text: retext(this._thought.text), who: retext(this._thought.who) };
+      if (this.thoughtEl.classList.contains('show')) this._renderThought();
+    }
+    const pt = this._pendingThought;
+    if (pt) this._pendingThought = [retext(pt[0]), pt[1], { who: retext(pt[2]?.who) }];
+    const cap = $('.text', this.captionEl);
+    cap.textContent = retext(cap.textContent);
+    if (this._banner) {
+      this._banner.text = retext(this._banner.text);
+      this._banner.label = retext(this._banner.label);
+      this._renderBanner();
+    }
+    $('.num', this.chapterEl).textContent = this._chapterNum ? L.ui.chapter.replace('{n}', this._chapterNum) : '';
+    const name = $('.name', this.chapterEl);
+    name.textContent = retext(name.textContent);
+    // Watch: label, lap, the last notification, and the face's decimal mark.
+    const w = this._watch;
+    if (w.face) this._renderFace(w.face);
+    if (w.label) $('.wlabel', this.watchEl).textContent = w.label = retext(w.label);
+    if (w.lap) this._renderLap((w.lap = retext(w.lap)));
+    if (w.buzz) {
+      w.buzz = { text: retext(w.buzz.text), title: retext(w.buzz.title) };
+      $('.ntitle', this.watchEl).textContent = w.buzz.title || '';
+      $('.ntext', this.watchEl).innerHTML = renderSegments(segments(w.buzz.text));
+    } else $('.ntitle', this.watchEl).textContent = L.names.stride;
+    // Notebook entries keep their struck state and notes.
+    if (this._nb.entries.length) {
+      for (const it of this._nb.entries) {
+        it.text = retext(it.text);
+        if (it.note) it.note = retext(it.note);
+      }
+      this._nbRender();
+    }
+    if (this._gauge?.label) {
+      this._gauge.label = retext(this._gauge.label);
+      $('.glabel', this.gaugeEl).textContent = this._gauge.label;
+    }
+    $('.key', this.driveEl).innerHTML = this._cue ? promptHtml((this._cue = retext(this._cue))) : esc(L.ui.space);
+    // An open menu: its options are L objects (swapped in place) or plain strings from L.
+    const k = this._choices;
+    if (k) {
+      const q = $('.q', this.choicesEl);
+      if (q) q.textContent = retext(k.menu.prompt);
+      (k.menu.options || []).forEach((o, i) => {
+        const b = k.buttons[i];
+        if (b) b.innerHTML = `<span class="kbd">${i + 1}</span>${esc(retext(o.text))}`;
+      });
+    }
+    if (this._end) {
+      const { E, again, credits } = this._end;
+      const thanks = $('.thanks', this.endEl);
+      if (thanks) thanks.textContent = retext(E.thanks);
+      again.textContent = retext(E.playAgain);
+      credits.textContent = retext(E.credits);
+    }
   }
 
   // ------------------------------------------------------------- loop

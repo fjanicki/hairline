@@ -100,12 +100,13 @@ class RunHandle {
     const r = this.char.root;
     r.position.set(this.laneX, r.position.y, this.startZ - this.d);
     r.rotation.y = Math.PI; // facing -Z down the track
+    // Cadence from ground speed and the character's size, so the planted foot stays put.
     if (this.v > 2.2) {
       const a = this.char.play('run', 0.2);
-      if (a) a.timeScale = clamp(this.v / 5, 0.6, 1.6);
+      if (a) a.timeScale = clamp(this.char.strideRate('run', this.v), 0.45, 1.6);
     } else {
       const a = this.char.play(this.v > 0.2 ? 'walk' : 'idle', 0.3);
-      if (a && this.v > 0.2) a.timeScale = clamp(this.v / 1.3, 0.6, 1.4);
+      if (a && this.v > 0.2) a.timeScale = clamp(this.char.strideRate('walk', this.v), 0.5, 1.6);
     }
     return false;
   }
@@ -156,7 +157,7 @@ class WalkHandle {
     if (diff < -Math.PI) diff += Math.PI * 2;
     this.char.root.rotation.y = r + diff * (1 - Math.exp(-8 * dt));
     const a = this.char.play(this.run ? 'run' : 'walk', 0.3);
-    if (a) a.timeScale = this.run ? clamp(this.speed / 5, 0.6, 1.6) : clamp(this.speed / 1.3, 0.5, 1.5);
+    if (a) a.timeScale = this.run ? clamp(this.char.strideRate('run', this.speed), 0.45, 1.6) : clamp(this.char.strideRate('walk', this.speed), 0.5, 1.6);
     return false;
   }
 }

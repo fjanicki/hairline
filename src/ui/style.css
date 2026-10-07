@@ -147,7 +147,8 @@ kbd,
   font-size: 15px;
   letter-spacing: 0.04em;
   color: var(--ink);
-  text-shadow: var(--shadow);
+  /* a tight dark halo too: the Ch4 lettering prompt sits on the pale board */
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8), 0 1px 3px rgba(0, 0, 0, 0.6), var(--shadow);
   opacity: 0;
   transition: opacity 0.25s ease, transform 0.25s ease, bottom 0.25s ease;
   white-space: nowrap;
@@ -166,15 +167,18 @@ body:has(.thought.show) .gauge { bottom: calc(max(23vh, calc(15vh + 124px)) + 40
   text-align: center;
   font-size: clamp(17px, 1.6vw, 22px);
   font-style: italic;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.45;
   color: var(--ink);
-  text-shadow: var(--shadow);
+  /* A tight dark halo as well as the soft one: thoughts also land on bright fog (Ch3's race). */
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.75), 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 18px rgba(0, 0, 0, 0.45);
   opacity: 0;
   transition: opacity 0.7s ease;
   z-index: 25;
 }
 .thought.show { opacity: 1; }
+/* A bark that lands with a choice menu (Ch5 "It's off again!") goes above it, not under the buttons. */
+body:has(.choices.show) .thought { bottom: auto; top: 16vh; }
 /* On narrow windows, keep centred thoughts clear of the docked watch (right: 5vw, 150px wide). */
 body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
 .thought.spoken { font-style: normal; font-weight: 400; }
@@ -220,7 +224,8 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
 .caption {
   position: absolute;
   left: 6vw;
-  bottom: 30vh;
+  /* Above the bottom-centre stack (prompt over a thought; gauge): long French captions reach the centre. */
+  bottom: max(30vh, calc(15vh + 170px));
   display: flex;
   align-items: stretch;
   font-size: clamp(13px, 1.15vw, 16px);
@@ -229,9 +234,10 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
   color: #fff;
   opacity: 0;
   transform: translateX(-12px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease, bottom 0.25s ease;
 }
 .caption.show { opacity: 1; transform: none; }
+body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 116px); }
 .caption .bar { width: 6px; background: #e8b03a; margin-right: 0; }
 .caption .text { background: rgba(8, 12, 30, 0.82); padding: 10px 18px; }
 
@@ -372,6 +378,7 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
   white-space: nowrap;
   transition: color 0.6s ease, text-shadow 0.6s ease;
 }
+.watch .wlap.long { letter-spacing: 0; }
 .watch .wface.tick,
 .watch .wlap.tick { animation: tick 0.4s ease; }
 @keyframes tick { 0% { transform: scale(1.12); } 100% { transform: none; } }
@@ -431,7 +438,9 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
   filter: saturate(0.85);
 }
 .notebook.show { opacity: 0.9; transform: scale(0.56) rotate(1.5deg); }
-.notebook.show.open { opacity: 1; transform: translate(calc(-50vw + 180px), 14vh) scale(1.12) rotate(-0.8deg); }
+/* Open: an insert pinned to the top-left corner (under the objective), clear of Hugo and the
+   action, which the cameras keep in the middle of the frame. */
+.notebook.show.open { opacity: 1; transform: translate(calc(340px - 100vw), 7vh) scale(0.92) rotate(-0.8deg); }
 .notebook .nb-spiral {
   position: absolute;
   left: 6px;
@@ -716,14 +725,21 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
   transition: opacity 0.6s ease;
 }
 .card.show { opacity: 1; pointer-events: auto; cursor: pointer; }
-.card.clear { background: transparent; }
+/* Over the live scene (KM 31 in bright race fog, Day 5): a soft dark scrim under the lines and a
+   tighter shadow, so pale ink stays readable on a near-white frame. The scrim fades with the card. */
+.card.clear { background: radial-gradient(ellipse 62% 30% at 50% 50%, rgba(8, 10, 14, 0.62), rgba(8, 10, 14, 0.34) 55%, rgba(8, 10, 14, 0) 100%); }
+.card.clear .line {
+  font-weight: 400;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 22px rgba(0, 0, 0, 0.6);
+}
 .card .line {
   font-size: clamp(18px, 1.9vw, 27px);
   font-weight: 300;
   line-height: 1.45;
   letter-spacing: 0.01em;
   text-align: center;
-  max-width: 900px;
+  text-wrap: balance; /* no lone last word (French lines run longer) */
+  max-width: 960px;
   opacity: 0;
   transform: translateY(6px);
   transition: opacity 1.1s ease, transform 1.1s ease;
@@ -824,6 +840,20 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
   animation: breathe 2.4s ease-in-out infinite;
 }
 
+/* Language switch + Options, bottom of the title screen. */
+.title .title-foot {
+  position: absolute;
+  bottom: max(4vh, 22px);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+.title .title-options { margin-left: 18px; }
+
 /* ---------------------------------------------------------- loading */
 .loading {
   z-index: 90;
@@ -871,6 +901,25 @@ body:has(.watch.show) .thought { width: min(760px, 86vw, calc(90vw - 320px)); }
 }
 .btn:hover,
 .btn:focus-visible { background: rgba(255, 233, 176, 0.12); border-color: var(--warm); outline: none; }
+.quality { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.quality-label { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-right: 8px; }
+.quality-opt {
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.quality-opt:hover,
+.quality-opt:focus-visible { color: var(--ink); border-color: var(--warm); outline: none; }
+.quality-opt.on { color: var(--ink); background: rgba(255, 233, 176, 0.12); border-color: rgba(255, 233, 176, 0.5); }
+.overlay.options .quality-label { min-width: 120px; text-align: right; }
+.overlay.options .btn { margin-top: 10px; }
 .warning { z-index: 80; background: #000; }
 .fatal { z-index: 95; background: #000; }
 .fatal .line { font-size: clamp(16px, 1.6vw, 22px); font-weight: 300; color: var(--ink-dim); margin: 0.2em 0; }

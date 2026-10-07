@@ -35,8 +35,10 @@ export class World {
     } catch (err) {
       console.error('[world] dispose failed', err);
     }
-    this.assets.releaseCharacters();
+    // The group first: props a chapter parented to an NPC's bones (brushes, a camera) are still under
+    // the group then. Releasing the characters first would detach them before the walk.
     disposeGroup(r.group);
+    this.assets.releaseCharacters();
     this.current = null;
     this.group = null;
     this.bounds = [];

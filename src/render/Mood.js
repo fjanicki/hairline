@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LIGHTING, HDRI } from '../world/look.js';
 
 // "Colour is hope." Mood owns the global lights, sky, fog and the MoodShader uniforms (grade + grime).
 // hope: 0 = grey, 1 = full colour, >1 = oversaturated (Ch3 flashback).
@@ -21,12 +22,31 @@ export const damp = (a, b, lambda, dt) => THREE.MathUtils.lerp(a, b, 1 - Math.ex
  *  hemiSky, hemiGround, hemiIntensity
  *  sunColor, sunIntensity, sunDir [x,y,z] (direction *towards* the sun), shadows (bool)
  *  fillColor, fillIntensity      soft point light that rides with the camera so figures read (0 = off)
+ *  fillNear (m, 0 = off)        dim that fill as the camera closes in on Hugo nearer than this, so a
+ *                               close-up does not blow him out (light at Hugo stays what it is at fillNear)
  *  exposure (tone mapping), contrast, vignette, neutralTint (true = no cool/gold tint)
  *  lightChroma                  saturation kept in bright areas at low hope (0 = none; lamps/TV glow)
  *  vignetteColor                colour the vignette sinks towards (default black)
  *  grain                        film grain amount (scaled by 1.2 - 0.5*clamp(hope,0,1) at runtime)
  *  dirt                         static lens dirt / smudges (0..1)
  *  showSky (bool, default true)
+ * Image-based lighting (src/render/Environment.js; HDRIs in public/assets/hdri):
+ *  env                          HDRI id (null = none); loads lazily, cross-fades through 0 on change
+ *  envIntensity, envIntensityHope   scene.environmentIntensity at hope 0 / 1
+ *  envRotation (rad, Y)         or envAlign: true = rotate the HDRI's key light onto sunDir
+ *  envBackground                null = gradient sky; a number = the HDRI as a blurred background
+ *                               (that blurriness, 0..1)
+ * Post (src/render/Post.js; a quality tier can switch AO / bloom / CA off):
+ *  ao                           GTAO strength (0..1.5)
+ *  bloom, bloomThreshold        bloom strength / linear HDR threshold (only practicals pass ~1.1+)
+ *  heightFog, heightFogFalloff, heightFogY, heightFogColor (default fogColor)
+ *                               ground-hugging fog: density at heightFogY, e^-falloff per metre above
+ * Grade:
+ *  lift, gamma, gain [r,g,b]    lift is added in the shadows, gamma pivots on mid-grey, gain multiplies
+ *  splitShadow, splitHigh, split  split-tone hues (normalised) and amount
+ *  shoulder                     soft highlight roll-off before ACES (0 = off)
+ *  ca                           chromatic aberration at the frame edges (0..1)
+ * The chapter presets spread LIGHTING.<name> from src/world/look.js (the art bible).
  */
 const DEFAULT_PRESET = {
   skyTop: '#1a1d22',
@@ -42,6 +62,7 @@ const DEFAULT_PRESET = {
   shadows: true,
   fillColor: '#c8d2e0',
   fillIntensity: 0,
+  fillNear: 0,
   exposure: 1,
   contrast: 1,
   vignette: 0.45,
@@ -51,12 +72,32 @@ const DEFAULT_PRESET = {
   dirt: 0,
   neutralTint: false,
   showSky: true,
+  env: null,
+  envIntensity: 0,
+  envRotation: 0,
+  envAlign: false,
+  envBackground: null,
+  ao: 1,
+  bloom: 0,
+  bloomThreshold: 1.5,
+  heightFog: 0,
+  heightFogFalloff: 0.5,
+  heightFogY: 0,
+  lift: [0, 0, 0],
+  gamma: [1, 1, 1],
+  gain: [1, 1, 1],
+  splitShadow: '#ffffff',
+  splitHigh: '#ffffff',
+  split: 0,
+  shoulder: 0,
+  ca: 0,
 };
 
 export const PRESETS = {
   // Ch1: Hugo's flat at night. Green-grey nicotine ambient, no fog. The chapter adds the TV
   // PointLight #9fb7d6 (key light) and a failing fluorescent strip #cfe6d0.
   flat: {
+    ...LIGHTING.flat,
     skyTop: '#07090a',
     skyBottom: '#101411',
     fogColor: '#101411',
@@ -80,6 +121,7 @@ export const PRESETS = {
   // Ch2 (and Ch5 before golden hour falls back to `wall`): Rue des Tanneurs, wet, late evening.
   // The chapter adds sodium lamps #d9a35a and the pink MARCO'S neon #ff3d6e.
   street: {
+    ...LIGHTING.street,
     skyTop: '#2f3438',
     skyBottom: '#5f6560',
     skyTopHope: '#3c3a40',
@@ -105,6 +147,7 @@ export const PRESETS = {
   // Ch3 flashback: a dawn ring road. Cold, bright, acid; hope is forced high (1.15 -> 0.75).
   // neutralTint so the STRIDE green reads cold. The chapter adds a low cold sun ahead.
   dawnrun: {
+    ...LIGHTING.dawnrun,
     skyTop: '#1b2a44',
     skyBottom: '#4f6f8f',
     fogColor: '#4f6f8f',
@@ -127,6 +170,7 @@ export const PRESETS = {
   // Ch4: Odile's workshop. Tungsten bulb #ffb36b (chapter light) over grey daylight from a grimy
   // high window. lightChroma 0.5 keeps the bulb warm at low hope; the vignette sinks to brown.
   workshop: {
+    ...LIGHTING.workshop,
     skyTop: '#16130f',
     skyBottom: '#241e18',
     fogColor: '#241e18',
@@ -149,6 +193,7 @@ export const PRESETS = {
   },
   // Ch5: the street by day, overcast, warming with hope (rain off).
   wall: {
+    ...LIGHTING.wall,
     skyTop: '#8a949c',
     skyBottom: '#b9bfc2',
     skyTopHope: '#7fa6c9',
@@ -175,6 +220,7 @@ export const PRESETS = {
   // Ch5 final walk: late-afternoon gold breaking under the cloud from the far end of the street.
   // Still dirty, lit differently.
   golden: {
+    ...LIGHTING.golden,
     skyTop: '#b07a5c',
     skyBottom: '#f2c879',
     fogColor: '#eac28a',
@@ -194,12 +240,35 @@ export const PRESETS = {
     grain: 0.03,
     dirt: 0.12,
   },
+  // The colour-returns end: a bright, neutral square (title backdrop / final card, if wanted).
+  bright: {
+    ...LIGHTING.bright,
+    skyTop: '#86a6c8',
+    skyBottom: '#e6dccb',
+    fogColor: '#e6dccb',
+    fogDensity: 0.006,
+    hemiSky: '#e8e4dc',
+    hemiGround: '#6a5e50',
+    hemiIntensity: 0.6,
+    sunColor: '#fff0d8',
+    sunIntensity: 2.4,
+    sunDir: [-0.4, 0.7, -0.5],
+    fillIntensity: 2,
+    exposure: 1.05,
+    vignette: 0.35,
+    grain: 0.025,
+    dirt: 0.08,
+  },
   // Neutral black void (title, transitions).
-  void: { skyTop: '#000000', skyBottom: '#000000', hemiIntensity: 0.2, sunIntensity: 0.2, showSky: false },
+  void: { skyTop: '#000000', skyBottom: '#000000', hemiIntensity: 0.2, sunIntensity: 0.2, showSky: false, bloom: 0, ao: 0 },
 };
 
-const COLOR_KEYS = ['skyTop', 'skyBottom', 'skyTopHope', 'skyBottomHope', 'fogColor', 'fogColorHope', 'hemiSky', 'hemiGround', 'sunColor', 'fillColor', 'vignetteColor'];
-const NUM_KEYS = ['fogDensity', 'fogDensityHope', 'hemiIntensity', 'sunIntensity', 'fillIntensity', 'exposure', 'contrast', 'vignette', 'lightChroma', 'grain', 'dirt'];
+const COLOR_KEYS = ['skyTop', 'skyBottom', 'skyTopHope', 'skyBottomHope', 'fogColor', 'fogColorHope', 'hemiSky', 'hemiGround', 'sunColor', 'fillColor', 'vignetteColor', 'heightFogColor', 'splitShadow', 'splitHigh'];
+const NUM_KEYS = [
+  'fogDensity', 'fogDensityHope', 'hemiIntensity', 'sunIntensity', 'fillIntensity', 'fillNear', 'exposure', 'contrast', 'vignette', 'lightChroma', 'grain', 'dirt',
+  'envIntensity', 'envIntensityHope', 'envRotation', 'ao', 'bloom', 'bloomThreshold', 'heightFog', 'heightFogFalloff', 'heightFogY', 'split', 'shoulder', 'ca',
+];
+const VEC_KEYS = ['lift', 'gamma', 'gain'];
 
 function resolve(p) {
   const r = { ...DEFAULT_PRESET, ...p };
@@ -207,32 +276,62 @@ function resolve(p) {
   r.skyBottomHope ??= r.skyBottom;
   r.fogColorHope ??= r.fogColor;
   r.fogDensityHope ??= r.fogDensity;
+  r.heightFogColor ??= r.fogColor;
+  r.envIntensityHope ??= r.envIntensity;
   const out = { raw: { ...p } };
   for (const k of COLOR_KEYS) out[k] = new THREE.Color(r[k]);
   for (const k of NUM_KEYS) out[k] = r[k];
+  for (const k of VEC_KEYS) out[k] = new THREE.Vector3(...r[k]);
   out.sunDir = new THREE.Vector3(...r.sunDir).normalize();
   out.shadows = r.shadows;
   out.neutralTint = r.neutralTint;
   out.showSky = r.showSky;
+  out.env = r.env || null;
+  out.envBackground = r.envBackground;
+  // envAlign: rotate the HDRI about Y so its measured key light comes from the sun's azimuth.
+  const key = HDRI[out.env]?.key;
+  if (r.envAlign && key && p.envRotation === undefined) {
+    out.envRotation = Math.atan2(out.sunDir.x, out.sunDir.z) - Math.atan2(key[0], key[2]);
+  }
   return out;
 }
 
 function lerpState(a, b, k, out) {
   for (const key of COLOR_KEYS) out[key].copy(a[key]).lerp(b[key], k);
   for (const key of NUM_KEYS) out[key] = a[key] + (b[key] - a[key]) * k;
+  for (const key of VEC_KEYS) out[key].copy(a[key]).lerp(b[key], k);
   out.sunDir.copy(a.sunDir).lerp(b.sunDir, k).normalize();
   out.shadows = b.shadows;
   out.neutralTint = k < 0.5 ? a.neutralTint : b.neutralTint;
   out.showSky = b.showSky;
+  out.envBackground = k < 0.5 ? a.envBackground : b.envBackground;
+  // Two different HDRIs can't be mixed: fade the old one out, then the new one in.
+  if (a.env === b.env) {
+    out.env = b.env;
+    out.envFade = 1;
+  } else {
+    out.env = k < 0.5 ? a.env : b.env;
+    out.envFade = Math.abs(1 - 2 * k);
+    out.envRotation = k < 0.5 ? a.envRotation : b.envRotation;
+  }
   return out;
 }
 
+/** Colour scaled to unit luminance (a hue for the split tone). */
+function unitLuma(c, out) {
+  const l = Math.max(1e-4, 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b);
+  return out.set(c.r / l, c.g / l, c.b / l);
+}
+
 export class Mood {
-  constructor({ engine, sky, audio }) {
+  constructor({ engine, sky, audio, env = null }) {
     this.engine = engine;
     this.scene = engine.scene;
     this.camera = engine.camera;
     this.pass = engine.moodPass;
+    this.post = engine.post;
+    /** Environment (HDRI loader / cache), or null for no image-based lighting. */
+    this.env = env;
     this.sky = sky;
     this.audio = audio;
     this.player = null; // set by main
@@ -254,7 +353,10 @@ export class Mood {
     s.near = 1;
     s.far = 90;
     this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.02;
+    this.sun.shadow.normalBias = 0.025;
+    this.sun.shadow.radius = 3;
+    /** Half-size of the sun's shadow box (m). fitShadows() tightens it to small playable areas. */
+    this.shadowExtent = 22;
     this.fill = new THREE.PointLight(0xc8d2e0, 0, 12, 1.6);
     for (const o of [this.hemi, this.sun, this.sun.target, this.fill]) o.userData.noDispose = true;
     this.scene.add(this.hemi, this.sun, this.sun.target, this.fill);
@@ -279,6 +381,45 @@ export class Mood {
     this._lightQ = new THREE.Quaternion();
     this._lightQi = new THREE.Quaternion();
     this._lightM = new THREE.Matrix4();
+    this._splitS = new THREE.Vector3();
+    this._bgColor = this.scene.background?.isColor ? this.scene.background : new THREE.Color(0, 0, 0);
+    this._envId = null;
+  }
+
+  /** Quality tier (src/render/Quality.js): shadow map size and softness. */
+  setQuality(tier) {
+    const sh = this.sun.shadow;
+    if (sh.mapSize.x !== tier.shadowSize) {
+      sh.mapSize.set(tier.shadowSize, tier.shadowSize);
+      sh.map?.dispose();
+      sh.map = null;
+    }
+    sh.radius = tier.shadowRadius;
+  }
+
+  /**
+   * Fit the sun's shadow box to the playable area: half-size = largest bounds extent / 2 + margin,
+   * clamped to [6, 22] m. A room gets ~3x the shadow resolution of the street. bounds: [{minX, maxX,
+   * minZ, maxZ}] (the chapter's walkable rects; [] or null = the default 22 m).
+   */
+  fitShadows(bounds) {
+    let e = 22;
+    if (bounds?.length) {
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (const b of bounds) {
+        x0 = Math.min(x0, b.minX);
+        x1 = Math.max(x1, b.maxX);
+        z0 = Math.min(z0, b.minZ);
+        z1 = Math.max(z1, b.maxZ);
+      }
+      if (Number.isFinite(x0 + x1 + z0 + z1)) e = THREE.MathUtils.clamp(Math.max(x1 - x0, z1 - z0) / 2 + 4, 6, 22);
+    }
+    this.shadowExtent = e;
+    const s = this.sun.shadow.camera;
+    s.left = s.bottom = -e;
+    s.right = s.top = e;
+    s.updateProjectionMatrix();
+    return e;
   }
 
   /**
@@ -315,6 +456,7 @@ export class Mood {
     this._to = next;
     this._blend = { t: 0, dur: Math.max(0, blend) };
     if (blend <= 0) lerpState(this._to, this._to, 1, this._cur);
+    if (next.env) this.env?.load(next.env); // lazy; lit by the hemisphere light until it arrives
   }
 
   /** Change some preset fields (e.g. { fogDensity: 0.02 }) over `secs`. */
@@ -395,6 +537,26 @@ export class Mood {
     this._tint.copy(c.neutralTint ? NEUTRAL : COOL).lerp(GOLD, c.neutralTint ? 0 : h01);
     u.uTint.value.copy(this._tint);
     u.uContrast.value = damp(u.uContrast.value, c.contrast, 3, dt);
+    u.uLift.value.copy(c.lift);
+    u.uGamma.value.copy(c.gamma);
+    u.uGain.value.copy(c.gain);
+    u.uSplit.value = c.split;
+    if (c.split > 0) {
+      u.uSplitShadow.value.copy(unitLuma(c.splitShadow, this._splitS));
+      u.uSplitHigh.value.copy(unitLuma(c.splitHigh, this._splitS));
+    }
+    u.uShoulder.value = c.shoulder;
+    // Post: the tier decides whether AO / bloom / CA run at all; the preset sets how much.
+    if (this.post) {
+      const p = this.post.params;
+      p.ao = c.ao;
+      p.bloom = c.bloom;
+      p.bloomThreshold = c.bloomThreshold;
+      p.ca = c.ca;
+    }
+    u.uHFog.value = c.heightFog;
+    u.uHFogFalloff.value = c.heightFogFalloff;
+    u.uHFogY.value = c.heightFogY;
     u.uVignette.value = damp(u.uVignette.value, c.vignette, 3, dt);
     u.uFlash.value = Math.max(0, u.uFlash.value - dt * this.flashDecay);
     // Grime: grain eases as hope rises but never disappears.
@@ -435,9 +597,32 @@ export class Mood {
     this._sky1.copy(c.skyBottom).lerp(c.skyBottomHope, h01);
     this.sky.set(this._sky0, this._sky1);
     this.sky.mesh.visible = c.showSky;
-    this.scene.background.copy(this._sky1);
+    this._bgColor.copy(this._sky1);
     this.fog.color.copy(c.fogColor).lerp(c.fogColorHope, h01);
     this.fog.density = c.fogDensity + (c.fogDensityHope - c.fogDensity) * h01;
+    u.uFogDensity.value = this.fog.density;
+    // The height fog takes the hope-blended fog colour unless the preset gives its own.
+    const hf = this._to.raw?.heightFogColor !== undefined ? c.heightFogColor : this.fog.color;
+    u.uHFogColor.value.set(hf.r, hf.g, hf.b);
+
+    // Image-based light: the preset's HDRI once it has loaded, faded through 0 on a change. The last
+    // texture stays bound at intensity 0 when a preset has none (toggling scene.environment to null
+    // would recompile every material).
+    const envTex = this.env?.get(c.env) || null;
+    const ei = envTex ? (c.envIntensity + (c.envIntensityHope - c.envIntensity) * h01) * (c.envFade ?? 1) : 0;
+    if (envTex) this.scene.environment = envTex;
+    this.scene.environmentIntensity = ei;
+    this.scene.environmentRotation.set(0, c.envRotation, 0);
+    if (envTex && typeof c.envBackground === 'number') {
+      this.scene.background = envTex;
+      this.scene.backgroundBlurriness = c.envBackground;
+      this.scene.backgroundIntensity = Math.max(0.05, ei);
+      this.scene.backgroundRotation.set(0, c.envRotation, 0);
+      this.sky.mesh.visible = false;
+    } else {
+      this.scene.background = this._bgColor;
+    }
+    this._envId = envTex ? c.env : null;
     this.hemi.color.copy(c.hemiSky);
     this.hemi.groundColor.copy(c.hemiGround);
     this.hemi.intensity = c.hemiIntensity;
@@ -449,6 +634,11 @@ export class Mood {
     this.fill.intensity = c.fillIntensity;
     this.fill.position.copy(this.camera.position);
     this.fill.position.y += 0.6;
+    if (c.fillNear > 0 && this.player?.root) {
+      // Same falloff as the light's decay, so Hugo gets no more fill up close than at fillNear.
+      const d = this.fill.position.distanceTo(this._v.copy(this.player.root.position).setY(this.player.root.position.y + 1.1));
+      if (d < c.fillNear) this.fill.intensity *= Math.pow(Math.max(d, 0.05) / c.fillNear, this.fill.decay);
+    }
 
     const t = this.followTarget || this.player?.root;
     if (t) {

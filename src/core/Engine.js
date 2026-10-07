@@ -1,9 +1,6 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { MoodShader } from '../render/MoodShader.js';
+import { Post } from '../render/Post.js';
+import { TIERS, pickTier, saveTier, gpuName } from '../render/Quality.js';
 
 export function hasWebGL() {
   return !!window.WebGL2RenderingContext;
@@ -17,15 +14,15 @@ export function hasWebGL() {
 export class Engine {
   constructor(canvas) {
     this.canvas = canvas;
-    // No canvas MSAA: the scene is drawn into the composer's targets, which carry their own samples.
+    // No canvas MSAA: the scene is drawn into Post's scene target, which carries its own samples.
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
     const coarse = window.matchMedia?.('(pointer:coarse)').matches;
-    this.maxPixelRatio = coarse ? 1.25 : 1.5; // 4x MSAA on top, so a lower cap is still crisp
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.maxPixelRatio));
+    this.deviceMaxPixelRatio = coarse ? 1.25 : 1.5; // 4x MSAA on top, so a lower cap is still crisp
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
+    // r186 PCF is soft: a Vogel-disk kernel whose width is light.shadow.radius (set per quality tier).
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.info.autoReset = false; // info.render.calls = whole frame (all passes)
 
@@ -35,22 +32,18 @@ export class Engine {
     this.camera.position.set(0, 2.6, 4.2);
     this.scene.add(this.camera); // so camera-attached objects render
 
-    // Multisampled composer targets: anti-aliases the scene geometry (canvas MSAA would only touch
-    // the final full-screen quad).
-    const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
-    rt.texture.name = 'EffectComposer.rt1';
-    this.composer = new EffectComposer(this.renderer, rt);
-    // The chain is fixed (Render -> Mood -> Output, two swaps per frame), and RenderPass draws into
-    // the composer's readBuffer, which is renderTarget2 at the start of every frame. Only that one
-    // needs MSAA and depth; the Mood pass writes renderTarget1, a plain single-sample target.
-    this.composer.renderTarget1.samples = 0;
-    this.composer.renderTarget1.depthBuffer = false;
-    this.renderPass = new RenderPass(this.scene, this.camera);
-    this.moodPass = new ShaderPass(MoodShader);
-    this.outputPass = new OutputPass();
-    this.composer.addPass(this.renderPass);
-    this.composer.addPass(this.moodPass);
-    this.composer.addPass(this.outputPass);
+    // Quality tier (?quality=low|medium|high, else remembered, else picked from the GPU).
+    const pick = pickTier(this.renderer.getContext());
+    this.qualitySource = pick.source;
+    this.gpu = pick.gpu || gpuName(this.renderer.getContext());
+    this.tier = TIERS[pick.tier];
+    this.maxPixelRatio = Math.min(this.deviceMaxPixelRatio, this.tier.pixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.maxPixelRatio));
+
+    // Post chain (src/render/Post.js): scene -> GTAO -> bloom -> grade (MoodShader) -> OutputPass.
+    this.post = new Post(this.renderer, this.scene, this.camera, this.tier.name);
+    /** The grade pass: { uniforms } of the MoodShader material (Mood owns them). */
+    this.moodPass = this.post.moodPass;
 
     this.timer = new THREE.Timer();
     this.timer.connect(document);
@@ -66,7 +59,7 @@ export class Engine {
     this.systems = [];
     this._timers = []; // {at, scaled, fn}
     this._frameWaiters = [];
-    this._listeners = { pause: [], resize: [] };
+    this._listeners = { pause: [], resize: [], quality: [] };
     this.contextLost = false;
 
     canvas.addEventListener('webglcontextlost', (e) => {
@@ -101,12 +94,35 @@ export class Engine {
     const h = window.innerHeight;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.maxPixelRatio));
     this.renderer.setSize(w, h, false);
-    this.composer.setPixelRatio(this.renderer.getPixelRatio());
-    this.composer.setSize(w, h);
+    const pr = this.renderer.getPixelRatio();
+    this.post.setSize(Math.floor(w * pr), Math.floor(h * pr));
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.moodPass.uniforms.uAspect.value = w / h;
     for (const fn of this._listeners.resize) fn(w, h);
+  }
+
+  /** Current quality tier name ('low' | 'medium' | 'high'). */
+  get quality() {
+    return this.tier.name;
+  }
+
+  /**
+   * Switch the quality tier at runtime (pause menu, __game.quality.set). Rebuilds the post targets,
+   * applies the pixel ratio and notifies 'quality' listeners (Mood: shadows; Materials: anisotropy).
+   * remember=true stores the choice for the next visit.
+   */
+  setQuality(name, { remember = false } = {}) {
+    const t = TIERS[name];
+    if (!t) return this.tier.name;
+    if (remember) saveTier(name);
+    if (t === this.tier) return name;
+    this.tier = t;
+    this.maxPixelRatio = Math.min(this.deviceMaxPixelRatio, t.pixelRatio);
+    this.post.setTier(name);
+    this.resize();
+    for (const fn of this._listeners.quality) fn(t);
+    console.info('[hairline] quality', name);
+    return name;
   }
 
   setPaused(p) {
@@ -114,6 +130,28 @@ export class Engine {
     if (p === this.paused) return;
     this.paused = p;
     for (const fn of this._listeners.pause) fn(p);
+  }
+
+  /**
+   * Compile every material in the scene (hidden beats included) while a chapter is still behind
+   * the fade, in parallel where KHR_parallel_shader_compile exists, for the post chain's scene target
+   * (its programs differ from the canvas ones). Resolves when ready, or after `timeout` s anyway.
+   */
+  async precompile(timeout = 3) {
+    if (this.contextLost) return;
+    const r = this.renderer;
+    const prev = r.getRenderTarget();
+    let done;
+    try {
+      r.setRenderTarget(this.post?.sceneRT ?? null);
+      done = r.compileAsync(this.scene, this.camera);
+    } catch (err) {
+      console.warn('[hairline] precompile failed', err?.message || err);
+      return;
+    } finally {
+      r.setRenderTarget(prev);
+    }
+    await Promise.race([done, this.wait(timeout)]);
   }
 
   /** Promise resolving after `sec` seconds of (unpaused) game time. scaled:true uses timeScale. */
@@ -206,7 +244,7 @@ export class Engine {
 
     if (!this.contextLost) {
       this.renderer.info.reset();
-      this.composer.render(raw);
+      this.post.render(raw);
     }
   }
 

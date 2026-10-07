@@ -1,3 +1,9 @@
+> **SUPERSEDED. Historical spec, do not follow.** This is the plan for the earlier "9.81" prototype.
+> HAIRLINE replaced it: the current spec is `docs/DESIGN.md`, the engine API is `docs/API.md` and every
+> shipped asset is listed in `docs/CREDITS.md`. In particular, **nothing here about the Mixamo Xbot
+> applies any more**: the game ships no Mixamo content (characters are Quaternius CC0), so do not fetch
+> `Xbot.glb`, put it in `public/models`, or credit mixamo.com. The audio file names below are also stale.
+
 > **OVERRIDES (these take precedence over anything below):**
 > 1. **Kenney CC0 props are in scope.** The Kenney CC0 kits are already extracted in `public/assets/kenney/*`; approximate bounds are in `docs/asset-bounds.txt`. USE them:
 >    - Ch1 apartment furniture: sofa, TV, TV cabinet, coffee table, bed, boxes, fridge, lamp, rug, plant.

@@ -21,14 +21,14 @@ Read this file, `docs/DESIGN.md` (story, beats, mood values) and your own two fi
 | Thing | Convention |
 |---|---|
 | Units | metres, seconds, radians. y is up. |
-| Character facing | Xbot faces **+Z** at `rotation.y = 0`. `rotation.y = Math.PI` faces **−Z**. To face a point: `rotation.y = Math.atan2(dx, dz)`. |
+| Character facing | Characters face **+Z** at `rotation.y = 0`. `rotation.y = Math.PI` faces **−Z**. To face a point: `rotation.y = Math.atan2(dx, dz)`. |
 | Streets | Outdoor scenes run along **−Z** (Ch2/Ch5 street: spawn z +8…+3, workshop door at z −48; Ch3 road: the runner goes toward −Z). See DESIGN.md's STREET CONTRACT. |
 | Camera | Fixed world offset behind the player (`(0, 2.6, 4.2)` outdoors, `(0, 3.4, 3.6)` in the dollhouse rooms). It looks toward −Z. There is no orbit. "Forward" for the player is W, which is −Z. |
 | Positions in APIs | `[x, z]` means on the ground. `[x, y, z]` is a full 3D point. A `THREE.Vector3` is also accepted wherever noted. |
 | Colours | Hex numbers (`0x9fb7d6`) or CSS strings (`'#9fb7d6'`). They are sRGB and are converted automatically. |
 | Time | `dt` passed to update hooks is **scaled** by `engine.timeScale` (slow-mo). `rawDt` is real time. The camera, Mood and UI use real time. |
-| Albedo | The MoodShader desaturates heavily at low hope, the vignette darkens edges, and the grime pass adds grain and dirt. Keep surface colours **mid-value** (sRGB roughly `#707070`–`#b0b0b0` for walls and floors). Very dark albedos read as pure black. Let lights, `grimeTexture` and the mood create the dirt and darkness. |
-| Disposal | Everything you add to your scene `group` (or via `ctx.world.add`) is disposed when the chapter ends. Characters from `assets.makeCharacter` are released automatically too. |
+| Albedo | The MoodShader desaturates heavily at low hope, the vignette darkens edges, and the grime pass adds grain and dirt. Keep surface colours **mid-value** (sRGB roughly `#707070`–`#b0b0b0` for walls and floors). Very dark albedos read as pure black. Let lights, `grimeTexture` and the mood create the dirt and darkness. For big surfaces prefer a look recipe (`surface: 'facade.brick'`, §4.10): its albedo is already normalised into this band, and brighter canvases enhanced with a recipe are pulled down to it. |
+| Disposal | Everything you add to your scene `group` (or via `ctx.world.add`) is disposed when the chapter ends. Characters from `assets.makeCharacter` are released automatically too. Shared look / Materials materials (`userData.shared`) are kept. |
 
 Imports (paths are relative to your file):
 
@@ -41,6 +41,38 @@ import { rhythm, timing, makeSteer, memory } from './minigames.js'; // from src/
 ```
 
 Addons: `import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';` The `.js` extension is required.
+
+### Text and languages (i18n)
+
+All player-facing text lives in `src/story/text/{common,ch1..ch5}.js` (English) and
+`src/story/text/fr/*.js` (French, same shape), assembled into `L` (`script.js`). `src/story/i18n.js`
+owns `getLang()`, `setLang(code)`, `onLangChange(fn, { chapter })` (returns unsubscribe), `LANGS` and
+`retext(s)` (a string from L in any language -> the same key now).
+
+- `setLang` rewrites `L` **in place**: `L` and every nested object/array keep their identity, so
+  `const T = L.ch2` at module scope is fine. **Never cache a string** (or anything built from one) at
+  module scope or in a constructor; read `L.ch2.howFarLap` when you use it. Chapter `title` /
+  `objective` are getters for that reason.
+- The UI re-renders what is on screen (objective, prompts, hotspot prompts, watch labels, notebook,
+  menus, pause/Options); a dialogue line or card already up finishes in the old language.
+- Canvas text in the world: `B.relabel(signMesh, () => text)` or
+  `B.relangTexture(material, () => makeTexture(), ['map', 'emissiveMap'])` redraw it on a switch (chapter
+  scoped; the Director drops them between chapters). Anything else is right after the chapter reloads.
+- A key missing from a translation falls back to English (debug: warning `[i18n] missing fr key: path`).
+- In-world signage that is already French (RÉPARATIONS, BOULANGERIE, street names) stays as it is in
+  every language (`AS_IS` in `scripts/i18n-lib.mjs`).
+- Numbers: `ui.watch()` and the end card show decimals through `num(s)` (`'212.4 km'` -> `'212,4 km'` in
+  French), so code keeps `toFixed()`; parse a face from text with `parseNum(s)` (either mark).
+- Key names: never hard-code a key chip; read it from text (`L.ch3.keys.both` = `[A / D]` / `[Q / D]`,
+  `L.hints.space`, `L.pause.escKey`). French names the AZERTY keys for the same physical codes
+  (`KEY_NAMES` in `scripts/i18n-lib.mjs`, which the checker accepts in place of the English names).
+
+**Adding a language:** `node scripts/i18n-skeleton.mjs <code>` writes `src/story/text/<code>/*.js` with
+every text leaf marked `⟦EN⟧ `; translate those (keep keys, array lengths, `who`/`inner`/`voicemail`/
+`correct`, `*stage*` markers, `{n}`, `[E]` chips and key names), add `{ code, label }` to `LANGS` in
+`i18n.js` and the imports to `TEXTS` in `script.js`. Then `node scripts/i18n-check.mjs <code>` reports
+missing/extra keys, shape and flag mismatches, lost markers/placeholders/numbers, untranslated text,
+and text over the UI `LIMITS` (max characters per tight spot, measured at 1280x800); exit 1 on errors.
 
 ---
 
@@ -57,6 +89,7 @@ export default {
   objective: L.ch1.objectives.start, // initial objective text (or null)
   music: { name: 'contemplation', volume: 0.35, fade: 3 }, // optional; undefined = keep current, null = fade out
   ambience: ['rain'],           // optional: which of 'rain' | 'crowd' should be on (others fade off)
+  sounds: ['crowd'],            // optional: other audio files run() turns on itself (preloaded with the chapter)
   camera: { offset: [0, 3.4, 3.6], look: [0, 1.1, 0], fov: 55, lerp: 6 }, // optional follow-cam settings
   player: {                     // passed to player.configure() (see §5). bounds default to build().bounds
     spawn: [0, 1.5], facing: Math.PI, boot: true, limp: 1, painRate: 1 / 0.7, canJog: true, footsteps: 'boot',
@@ -121,10 +154,13 @@ return {
 | `ctx.camera` | `THREE.PerspectiveCamera` | Driven by `ctx.cam`. Do not move it directly. |
 | `ctx.renderer` | `THREE.WebGLRenderer` | |
 | `ctx.input` | `Input` | Keyboard (§4.2) |
-| `ctx.assets` | `Assets` | Characters and Kenney props (§4.3) |
+| `ctx.assets` | `Assets` | Characters and GLB props (§4.3) |
 | `ctx.audio` | `AudioSys` | Music, ambience, one-shots (§4.4) |
 | `ctx.mood` | `Mood` | Hope, colour grade, lights, sky, fog (§6) |
 | `ctx.sky` | `Sky` | Gradient sky (Mood drives it) |
+| `ctx.materials` | `Materials` | PBR material library (§4.10) |
+| `ctx.look` | `look` | Art bible: named surface recipes (§4.10) |
+| `ctx.env` | `Environment` | HDRI loader / cache (Mood uses it; §4.10) |
 | `ctx.ui` | `UI` | All HTML overlay UI (§4.5) |
 | `ctx.player` | `Player` | Hugo (§5) |
 | `ctx.cam` | `FollowCam` | Camera follow and cinematics (§4.6) |
@@ -143,7 +179,15 @@ return {
 
 ### 4.1 Engine (`ctx.engine`)
 
-Rendering: the scene is drawn into a 4× multisampled half-float composer target with depth (`composer.renderTarget2`, the RenderPass's read buffer every frame); the Mood pass writes a single-sample, depthless half-float target (`renderTarget1`). Canvas MSAA is off. Keep the chain at Render → Mood → Output (an even number of swaps), or move the MSAA settings with it; with the pixel ratio capped at 1.5 (1.25 on touch devices). Camera near plane 0.1. **Shaders must not produce NaN** (e.g. `pow()` of a negative): with MSAA, varyings can be evaluated slightly outside a triangle, and a NaN survives the resolve and the grade as black.
+Rendering (`src/render/Post.js`, owned by `engine.post`). One frame:
+
+1. **Scene** → a half-float target with a `DepthTexture`, 4× MSAA on medium/high (none on low). Canvas MSAA is off. The pixel ratio is capped per tier (1 / 1.25 / 1.5; 1.25 on touch devices).
+2. **GTAO** (medium/high): reads only that depth (normals are rebuilt from depth, so the scene is **not** drawn twice), half res on medium and full res on high, Poisson-denoised.
+3. **Bloom** (medium/high): a soft-thresholded 5-level down/up chain at half res. Only pixels brighter than the preset's `bloomThreshold` (linear HDR, about 1.3–3.5) feed it, so **practicals bloom and walls and skin don't**. To make a practical glow, push it above the threshold: `MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(3) })` or `emissiveIntensity` 3–5.
+4. **Grade** (`MoodShader`): AO multiply (faded in fog and on bright pixels), height fog, bloom add, then the whole Mood grade (hope saturation, focus slots, lift/gamma/gain, split tone, contrast, shoulder, vignette, dirt, pain, flash, grain), edge chromatic aberration on high.
+5. **OutputPass**: ACES tone mapping and sRGB, to the canvas.
+
+**Shaders must not produce NaN** (e.g. `pow()` of a negative): with MSAA, varyings can be evaluated slightly outside a triangle, and a NaN survives the resolve. The grade and the bloom sanitise their input (NaN → 0, clamped to 64), so a bad pixel shows as black, not as a black smear, but fix it at the source.
 
 | Member | Signature / type | Notes |
 |---|---|---|
@@ -155,10 +199,23 @@ Rendering: the scene is drawn into a 4× multisampled half-float composer target
 | `wait(sec, {scaled=false})` | `→ Promise<void>` | Loop-driven timer that pauses with the game. **In chapters use `d.wait()`** (skippable). |
 | `after(sec, fn, {scaled=false})` | `→ cancel()` | **In chapters use `d.after()`**, which is auto-cancelled at chapter end. |
 | `frame()` | `→ Promise<dt>` | Resolves on the next unpaused frame with the scaled dt. |
-| `renderer`, `scene`, `camera`, `composer` | three objects | `composer` passes: `[RenderPass, ShaderPass(MoodShader), OutputPass]`. |
-| `moodPass` | `ShaderPass` | Mood owns its uniforms. |
+| `renderer`, `scene`, `camera` | three objects | |
+| `post` | `Post` | `post.params` (written by Mood every frame), `post.stats = {scene, post}` (draw calls: the scene pass including shadow maps / the full-screen passes), `post.view = 'ao' \| 'bloom' \| null` and `post.override = {ao: 0, bloom: 0, ...}` for debugging. |
+| `moodPass` | `{ uniforms }` | The grade's uniforms. Mood owns them. |
+| `quality`, `setQuality(name, {remember})` | `'low' \| 'medium' \| 'high'` | The quality tier (see below). `engine.on('quality', fn(tier))` notifies a change. |
+| `precompile(timeout=3)` | `→ Promise` | Compiles every material in the scene (hidden beats included) for the post chain's scene target, in parallel where `KHR_parallel_shader_compile` exists. The Director awaits it before each fade-in. |
 
-Bloom is CUT by design (DESIGN.md). Don't add post passes.
+**Quality tiers** (`src/render/Quality.js`): `?quality=low|medium|high` forces one; otherwise the pause-menu choice (remembered in `localStorage`), otherwise a guess from the GPU string and the screen size (Apple M-series, RTX, Radeon RX → high; Intel, Mali, Adreno, software → low; very large screens step down once). The pause menu switches it live. `__game.quality` = `{ get(), set(name), tiers, gpu, source }`.
+
+| Tier | Pixel ratio | MSAA | GTAO | Bloom | Sun shadow map (PCF radius) | CA | Anisotropy |
+|---|---|---|---|---|---|---|---|
+| `low` | 1 | off | off | off | 1024 (2) | off | 4 |
+| `medium` | ≤ 1.25 | 4× | half res, 8 samples | on | 2048 (3) | off | 8 |
+| `high` | ≤ 1.5 | 4× | full res, 16 samples | on | 2048 (4) | on | 16 |
+
+Measured at 1280 × 800 on an M5 Max (headless, uncapped, Ch5 street with 13 figures): high 5.4 ms (≈ 184 fps), low 4.5 ms (≈ 222 fps); the post chain draws 13 full-screen passes on medium/high (2 on low, as before).
+
+The sun's shadow box follows the player and is **fitted to the chapter's bounds** after each build (`mood.fitShadows(bounds)`: half the largest extent + 4 m, clamped to 6–22 m), so the rooms get about three times the street's shadow resolution. Shadows are PCF with a Vogel-disk kernel; `sun.shadow.radius` comes from the tier.
 
 ### 4.2 Input (`ctx.input`)
 
@@ -188,17 +245,23 @@ Keys are `KeyboardEvent.code` strings: `'KeyW'`, `'KeyE'`, `'Space'`, `'ShiftLef
 
 #### `makeCharacter(opts) → Character`
 
-This never throws. If the Xbot failed to load, it returns a capsule stand-in with the same API (`isFallback: true`, `play()` is a no-op).
-Skinned meshes are frustum-culled (main and shadow pass) against a fixed bind-pose bounding sphere padded ×1.5, so off-screen crowds cost little. Poses applied through `model.position/rotation` stay inside it.
+Characters are the Quaternius "Universal" set (CC0; `public/assets/characters/`, built by `scripts/assets/characters.sh`, documented in `docs/assets/characters.md`). The code is in `src/characters/`: `cast.js` (presets, clip and bone aliases), `CharacterKit.js` (loading, part merging, the tint and kit shader) and `Character.js`.
+
+This never throws. If the character files fail to load, it returns a capsule stand-in with the same API (`isFallback: true`, `play()` is a no-op, `bone()` returns null).
 
 | opt | default | |
 |---|---|---|
-| `tint` | `0x2a3550` | Body colour. Use mid values. |
-| `joints` | 55% of tint | Joint colour |
-| `scale` | `1` | Height = 1.8 m × scale (Odile 0.94, Sami 0.72) |
+| `preset` | `'passerby'` | Cast recipe: `'hugo' 'odile' 'sami' 'bastien' 'ines' 'marco' 'mme' 'runner' 'spectator' 'passerby'`. |
+| `variant` | — | Preset tokens: `'m'` / `'f'` (body), `'long'` (long sleeves and tights on runners), `'rain'` (a hood instead of hair). Hugo: `'civilian'` (default), `'runner'`, `'runner_dawn'`. Every runner recipe (Hugo's kits, `'runner'`, `'bastien'`) narrows the athletic body to 0.86 in x/z (`slim`), so the run club and the race field share one build. |
+| `tint` | preset | Main garment colour (shirt/blouse and sleeves; the kit top on runners). The DESIGN tints still apply: Odile `#9a7a4e`, Sami `#c24a3a`, the club's hi-vis. |
+| `scale` | preset | Overrides the preset's size (adult rigs are 1.81 m male, 1.77 m female at 1; Odile 0.95, Sami 0.74, Mme 0.92). |
 | `name` | `'character'` | |
-| `roughness`, `metalness` | `0.75`, `0.05` | |
-| `castShadow` | `true` | |
+| `seed` | `name` | Picks the look of random extras (runner, spectator, passerby), so a named extra looks the same every run. |
+| `castShadow` | `true` | Only skin and clothes cast; hair and eyes never do. |
+
+- **Cost:** parts that share a material are merged, so a clothed adult is 4–5 draw calls (plus 3 shadow draws), a runner 3 (+1). The eyes are skipped beyond 7 m.
+- **Culling:** every part is frustum-culled against one whole-body sphere (centre 0.9 m, radius 1.5 m, in the character's space). Poses applied through `model.position/rotation` move it with the mesh.
+- **Old options:** `joints`, `roughness` and `metalness` are gone. A call without `preset` gets a random passer-by.
 
 You must add `char.root` to your group (`group.add(char.root)` or `ctx.world.add(char.root)`).
 
@@ -208,28 +271,43 @@ The character's mixer is updated automatically, with scaled dt. It is released a
 
 | Member | Signature | Notes |
 |---|---|---|
-| `root` | `THREE.Group` | Position and rotate this. |
-| `model` | `THREE.Object3D` | Inner scaled model. Use it for local offsets and leans (`model.rotation.x` pitches about the feet). |
-| `play(name, fade=0.25, {timeScale=1, once=false})` | `→ AnimationAction \| null` | Cross-fades. Clips: `'idle' 'walk' 'run' 'sad' 'sneak' 'agree' 'headShake'`. `'sad'` and `'sneak'` are static full-body poses (slumped and crouched). `agree` and `headShake` are full-body clips, CUT by design. Calling with the current clip is a no-op that returns the action. |
-| `actions` | `{[name]: AnimationAction}` | For example `char.actions.run.timeScale = 1.3`. |
-| `current` | `string` | Current clip name. |
+| `root` | `THREE.Group` | Position and rotate this. The feet are at its origin. |
+| `model` | `THREE.Group` | Inner group at the feet, scaled to the character's size. Use it for local offsets and leans (`model.rotation.x` pitches about the feet). |
+| `rig` | `THREE.Object3D` | The skinned model inside `model`. The kit keeps its pelvis-height offset and per-clip compensation here; don't move it. |
+| `play(name, fade=0.25, {timeScale, once=false})` | `→ AnimationAction \| null` | Cross-fades. Clips: see below. Calling with the current clip is a no-op that returns the action. |
+| `actions` | `{[name]: AnimationAction}` | For example `char.actions.run.timeScale = 1.3`. Keyed by library name (`actions.sit_idle`, not `actions.sad`). |
+| `current` | `string` | Current clip name, as passed to `play()`. |
 | `fade(to, secs=1)` | `→ Promise` | Opacity fade. 0 also hides the root (Bastien running off). |
 | `setOpacity(a)` | | Immediate. |
-| `setTint(color)` | | Recolour the body. |
-| `bone(name)` | `→ THREE.Bone \| null` | Mixamo short names: `'Hips'`, `'Spine'`, `'Head'`, `'LeftUpLeg'`, `'RightArm'`, … Bone names are sanitized (`mixamorigHips`). This finds them for you. |
+| `setTint(color)` | | Recolour the main garment (the kit top on a runner). |
+| `setPartColor(part, color)` | | Recolour one part: `'m_trousers2'`, `'f_blouse'`, `'hair_buns'`, … (names in `docs/assets/characters.md`). |
+| `setOutfit(name)` | | Characters with several outfits (Hugo: `'civilian' \| 'runner' \| 'runner_dawn'`). Player calls it from `configure({outfit})`. |
+| `hideLeftFoot(on)` | | Discards the left shoe below the knee (the walking boot goes over it). Player does this in `setBoot`. |
+| `stoop` | `number` (rad) | Added to the upper spine and neck after the clips each frame, with the head tipped back up so the gaze stays level (Odile 0.2, Mme 0.18). Writable. |
+| `strideRate(clip, v)` | `→ number` | The `timeScale` at which a locomotion clip (`'walk'`, `'run'`, ...) covers `v` m/s of ground for this character (its scale and slim included), so the planted foot stays put. Use it for every walk or run you drive yourself. |
+| `bone(name)` | `→ THREE.Bone \| null` | Universal names (`'pelvis'`, `'spine_03'`, `'Head'`, `'upperarm_r'`, `'calf_l'`, …) or the old Mixamo short names, which map to them: `Hips → pelvis`, `Spine/Spine1/Spine2 → spine_01/02/03`, `Neck → neck_01`, `LeftArm → upperarm_l`, `LeftForeArm → lowerarm_l`, `LeftHand → hand_l`, `LeftUpLeg → thigh_l`, `LeftLeg → calf_l`, `LeftFoot → foot_l`, `LeftToeBase → ball_l` (and `Right…`). Bones have +Y along the bone. |
 | `isFallback` | `boolean` | |
 | `dispose()` | | Usually not needed (automatic). |
 
+**Clips** (34, from Universal Animation Library 1 and 2; full list with uses in `docs/assets/characters.md`):
+
+- **Loops:** `idle`, `walk`, `walk_formal`, `run` (= `jog`), `sprint`, `crouch_walk`, `crouch_idle`, `talk`, `phone`, `call_out` (cheering, shouting), `agree`, `headShake`, `arms_crossed`, `lean` (on a rail or counter), `slump`, `shamble`, `paint` (an arm out at shoulder height), `hold_can`, `push`, `carry`, `hammer`, `kneel_work`, `sit_idle`, `sit_talk`.
+- **One-shots** (pass `{once: true}`): `sit_down`, `stand_up`, `reach`, `pick_up`, `open_box`, `pour`, `drink`, `kneel_reach`, `fall` (knocked backwards), `get_up`.
+- **Speeds:** use `char.strideRate(clip, v)` (= `v / (CLIP_SPEED[clip] × model.scale.z)`). `walk` covers 1.3 m/s at timeScale 1 for a scale-1 adult. `run` is the library jog with its stride shortened at load (`CLIP_STRIDE` in `cast.js`): 4.66 m/s at timeScale 1 and a 150 spm cadence, so 3–6 m/s jogs keep both the feet planted and a runner's cadence. Runner, Ch2/Ch3/Ch5 and the Player all use it (measured planted-foot slip under 0.05 m/s).
+- **Old Xbot names still work:** `'sad'` is `sit_idle` with +0.42 m added under the model, so the old "`sad` + `model.position.y = −0.42`" seat still lands on a 0.45 m seat. `'sneak'` is `crouch_idle` (a static crouch). `'ride'` sits on a bicycle saddle, for a model raised +0.43 m (Sami, Ch5). `'nod'` is `agree`.
+- **Seated clips** (`sit_idle`, `sit_talk`) are shifted forward so the pelvis is over `root`: put the root on the seat point. The seat should be about 0.45 m high.
+- **Missing from the free libraries:** wave, clap, look-around, sitting on the ground, a real limp, riding. Use procedural bone aims (Ch5's `aimBone`) or the Player's procedural limp.
+
 #### `prop(path, opts) → Promise<THREE.Group>`
 
-This loads a Kenney GLB, normalised to a real-world size. **It never rejects.** A missing or broken file gives a grey box of the right size (`group.userData.isFallback = true`).
+This loads a GLB prop, normalised to a real-world size. **It never rejects.** A missing or broken file gives a grey box of the prop's native proportions (`NATIVE_SIZE` in Assets.js; `group.userData.isFallback = true`).
 
-- `path`: `'kenney/furniture/loungeSofa.glb'` (relative to `public/assets/`). A leading `/assets/` also works.
+- `path`: relative to `public/assets/`, for example `'props/crt_tv.glb'` or `'kenney/retro/pallet-small.glb'`. A leading `/assets/` also works.
 - `opts`:
 
 | opt | default | |
 |---|---|---|
-| `height` | — | Target height in metres. Real heights: sofa 0.85, TV 0.5, fridge 1.8, building 8–14, street light 4.5, tree 5–8, bench 0.8. |
+| `height` | — | Target height in metres. Real heights: sofa 0.85, TV 0.5, building 8–14, street light 4.5, bench 0.8. |
 | `width` | — | Used only when `height` is omitted (scales by x size). |
 | `tint` | — | Multiplies every material colour (clones the materials). |
 | `color` | — | Replaces every material colour (clones the materials). |
@@ -238,26 +316,25 @@ This loads a Kenney GLB, normalised to a real-world size. **It never rejects.** 
 
 The returned group has `userData.size` (a `Vector3`, in metres).
 
-- **Rotation:** set `rotation.y` on the returned group.
-- **Kenney model fronts:** furniture and retro props (TV screen, fridge door, sofa seat, bench) face **+Z** natively, toward the default camera. Use `rotation.y = Math.PI` to make them face −Z (for example a sofa facing a TV on the back wall). Check other kits visually.
+- **Rotation:** set `rotation.y` on the returned group. Kenney furniture and retro pieces face **+Z** natively; check scans visually.
 - Results are cached, so repeated calls clone a cached model and are cheap.
 
 #### Other Assets methods
 
-- **`preload(paths[])`:** warm the cache (fire and forget, during `build`).
-- **`texture(path, {repeat:[u,v], srgb=true}) → THREE.Texture`:** cached loader, for example `'kenney/retro/Textures/asphalt.png'`.
+- **`preload(paths[])`:** warm the cache (fire and forget). main.js already preloads each chapter's measured list (`CHAPTER_LOOKS[i].props`) with the build, and downloads the next chapter's list in the background once a chapter plays.
+- **`releaseProps(keep[])`:** free the GPU copies (geometry, textures) of cached prop scenes whose path is not in `keep`. main.js calls it with the chapter's list before each build, and with `[]` at the end card; a prop needed again simply re-uploads on first draw.
+- **`halfRes`:** set by main.js on the low tier: prop textures are halved before their first upload.
+- **`texture(path, {repeat:[u,v], srgb=true}) → THREE.Texture`:** cached loader.
 
-**Available props** (see `docs/asset-bounds.txt` for native sizes):
+**Available props.** Only what some scene uses is shipped (`npm run setup:assets`; see `docs/CREDITS.md`). To add one, add it to the fetch script first.
 
-| Folder | Props |
+| Path | Props |
 |---|---|
-| `kenney/furniture/` | `bedSingle bench books cabinetTelevision cardboardBoxClosed cardboardBoxOpen chair doorway kitchenCabinet kitchenFridge lampRoundFloor loungeSofa pottedPlant rugRectangle sideTable table tableCoffee televisionVintage trashcan wallWindow` |
-| `kenney/city/` | `building-a … building-h detail-awning low-detail-building-a … -d` |
-| `kenney/roads/` | `construction-barrier construction-cone construction-fence dumpster light-curved light-square road-straight` |
-| `kenney/retro/` | `detail-barrier-strong-damaged detail-bench detail-bricks-type-a detail-cables-type-a detail-dumpster-closed detail-dumpster-open detail-light-single pallet pallet-small planks scaffolding-floor scaffolding-poles scaffolding-structure tree-small wall-a-door wall-a-flat wall-a-garage wall-a-window wall-broken-type-a` (all native 1 m modules; `wall-a-flat` is a 1×1 m plane) |
-| `kenney/survival/` | `barrel barrel-open bottle-large box box-large box-open bucket chest metal-panel metal-panel-screws resource-planks resource-wood signpost structure-metal-doorway structure-metal-roof structure-metal-wall tool-axe tool-hammer tool-shovel workbench workbench-anvil workbench-grind` (small native sizes: `workbench` is ~0.3 m, so scale it with `height`, or use it as dressing) |
-| `kenney/nature/` | `fence_simple grass grass_large log plant_bush rock_largeA stump_old tree_cone_fall tree_default_fall tree_oak_fall tree_simple_fall tree_thin_fall` |
-| `kenney/arena/` | `banner column-damaged trophy` |
+| `props/<id>.glb` (Poly Haven scans, CC0; `docs/assets/props.md`, sizes in `.cache/dl/props/props.json` after a fetch) | `crt_tv sofa_worn iron_bed cardboard_box trash_bag wrist_watch steel_shelves fluoro_light bench_vice spanner drill hammer handsaw pliers screwdriver tape_measure paint_can oil_can toolbox stool stepladder bulb track_pump radio bin_metal barrel crate_wood milk_crate cafe_set chair_painted road_barrier` |
+| `kenney/city/` | `low-detail-building-a … -d` (the fogged skyline) |
+| `kenney/roads/` | `construction-cone light-square` |
+| `kenney/retro/` | `detail-bench detail-bricks-type-a detail-dumpster-closed pallet-small` |
+| `kenney/survival/` | `bottle-large` |
 
 ### 4.4 Audio (`ctx.audio`)
 
@@ -267,7 +344,8 @@ Every method is safe before the user gesture: nothing plays until the title clic
 |---|---|
 | `music(name \| null, {volume=0.45, fade=2.5, loop=true})` | Cross-fades beds. Names: `'contemplation'` and `'piano'` (Ch5 and the ending). `null` fades out. Calling with the current name only changes the volume. Usually set through the chapter's `music` field instead. |
 | `ambience(name, on=true, {volume, fade=2, lowpass})` | `'rain'` or `'crowd'` (low-passed at 900 Hz by default; pass `lowpass` in Hz, e.g. Ch3 race `{lowpass: 1400}`). Usually set through the chapter's `ambience` field. Safe to call repeatedly while the file is still loading. |
-| `footstep(surface='concrete'\|'grass', {volume=0.35, rate})` | One sample. Player footsteps are already automatic (including `'boot'`). |
+| `footstep(surface='concrete', {volume=0.35, rate})` | One sample. Player footsteps are already automatic (including `'boot'`). |
+| `preload(names)` | Fetch music/ambience files early (default: all). main.js preloads the start chapter's sounds at boot and each chapter's (plus the next one's) with its build, from the chapter's `music`, `ambience` and `sounds` fields; anything else loads on first use. |
 | `heartbeat({volume})` | Two 55 Hz thumps (stumbles call it). |
 | `snap({volume=0.9})` | Small dry bandpassed click (Ch3 KM 31: `snap({volume: 0.3})`, "a pencil lead"). Plays after `cut()`. |
 | `thud({volume=0.45})` | Low body thud. Plays after `cut()`. |
@@ -369,6 +447,20 @@ Uses real time, so it is unaffected by `timeScale`.
 | `mode` | `'follow' \| 'fixed'` |
 | `pos`, `lookAt` | `Vector3`: current camera position and look target (read them to start tweens from the current shot). |
 
+#### Camera rig: mouse look, occlusion, wayfinding
+
+`src/player/CameraRig.js` (created in `main.js`, `__game.rig`) adds a user orbit on top of the follow mode:
+
+- **Orbit.** The `offset` / `look` passed to `follow()` set the default yaw, pitch (the camera's elevation above the look point) and distance. The user adds `cam.orbit.yaw` (relative to the default), sets `cam.orbit.pitch` and `cam.orbit.zoom`. With no mouse input the camera is exactly where it was before. `cam.offset` / `cam.look` are the live, orbit-rotated vectors, so `tween({pos: p + cam.offset})` returns to the player's current view.
+- **Input.** Clicking the canvas takes pointer lock. Without it, hold the left or right button and drag. The wheel zooms (0.7–1.4× the default distance). R or a middle click re-centres. The pitch is clamped to 10–55°, widened to include the chapter's own default.
+- **Free roam only.** Look input is ignored, and the pointer lock released, unless `director.state === 'play'`, the player is neither `frozen` nor `scripted`, no dialogue, card, choice menu, gauge or drive ring is open, the game is not paused or faded out, and the camera is in follow mode (`rig.freeRoam()`). If the browser drops the lock while walking (Esc), the game pauses at once, so a single Esc frees the mouse and pauses.
+- **Scripted cameras.** `tween()` / `set()` override the user look. When `follow()` is called again with the same offsets (or none) and no `snap`, the user's yaw is kept (an eased return after a cinematic). Different offsets, a new chapter, `follow({ snap: true })` or `cam.snap()` (a hard cut) re-centre behind the target.
+- **Movement.** `cam.moveYaw` is the camera's ground yaw (0 = looking down -Z). `Player` rotates its WASD vector by it, so W walks away from the camera. A diagonal step that wedges Hugo where two walkable rects meet a few cm apart backs the blocked axis off by 6 cm and takes the other axis's step. Minigames that read `input.down` / `input.pressed` directly are unaffected.
+- **Occlusion.** Each frame the rig casts from the target's look height to the camera against the current world's static occluders and pulls the camera in front of the first hit, with a 0.22 m margin (fast in, eased out). The camera has a body: besides the centre line, a fan of 12 rays to rings of 0.25 m and 0.125 m around the camera catches edges and posts that only graze the line (fan hits within 0.9 m of the target are left to the next step), and short probes left, right, forward-left, forward-right and up push the camera 0.35 m clear of walls beside and above it (they also count drawn see-through meshes such as alpha-cut bracing). Big static meshes are raycast through cached, chunked world-space triangles. The camera never goes below the target + 0.3 m. Excluded: characters (`userData.character`), skinned meshes, transparent, additive, `colorWrite: false` or `depthWrite: false` materials (the invisible fourth walls), decals (`polygonOffset`), points, lines, meshes under 0.3 m and meshes that stay below 0.3 m high, hidden objects, and anything with `userData.noOcclude = true`. The list is rebuilt when the world changes and every 2.5 s.
+- **Per-chapter limits.** `CHAPTER_LOOK` in `CameraRig.js`, keyed by chapter id: `{ yaw: [min, max] (deg, relative), pitch: [min, max] (deg), zoom: [min, max], box: { minX, maxX, minZ, maxZ } (world m, any subset) }`. The cut-away rooms (`flat`, `workshop`) clamp the yaw to ±18–20° and the pitch to 18–40°, and `box` keeps the camera inside their side walls even where it hangs out past the cut (`cam.limits.box`).
+- **Objective pointer.** `src/ui/ObjectivePointer.js` (`__game.pointer`) shows a small chevron and the distance to the nearest active, enabled `required` hotspot when it is off-screen or more than 8 m away. In free roam only. Both sit on small dark chips and scale with the viewport height. The pointer draws above the HUD (z-index 13) and keeps clear of the docked watch and notebook: it slides beside a panel it would land on (pointing at the target when the target itself is behind the panel), and moves the label off it. Chapters whose goal is a place rather than a spot can add a fallback to `WAYPOINTS` (keyed by chapter id; Ch2 points at Odile's scaffold).
+- **Debug.** `__game.debug.look(yawDeg, pitchDeg, zoom)` sets the view without a mouse (clamped). `__game.debug.view()` returns the look, the limits and the occlusion state. `__game.debug.pointer()` returns the pointer's state.
+
 ### 4.7 Hotspots (`ctx.hotspots`)
 
 - **`add(opts) → spot`** takes:
@@ -381,6 +473,7 @@ Uses real time, so it is unaffected by `timeScale`.
   - `once=true`
   - `auto=false`
   - `marker` (default `!auto`)
+  - `ringColor=0xc9b48a` (the floor ring's tint) and `ringOpacity=1` (multiplies its pulse and proximity opacity). Ch1 passes a darker `ringColor` so the chalk ring doesn't glare on the dark boards.
   - `onInteract: async (spot) => {}`
 - **Prompts:** the nearest enabled spot in range shows `[E] prompt`. E fires `onInteract` only when `director.state === 'play'` and no dialogue or card is open. The spot is busy until `onInteract` resolves.
 - **`once`:** the spot is removed after firing. `once:false` spots can fire again.
@@ -416,11 +509,72 @@ The player can be driven by the Runner too: set `ctx.player.scripted = true` fir
 | `add(...objs)` | Add to the chapter group (disposed at chapter end). |
 | `onUpdate(fn) → off()` | Per-frame hook `fn(dt, rawDt)` for this chapter only. |
 
+### 4.10 Materials, look and environment (`ctx.materials`, `ctx.look`, `ctx.env`)
+
+The large surfaces use real PBR materials (23 CC0 Poly Haven sets, `docs/assets/materials.md`), lit by an HDRI per chapter. Three layers, from most to least opinionated:
+
+1. **`ctx.look`** (`src/world/look.js`): the art bible. **Use this first**, so Ch2 and Ch5 (the same street) are built from the same recipes.
+2. **`ctx.materials`** (`src/core/Materials.js`): the material library under it, for anything the recipes don't cover.
+3. **`build.ground/box/mat({surface})`** (§8): the shared builders take a recipe name directly.
+
+Everything is failure-tolerant: with the files missing, every material keeps a flat fallback colour, and the game still plays.
+
+#### Surface recipes: `look.surface(name, opts) → MeshStandardMaterial`
+
+```js
+const road = B.ground({ size: [12, 64], pos: [0, -16], surface: 'street.asphalt' });     // via build
+const wall = new THREE.Mesh(geo, ctx.look.surface('facade.brick'));                    // direct
+const dry = ctx.look.surface('street.pavement', { wet: 0, grime: 0.4 });                // overrides
+```
+
+| Name | Material | Use |
+|---|---|---|
+| `street.asphalt`, `street.cobbles`, `street.pavement`, `street.kerb` | asphalt_02, cobbles in tar, concrete slabs, grimy concrete (×0.6) | Ch2/Ch3/Ch5 road, gutters, sidewalks, kerb faces |
+| `facade.brick`, `facade.brickPainted`, `facade.brickPlaster`, `facade.render` | dark red brick, flaking painted brick, brick with fallen render, stained render | Street facades |
+| `shutter.rust`, `metal.green`, `metal.rust`, `metal.corrugated` | roller shutter, green painted steel, white paint eaten by rust, corrugated sheet | Shutters, downpipes, lamp posts, awnings |
+| `concrete.grimy`, `mural.wall` | cast concrete; light primed render | Ch3 retaining wall; the 20 × 8 m blind wall |
+| `interior.floorboards`, `interior.plaster`, `interior.tile`, `interior.fabric` | | Ch1 flat |
+| `workshop.concrete`, `workshop.brick`, `workshop.timber`, `workshop.paintedWood`, `workshop.plywood`, `workshop.steel` | | Ch4 workshop, Ch5 garage |
+
+- Recipes default to **world mapping** (`mapping: 'world'`): a box projection from the world normal, so the texture scale is right on any box, wall or merged mesh without UV work. Pass `{ mapping: 'uv', worldSize: [w, h] }` for meshes whose UVs span the surface once.
+- Every recipe is normalised to a target mean albedo (`level`), so a black asphalt and a pale render sit in the value band the grade was tuned for. Pull the hue with `tint`.
+- **Weather comes from the chapter** (`CHAPTER_LOOKS` in look.js): Ch2 wet 1 and grime 1; Ch3 wet 0.7; Ch5 wet 0.25 ("puddles drying"); interiors dry. Override per call with `{ wet, grime }`.
+- `look.surface()` materials are **cached and shared** (`userData.shared`, never disposed by the chapter). **Don't mutate them**; ask for another variant with different opts instead, or use `look.enhance(myMaterial, name)` on a material you own.
+- `look.enhance(material, name, opts)` layers a recipe's normal, AO, roughness variation and (normalised) colour over a material you own, keeping its `map` (e.g. a `grimeTexture` canvas with posters and tags) and its mean value. opts: `{ albedo=1 (0..1 how much of the detail colour), normalScale, ao, scale, roughnessVar, grime, wet, groundY, level }`.
+  - **Watch the value:** `enhance` normalises the detail to the recipe's `level` (target mean albedo), which can pull a pale material you own down to the recipe's brightness. For example, `interior.fabric` is a dark wool (level 0.1), so cream canvas drop cloths go near-black unless you pass your own `level` (Ch5 does). The same holds for `materials.enhance(material, id, opts)`.
+- `look.recipe(name)`, `look.chapter` (the active chapter look), `SURFACES`, `CHAPTER_LOOKS` and `LIGHTING` are exported for reference.
+
+#### `ctx.materials` (Materials)
+
+| Method | Notes |
+|---|---|
+| `get(id, opts) → MeshStandardMaterial` | Cached by `id` + opts (shared; don't mutate). `id` is a `materials.json` id (`'facade_brick_dark'`...). opts: `mapping='uv' \| 'world'`, `worldSize` ([w, h] or m; 'uv': repeat = size / real tile size), `repeat` ([u, v]), `scale` ('world' tile multiplier), `tint`, `level` (target mean albedo, linear), `roughness`, `metalness` (multipliers on the ARM channels), `normalScale`, `aoIntensity`, `grime` (0..1), `wet` (0..1), `groundY` (world y of the ground under a wall), `puddleTile` (6 m), `color` (fallback while loading), plus any MeshStandardMaterial parameter (`side`, `transparent`...). |
+| `enhance(material, id, opts)` | See `look.enhance` (patches in place, returns it). |
+| `weather(material, {grime, wet, desat, groundY})` | World-space weathering only, on any MeshStandardMaterial you own. |
+| `setWeather(material, {grime, wet})` | Change it live (uniforms; e.g. Ch5's puddles drying over the walk). |
+| `restyleKenney(object, {roughness=0.82, metalness=0.05, grime=0.55, desat=0.18, darken=0.9, wet=0})` | Makes Kenney GLBs stop looking like plastic next to PBR: rougher, darker, a little desaturated, with world-space grime. Shared Kenney materials get one cached restyled clone each. Skips skinned meshes and `userData.noRestyle`. **Already applied after every build** to `assets.prop('kenney/...')` props in the chapter group (set `userData.noRestyle = true` on a prop to keep it glossy); props you add later in `run()` need a call. |
+| `has(id)`, `tile(id)` | Manifest lookups (tile = real size in metres). |
+| `preload(ids, {timeout=8000, upload=true})` | Loads and uploads the textures. main.js preloads each chapter's sets (`look.materialIds(i)`: the first-pass recipes plus the measured `CHAPTER_LOOKS[i].materials`) behind the fade, and the first chapter's on the loading screen. With `upload: false` it only downloads: main.js prefetches the next chapter's sets that way once a chapter plays. |
+| `retain(ids)` | Frees the GPU copies of every loaded set not in `ids` (images and cached materials stay; a set needed again re-uploads). main.js calls it with the chapter's own ids before each build, and with `[]` at the end card. A chapter that uses a set it doesn't list still works, it just uploads on first draw. |
+| `image(id, map='color') → Promise<image \| null>` | A set's decoded image, for canvas work (Ch4's door takes the plywood grain). |
+| `halfRes` (constructor option) | main.js sets it on the low tier: every set map is halved on load (a quarter of the memory). |
+
+**Weathering layers** (`grime`, `wet`), all driven by world position, so they line up across meshes:
+
+- `grime`: macro albedo breakup against tiling (13 m), a splash-back dirt band at the foot of walls (`groundY` + 0–1.1 m), rain and rust leaks under every storey line (every 3.2 m), vertical smudges, and blotches on floors. It also adds a little roughness.
+- `wet`: darker albedo and much lower roughness on floors, a wet splash band at the foot of walls, and puddles (`grime/puddles.png` at 6 m per tile: near-mirror, flattened normal). The puddles reflect the chapter HDRI and every light, so wet chapters need a high `bloomThreshold` (see §6).
+
+#### Environment light (`ctx.env`)
+
+HDRIs (`public/assets/hdri/<id>.hdr`: `night_street`, `dawn_fog`, `golden_street`, `interior_dim`, `workshop`) are chosen by the Mood preset (`env`, §6). Mood sets `scene.environment`, `environmentIntensity` and `environmentRotation`. They load lazily: main.js preloads the chapter's HDRIs (`CHAPTER_LOOKS[i].hdris`) with the build and the next chapter's in the background, and frees the rest. Each HDRI's peak is capped at 24 when it loads, so a sodium lamp or the sun can't put white-hot dots into every puddle. `env.load(id)` → `Promise<texture | null>`, `env.get(id)`.
+
+**What the first pass did** (main.js, around every chapter build; the chapter files are untouched): the active chapter look is set, so untagged big surfaces from `ground()`, `box()` and `mat({map: grimeTexture})` get its ground / facade / slab / wall recipe (see §8); Kenney props are restyled; soft light cones are added under street lamps and spot lights (Ch2, Ch3, Ch4; `r.lightCones` lists them); and the sun's shadow box is fitted to the bounds. Tag a surface with `surface: '<name>'` to choose, or `surface: false` to opt out.
+
 ---
 
 ## 5. Player (`ctx.player`)
 
-Hugo is a persistent character (slate Xbot, `HUGO_TINT = 0x4a5260`). The Director calls `configure()` with your chapter's `player` field.
+Hugo is a persistent character (`preset: 'hugo'`: slate shirt `HUGO_TINT = 0x4a5260`, dark work trousers, beard). The Director calls `configure()` with your chapter's `player` field.
 
 ### `configure(opts)`
 
@@ -431,8 +585,9 @@ Hugo is a persistent character (slate Xbot, `HUGO_TINT = 0x4a5260`). The Directo
 | `spawn` | — | `[x, z]` or `[x, y, z]`. |
 | `facing` | `Math.PI` | Facing −Z, away from the camera. |
 | `boot` | `false` | The **walking boot** on the left shin (see `setBoot`). Ch1, Ch2, Ch4 and Ch5 pass `boot: true`. |
-| `tint` | `HUGO_TINT` | Body colour. Ch3: `tint: '#c6f432'` (STRIDE green). |
-| `limp` | `1` | 0..1. It slows the walk (1.3 m/s × lerp(1, .85, limp)), unevens step timing and adds one dip per cycle. Per DESIGN: Ch1 1.0, Ch2 0.95, Ch4 0.85→0.75, Ch5 0.7, then 0.3 out of the boot. Writable mid-chapter. |
+| `tint` | `HUGO_TINT` | Main garment colour (the kit top in the runner outfit). Ch3: `tint: '#c6f432'` (STRIDE green). |
+| `outfit` | `'civilian'` | `'runner'` (Ch3: the athletic body in painted race kit, short sleeves and shorts) or `'runner_dawn'` (long sleeves and tights). |
+| `limp` | `1` | 0..1. It slows the walk (1.3 m/s × lerp(1, .85, limp)), unevens step timing (the stance on the bad left leg is cut short) and adds one dip per cycle, deepest in mid-stance on that leg. Per DESIGN: Ch1 1.0, Ch2 0.95, Ch4 0.85→0.75, Ch5 0.7, then 0.3 out of the boot. Writable mid-chapter. |
 | `painRate` | `1/0.6` | Pain per second while jogging (`1/secondsToMax`). |
 | `painCap` | `0` | 0 = none. `0.9` means pain never reaches 1, so no stumbles (Ch5 final walk). |
 | `canJog` | `true` | Shift jogs at 2.6 m/s while allowed. |
@@ -461,10 +616,10 @@ Set these directly:
 
 | Method | Notes |
 |---|---|
-| `setBoot(on)` | Show / hide the walking boot **without** a pose reset (Ch5 bench: `setBoot(false); player.limp = 0.3; player.footsteps = 'concrete';`). The boot (rounded shell `#3a3d42`, three straps, thick sole) is parented to the `LeftLeg` bone and built in metres (it divides by the bone's world scale), so it follows every animation and pose. The capsule fallback gets a box at its left base. |
+| `setBoot(on)` | Show / hide the walking boot **without** a pose reset (Ch5 bench: `setBoot(false); player.limp = 0.3; player.footsteps = 'concrete';`). The boot (one mesh: rounded shell `#3a3d42`, three Velcro straps, a rocker sole) is parented to the left shin bone `calf_l`, built in metres (it divides by the bone's world scale), and follows every animation and pose. The work boot under it is hidden below the knee (`char.hideLeftFoot`). The capsule fallback gets a box at its left base. |
 | `teleport(x, z, facing?, y=0)` | |
 | `face(x, z)` | Turn to face a point. |
-| `setPose(name, dur=0.6) → Promise` | `'stand' \| 'crouch' \| 'sit' \| 'fall' \| 'lie'`. Non-`stand` poses block movement. `'sit'` is the `sad` slump at y −0.42 (benches). `'crouch'` uses `sneak` (measuring the frame). |
+| `setPose(name, dur=0.6) → Promise` | `'stand' \| 'crouch' \| 'sit' \| 'fall' \| 'lie'`. Non-`stand` poses block movement. `'sit'` plays `sit_idle` with the pelvis over the root (benches: teleport to the seat point; seat about 0.45 m). `'crouch'` plays `crouch_idle` (measuring the frame). `'fall'`/`'lie'` pitch the idle pose forward 90°. The capsule fallback keeps the old y offsets. |
 | `crouch(dur)`, `stand(dur)`, `fallForward(dur=1.2)` | Shortcuts. |
 | `stumble()` | Forces a stumble: locked 1.1 s, camera dip, heartbeat, next line, pain → 0.6. |
 | `on(event, fn) → off()` | Events: `'stumble'(line)`, `'firstJog'` (first jog in the whole game), `'jog'` (each time jogging starts), `'step'(badLeg)`. All listeners are cleared between chapters. |
@@ -505,7 +660,19 @@ hope runs from 0 (grey) through 1 (full colour); values above 1 are oversaturate
 | `workshop` | Ch4: hemi `#7a7468` / `#2e2620`, grey daylight from the left, lightChroma 0.5 (the tungsten bulb `#ffb36b` keeps warmth), grain 0.06, dirt 0.35, vignette `#1c140c`. Add the bulb and tube yourself. |
 | `wall` | Ch5 day: overcast `#8a949c` / `#b9bfc2` warming with hope to `#7fa6c9` / `#e8cf9e`, fog 0.02 → 0.008, grain 0.045, dirt 0.25, lightChroma 0.3. |
 | `golden` | Ch5 final walk: late gold breaking under the cloud from the far end (−Z, backlit), grain 0.03, dirt 0.12 ("still dirty, lit differently"). |
+| `bright` | The colour-returns end: the `golden_street` HDRI as a blurred background. Not used by a chapter yet (title backdrop / final card). |
 | `void` | Black. |
+
+Each chapter preset spreads its **lighting recipe** `LIGHTING.<name>` from `src/world/look.js` (the art bible):
+
+| Preset | HDRI (`env`) | `envIntensity` (→ hope 1) | Bloom (threshold) | Height fog | Grade |
+|---|---|---|---|---|---|
+| `flat` | `interior_dim`, window turned to the back wall | 0.16 | 0.55 (1.25): the TV | — | green-grey shadows, warm paper highlights |
+| `street` | `night_street`, aligned to the sun | 0.22 → 0.3 | 0.7 (3): lamps, not the wet road | 0.025 | teal shadows, sodium highlights, CA 0.6 |
+| `dawnrun` | `dawn_fog`, aligned to the low sun | 0.35 | 0.55 (3.5) | 0.035 | cold blue split |
+| `workshop` | `workshop`, aligned | 0.22 → 0.3 | 0.6 (1.3): the bulb | — | warm brown shadows, tungsten highlights |
+| `wall` | `golden_street` | 0.2 → 0.3 | 0.45 (2.5) | 0.012 | cool shadows, warm highlights |
+| `golden` | `golden_street`, key on the sun | 0.3 | 0.5 (2.5) | 0.025 | violet shadows, gold highlights |
 
 **Preset fields** (all optional, merged over defaults):
 
@@ -519,6 +686,7 @@ hope runs from 0 (grey) through 1 (full colour); values above 1 are oversaturate
 | `sunColor`, `sunIntensity`, `sunDir:[x,y,z]` | Directional light. `sunDir` points **toward** the sun. |
 | `shadows` | Sun casts shadows (default true). |
 | `fillColor`, `fillIntensity` | Point light riding 0.6 m above the camera so figures read (0 = off). |
+| `fillNear` | Metres (default 0 = off). When the camera is closer than this to Hugo, the fill dims with the light's own falloff, so a close-up gets no more fill on him than the normal follow view. Ch1 uses 3.5. |
 | `exposure` | Tone-mapping exposure (ACES). |
 | `contrast` | Shader contrast around mid-grey 0.18: linear above it, a power curve below it, so shadows deepen but never clip to flat black. |
 | `lightChroma` | Saturation kept in bright areas even at low hope (0 = none). |
@@ -528,6 +696,19 @@ hope runs from 0 (grey) through 1 (full colour); values above 1 are oversaturate
 | `dirt` | Lens dirt / smudges (default 0). |
 | `neutralTint` | `true` turns off the cool/gold tint (Ch3). |
 | `showSky` | Sky sphere visible (default true). |
+| `env` | HDRI id for image-based light (`null` = none). It loads lazily and cross-fades through 0 when the preset blend changes it. |
+| `envIntensity`, `envIntensityHope` | `scene.environmentIntensity` at hope 0 / 1. It adds to the hemisphere light, so keep it modest: interiors at night 0.1–0.2, daylight 0.2–0.35 (more washes the sun's shadows out). |
+| `envRotation` / `envAlign` | Y rotation of the HDRI (rad), or `envAlign: true` to turn the HDRI's measured key light onto `sunDir`. |
+| `envBackground` | `null` (the gradient sky, default) or a blurriness 0..1: the HDRI as a blurred background. |
+| `ao` | GTAO strength (0..1.5; medium/high tiers only). |
+| `bloom`, `bloomThreshold` | Bloom strength and its threshold in linear HDR. Wet chapters need 3+, or every lamp's reflection in a puddle blooms. |
+| `heightFog`, `heightFogFalloff`, `heightFogY`, `heightFogColor` | Ground-hugging fog in the grade, integrated along each view ray (the sky included): density at `heightFogY`, falling off by e^−falloff per metre above it. The colour defaults to the hope-blended `fogColor`. It adds to the FogExp2. |
+| `lift`, `gamma`, `gain` | `[r, g, b]`. Lift is added in the shadows (`[0.004, 0.007, 0.01]` = cool blacks), gamma bends around mid-grey, gain multiplies. |
+| `splitShadow`, `splitHigh`, `split` | Split tone: hues (normalised to unit luminance) for the shadows and the highlights, and the amount (0.15–0.3). |
+| `shoulder` | Soft highlight roll-off before ACES (0 = off; 0.5–0.7): a hot bulb keeps a gradient instead of a flat white disc. |
+| `ca` | Chromatic aberration at the frame edges (0..1; high tier only). |
+
+All the new numeric fields, `lift`/`gamma`/`gain` and the colours blend with `applyPreset(..., {blend})` and `tweak()`, like the rest. Two more Mood methods: `fitShadows(bounds)` (main.js calls it after each build; call it again if you change the play area) and `setQuality(tier)`.
 
 The pain vignette (`player.pain²`, or `painOverride`) is automatic. It is off while `player.showPain` is false (Ch5 final walk), unless `painOverride` is set.
 
@@ -631,26 +812,30 @@ A plain object for cross-chapter hand-offs. Ch4 stores the lettered board as `me
 
 | Export | Signature | Notes |
 |---|---|---|
-| `bicycle({frame='#8a2b22', rust=0, scale=1})` | `→ Group` | Procedural road bike (see below). |
+| `bicycle({frame='#8a2b22', rust=0, scale=1, saddle=true})` | `→ Group` | Procedural road bike (see below). |
 | `grimeTexture({w=512, h=512, base='#8a8478', spread=0.1, stains=8, drips=6, tags=3, posters=2, seed=1, repeat, rust, damp, tagColors, posterColors})` | `→ CanvasTexture` | Dirty-wall texture: noise, damp blooms (heavier low down), rust drips from the top edge, graffiti scribbles, torn poster rectangles, splash-back grime. Deterministic per `seed`. Use as `map` on a white or mid-value material: `box(20, 8, 0.3, {color: '#fff', map: grimeTexture({w: 1024, h: 512, seed: 7})})`. `texture.userData.canvas` lets you draw more (set `needsUpdate`). |
 | `rain({count=1600, size=[34,16,34], color='#b9bec6', opacity=0.32, speed=12, length=0.5})` | `→ {object, material, update(dt, camera), opacity}` | Rain streaks wrapping around the camera (one draw call). Add `object` to your group and call `update(dt, ctx.camera)` from your scene's `update`. Set `.opacity` (0 hides it; ease it yourself for "rain eases past z −36"). |
 | `rng(seed)` | `→ () => [0,1)` | Small seeded PRNG for repeatable dressing. |
 | `sign(text, w=2, h=1, opts)` | `→ Mesh` | See the details after this table. |
-| `ground({size=200 \| [w,d], color, roughness=0.95, metalness=0, noise=true, spread=0.1, tile=4, pos:[x,z], y=0, map})` | `→ Mesh` | Flat shadow-receiving plane. Wet street: `roughness: 0.9, metalness: 0.1`. |
-| `box(w, h, d, {color, material, pos:[x,y,z], rotY, castShadow, receiveShadow, ...matOpts})` | `→ Mesh` | Origin at the **bottom centre**. `matOpts` go to the material (`map`, `roughness`, `emissive`…). |
-| `mat(color, opts)` | `→ MeshStandardMaterial` | `roughness` 0.85 default. |
+| `ground({size=200 \| [w,d], color, roughness=0.95, metalness=0, noise=true, spread=0.1, tile=4, pos:[x,z], y=0, map, surface})` | `→ Mesh` | Flat shadow-receiving plane. `surface: 'street.asphalt'` layers a look recipe (§4.10) over the colour / map; `false` keeps it flat. **Untagged planes of 16 m² or more get the chapter's ground recipe** (the noise canvas is then dropped). The chapter weather (wet, grime) applies. |
+| `box(w, h, d, {color, material, pos:[x,y,z], rotY, castShadow, receiveShadow, surface, ...matOpts})` | `→ Mesh` | Origin at the **bottom centre**. `matOpts` go to the material (`map`, `roughness`, `emissive`…). `surface` as for `ground`. **Untagged boxes at least 2.4 m tall and 2.5 m wide get the chapter's facade recipe; thin boxes (≤ 0.35 m) of 4 m² or more get its slab recipe.** An explicit `material` is never touched. |
+| `mat(color, {surface, ...opts})` | `→ MeshStandardMaterial` | `roughness` 0.85 default. `surface` as above; **untagged, a material whose `map` is a `grimeTexture` gets the chapter's wall recipe** under it. |
+| `lightCone({length=4, radius=1.4, apex=0.06, color, opacity=0.25, softness=1.2, pos, dir})` | `→ Mesh` | A soft additive light shaft (one draw, no depth write; fades at its rim, its foot, near the camera and in fog). Apex at the origin, pointing −Y, or along `dir`. Flicker it with `mesh.material.uniforms.uOpacity.value`. |
+| `addLightCones(group, {opacity=0.28, spotOpacity=0.16})` | `→ Mesh[]` | Cones under every SpotLight (along its aim) and every PointLight hung at 3 m+ with a 14 m+ reach (street lamps). Skips `userData.noCone`. main.js runs it after builds whose chapter look has `cones` (Ch2, Ch3, Ch4). |
 | `pointLight(color, intensity, {pos, distance=12, decay=2, shadow=false})` | `→ PointLight` | Keep shadowed point lights to 1 or 2 at most; about 10 real lights in the street. |
 | `instancedBoxes(items, material?, {castShadow, receiveShadow})` | `→ InstancedMesh` | `items: [{pos:[x,y,z] (bottom centre), size:[w,h,d], rotY, color}]`. Building silhouettes, barriers, litter. |
 | `scatter(geometry, material, count, place(i, dummy, color), opts)` | `→ InstancedMesh` | `place` sets `dummy.position/rotation/scale` and may `color.set(...)`. Puddles, leaves, litter. |
 | `canvasTexture(w, h, draw(ctx,w,h), {repeat})` | `→ CanvasTexture` | sRGB, anisotropic. |
 | `paintNoise(ctx, w, h, base, spread, {blotches})` | | Fill with base colour and noise. |
 | `noiseTexture({base, spread, size, repeat, blotches})` | `→ CanvasTexture` | |
-| `disposeGroup(group)` | | The World calls it on unload. Objects with `userData.noDispose` are skipped. |
+| `disposeGroup(group)` | | The World calls it on unload. Objects with `userData.noDispose`, and materials / textures with `userData.shared` (the look / Materials caches), are skipped. |
 
 **`bicycle()` details:**
 
 - About 1.0 m wheelbase, 0.68 m wheels, standing on y = 0, centred on x = 0, **front wheel toward +Z** (so `rotation.y` works like a character's facing; `Math.PI` points it down the street).
 - `rust` 0..1: orange-brown frame, dull rims and a brown chain (Ch1 hook bike `rust: 0.8`); 0 = clean.
+- `saddle: false` leaves the box saddle off, for a caller that fits its own at `userData.seat` (Ch1).
+- **Continuity:** Hugo's race bike is team blue `#34506e` everywhere (rusted on the Ch1 hooks, chalky on the Ch4 stand, clean in the Ch5 workshop); Sami's is red `#8a2b22` (Ch4, Ch5).
 - `userData`:
   - `wheels: [front, rear]`: Groups at the axles. Spin with `wheel.rotation.x -= speed * dt / 0.34`.
   - `rims: [front, rear]`: rim + hub meshes. Wobble a rim (out of true) with `rim.rotation.y = amp * Math.sin(angle)` or `rim.position.x`.
@@ -822,18 +1007,18 @@ await ctx.ui.fade(1, 0.25, '#fff');              // cut to white; Ch3 fades in f
 ctx.cam.follow(ctx.player.root, { offset: [0, 2.6, 4.2] });   // back to normal follow later
 ```
 
-### Placing Kenney props
+### Placing props
 
 ```js
 export async function buildScene4(ctx) {
   const group = new THREE.Group();
-  const [barrel, planks] = await Promise.all([
-    ctx.assets.prop('kenney/survival/barrel-open.glb', { height: 0.9 }),
-    ctx.assets.prop('kenney/survival/resource-planks.glb', { width: 0.9 }),
+  const [vice, crate] = await Promise.all([
+    ctx.assets.prop('props/bench_vice.glb', { height: 0.28 }),
+    ctx.assets.prop('props/crate_wood.glb', { width: 0.8 }),
   ]);
-  barrel.position.set(3.6, 0, -2.4);
-  planks.position.set(-3.4, 0, -2.2);
-  group.add(barrel, planks, B.pointLight(0xffb36b, 9, { pos: [0, 2.4, 0], distance: 9, shadow: true }));
+  vice.position.set(-2.1, 0.92, -2.3); // on the bench top
+  crate.position.set(3.4, 0, -2.2);
+  group.add(vice, crate, B.pointLight(0xffb36b, 9, { pos: [0, 2.4, 0], distance: 9, shadow: true }));
   // clones: call prop() again (cached) for each instance
   return { group, bounds: [{ minX: -4.2, maxX: 4.2, minZ: -2.6, maxZ: 2.6 }], spots: { door: [0.9, 0.4] } };
 }
@@ -862,7 +1047,9 @@ With `?debug=1`, `window.__game` exposes:
 - **Promises and objects:**
   - `ready`: a Promise that resolves once the first chapter reaches `'play'`
   - `ctx`, `director`, `player`, `mood`, `renderer`, `input`, `engine`, `ui`, `audio`, `cam`, `hotspots`, `runner`, `world`, `assets`
+  - `materials`, `look`, `env`, `post` (try `__game.post.view = 'ao'` / `'bloom'`, or `__game.post.override = { bloom: 0 }`), `quality` (`get()`, `set('low')`, `tiers`, `gpu`, `source`)
 - **Logs:** `errors[]` and `warnings[]` (captured console output).
+- **`loadTime`:** `performance.now()` when the loading screen finished (the characters plus the first chapter's PBR sets, HDRIs and props).
 - **`debug` methods:**
   - `goto(i)` (reload at chapter i with the debug flags)
   - `skip()`
@@ -871,15 +1058,20 @@ With `?debug=1`, `window.__game` exposes:
   - `setHope(h)`
   - `teleport(x, z)`
   - `trigger(id)`
-  - `state()`, which returns `{state, chapter, hope, pos, pain, spots, calls}`
+  - `state()`, which returns `{state, chapter, hope, pos, pain, spots, calls, callsPost, quality}`. `calls` counts the scene pass including shadow maps (the chapter budget); `callsPost` is the post chain's full-screen draws (13 on medium/high, 2 on low). `renderer.info.render.calls` is the sum.
   - `advance(ms, {choose, step, spots, rhythm, key})`: autoplay for `ms`. Presses E whenever a dialogue is open, picks choice `choose` when a menu is open, triggers the first required hotspot in `'play'` (unless `spots: false`), and otherwise taps a steady A/D rhythm (`rhythm: true`) or `key`. Resolves to the dialogue lines seen. It waits with MessageChannel yields, so it keeps pace in a hidden tab, where `setTimeout` is throttled to about 1 s.
   - `shot(holdMs)`: renders one frame and shows it in an overlay `<img>` for `holdMs`, so a page screenshot of an occluded window still shows the 3D view
+  - `look(yawDeg, pitchDeg, zoom)`, `view()`, `pointer()`: camera look without a mouse (see 4.6, Camera rig)
+  - `lang(code?)`: returns the language; with a code, switches to it (as Options does)
+  - `textLog`: every string the UI has shown (dialogue, speaker labels, thoughts, objectives, prompts, cards, menus, HUD labels, hints), capped at 2000, for diffing against the text files
 
 **Query flags:**
 
 - `?chapter=N` (0–4)
 - `?autostart=1` skips the title; audio stays silent until a real click.
 - `?skipcards=1` makes cards auto-close and hides chapter titles.
+- `?quality=low|medium|high` forces a quality tier (§4.1).
+- `?lang=en|fr` forces the language (not remembered).
 - With `?debug=1` the game keeps running in a hidden or occluded browser window (automation): the loop is driven from a `MessageChannel` instead of `requestAnimationFrame`, and the tab never auto-pauses. Page screenshots of a hidden window come out black, so capture the canvas instead: `__game.engine.tick(performance.now()); __game.renderer.domElement.toDataURL()`.
 
 **Also on `window.__game`:** `minigames` (the module: `rhythm`, `timing`, `makeSteer`, `memory`).
@@ -889,4 +1081,4 @@ With `?debug=1`, `window.__game` exposes:
 - reaches `'play'`
 - can be completed by repeatedly calling `__game.debug.skip()`, which never soft-locks
 - logs no console errors
-- stays under 250 draw calls (`debug.state().calls`)
+- stays under 250 draw calls (`debug.state().calls`, the scene pass; the post chain is extra)

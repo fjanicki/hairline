@@ -54,6 +54,7 @@ export const common = {
     begin: 'Click to begin',
     controls: [
       ['WASD / Arrows', 'Move / steady a brush'],
+      ['Mouse', 'Look around · R re-centre'],
       ['Shift', 'Try to jog'],
       ['E', 'Interact / advance'],
       ['Space', 'Timing prompts'],
@@ -76,7 +77,29 @@ export const common = {
     title: 'Paused',
     resume: 'Resume',
     restart: 'Restart chapter',
+    options: 'Options',
+    escKey: 'ESC', // footer: '{escKey} · {muteHint}'
     muteHint: 'M to mute',
+    quality: 'Graphics',
+    tiers: { low: 'Low', medium: 'Medium', high: 'High' },
+  },
+  // Options panel (title screen and pause menu). Language names are native (i18n.js LANGS).
+  options: {
+    title: 'Options',
+    language: 'Language',
+    back: 'Back',
+  },
+
+  // Small HUD bits ({n} is filled in by the code).
+  ui: {
+    chapter: 'CHAPTER {n}',
+    pain: 'PAIN',
+    voicemail: 'VOICEMAIL',
+    space: 'SPACE',
+    distance: '{n} m',
+    interact: 'Interact',
+    muted: 'Muted',
+    soundOn: 'Sound on',
   },
 
   opening: [
@@ -185,7 +208,7 @@ export const common = {
     thanks: 'Thank you for playing.',
     playAgain: 'Play again',
     credits:
-      'Character model from mixamo.com (via three.js examples). Props and sounds: Kenney (CC0). Music: OpenGameArt (CC0).',
+      'Characters and animations: Quaternius. Props, materials and HDRIs: Poly Haven, ambientCG. Street pieces and footsteps: Kenney. Music and ambience: OpenGameArt. All CC0.',
   },
 };
 

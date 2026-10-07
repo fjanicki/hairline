@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { L } from './script.js';
 import { makeSteer } from './minigames.js';
+import { PRESETS } from '../render/Mood.js';
 import { buildScene5, aimBone, clampToBounds, LINE_Z0, LINE_Z1, LINE_Y } from '../world/scenes/scene5.js';
 
 // Ch5 "The Wall": Rue des Tanneurs, Week 12. Day, then golden hour. See docs/DESIGN.md (Ch5).
@@ -28,6 +29,52 @@ const DEFAULT_CAM = { offset: [0, 2.6, 4.2], look: [0, 1.1, 0], lerp: 6 };
 const LINE_CAM = { offset: [5.35, 1.8, 1.6], look: [-0.65, 1.5, -1.2], lerp: 5 };
 const PROMPT_AUTO = 8; // seconds before [E] Wave / [E] Strap happen on their own
 
+// Light. The day part is late afternoon after the rain: the sky clearing, a warm sun low over the
+// right-hand roofs (behind the camera), long shadows across the street and the mural wall in
+// raking light. The final walk is golden hour proper: the sun at the far end of the street, the
+// walk home straight into it. Both spread the art-bible presets (look.js LIGHTING via Mood).
+const DAY_LIGHT = {
+  ...PRESETS.wall,
+  env: 'golden_street',
+  envAlign: true,
+  envIntensity: 0.25,
+  envIntensityHope: 0.3,
+  skyTop: '#71889e',
+  skyBottom: '#cfc2a8',
+  skyTopHope: '#5f87b2',
+  skyBottomHope: '#e9c991',
+  fogColor: '#bdb6a6',
+  fogColorHope: '#dcc39a',
+  fogDensity: 0.007,
+  fogDensityHope: 0.004,
+  heightFog: 0.008,
+  hemiSky: '#9fb0c4',
+  hemiGround: '#54463a',
+  hemiIntensity: 0.6,
+  sunColor: '#ffcf94',
+  sunIntensity: 5.5,
+  sunDir: [0.5, 0.42, 0.76],
+  fillIntensity: 1.4,
+  exposure: 1.1,
+  contrast: 1.06,
+  splitShadow: '#53627a',
+  splitHigh: '#f3d29e',
+  split: 0.24,
+};
+const GOLDEN_LIGHT = {
+  sunColor: '#ffb060',
+  sunIntensity: 5.5,
+  sunDir: [0.3, 0.2, -0.93],
+  hemiIntensity: 0.42,
+  hemiSky: '#c9b496',
+  hemiGround: '#4a3628',
+  fogDensity: 0.004,
+  heightFog: 0.01,
+  contrast: 1.08,
+  envIntensity: 0.18,
+  exposure: 1.05,
+};
+
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 const _q = new THREE.Quaternion();
@@ -53,10 +100,14 @@ const faceTo = (obj, x, z) => {
 
 export default {
   id: 'wall',
-  title: T.title,
+  get title() {
+    return T.title;
+  },
   hope: 0.62,
-  preset: 'wall',
-  objective: T.objectives.start,
+  preset: DAY_LIGHT,
+  get objective() {
+    return T.objectives.start;
+  },
   music: { name: 'piano', volume: 0.36, fade: 3 },
   ambience: [],
   camera: { offset: DEFAULT_CAM.offset, look: DEFAULT_CAM.look, fov: 55, lerp: 6 },
@@ -101,8 +152,29 @@ async function fullRun(ctx, d, W) {
     player.teleport(cx, cz, facing);
   };
   const sit = (char, on) => {
-    char.play(on ? 'sad' : 'idle', 0.3);
-    char.model.position.y = on ? -0.42 : 0;
+    char.play(on ? 'sit_idle' : 'idle', 0.3);
+    char.model.position.y = 0;
+  };
+  // Odile's chair (scene5/wallside): the seat point and the way it faces (the mural).
+  const chair = W.chair || { seat: new THREE.Vector3(S.odileChair[0], 0, S.odileChair[1]), facing: 0 };
+  const seatOdile = () => {
+    odile.root.position.copy(chair.seat);
+    odile.root.rotation.y = chair.facing;
+    sit(odile, true);
+  };
+  // Kerbs: everyone on foot follows the sidewalk height (scene5/street; 0 when scene2 has its own).
+  const groundAt = W.groundAt || (() => 0);
+  const walkers = [player.root, ...club.map((c) => c.root)];
+  world.onUpdate((_dt, raw) => {
+    const k = Math.min(1, raw * 14);
+    for (const r of walkers) r.position.y += (groundAt(r.position.x, r.position.z) - r.position.y) * k;
+  });
+  const surfaceAt = W.surfaceAt || groundAt;
+  /** A neighbour back in their home pose (clip, hand prop). */
+  const homePose = (n) => {
+    n.char.root.position.set(n.pos[0], n.y ?? surfaceAt(n.pos[0], n.pos[1]), n.pos[1]);
+    n.char.root.rotation.y = n.rot;
+    n.char.play(n.clip || 'idle', 0.3);
   };
   /** Walk an NPC to `to`; snaps there on skip or after `max` s. gated=false runs it in the background. */
   const walkNpc = async (char, to, { speed = 1.1, face, max = 8, gated = true } = {}) => {
@@ -204,13 +276,15 @@ async function fullRun(ctx, d, W) {
   const wheels = bike.userData?.wheels || [];
   const R = bike.userData?.wheelRadius || 0.34;
   const sc = { v: 0, speed: 0, path: [], loop: null, resolve: null, riding: false };
+  // The 'ride' seat sits a full-size saddle at model y 0.43; Sami's frame is scaled down to a kid's.
+  const bikeK = bike.userData?.kidScale ?? 1;
   const mount = (on) => {
     sc.riding = on;
     if (on) {
-      sami.play('sneak', 0.2);
-      sami.root.position.set(0, 0, -0.2);
+      sami.play('ride', 0.2);
+      sami.root.position.set(0, 0, -0.14 * bikeK);
       sami.root.rotation.y = 0;
-      sami.model.position.y = 0.43;
+      sami.model.position.y = 0.43 - (1 - bikeK) * 0.93;
       bike.rotation.z = 0;
     } else {
       sami.play('idle', 0.25);
@@ -266,7 +340,9 @@ async function fullRun(ctx, d, W) {
         rig.position.z += (dz / dist) * step;
       }
     }
-    if (sc.v > 0.01) for (const wh of wheels) wh.rotation.x += (sc.v * dt) / R;
+    if (sc.v > 0.01) for (const wh of wheels) wh.rotation.x += (sc.v * dt) / (R * bikeK);
+    // Hands on the bars, feet on the pedals (after the mixers).
+    if (sc.riding) W.rider?.update(dt, sc.v / bikeK, 1);
   });
 
   // ------------------------------------------------------------------ the run club (moved by hand)
@@ -282,7 +358,7 @@ async function fullRun(ctx, d, W) {
         root.position.set(r.x, 0, r.z);
         root.rotation.y = Math.PI;
         const a = r.c.play('run', 0.25);
-        if (a) a.timeScale = 0.85;
+        if (a) a.timeScale = r.c.strideRate('run', r.v); // cadence from ground speed: planted feet
         if (r === bastien && clubSpot && !r.leaving && r.z <= clubSpot[1] + 0.8) {
           r.state = 'spot';
         }
@@ -311,10 +387,12 @@ async function fullRun(ctx, d, W) {
 
   // ------------------------------------------------------------------ staging at the start
   const [chX, chZ] = S.odileChair;
-  const chairFacing = Math.atan2(W.wallX - chX, (LINE_Z0 + LINE_Z1) / 2 - chZ);
-  odile.root.position.set(chX, 0, chZ);
-  odile.root.rotation.y = chairFacing;
-  sit(odile, true);
+  const chairFacing = chair.facing;
+  seatOdile();
+  // The things he and Sami made hold a little colour of their own from the start: the trued bike
+  // (slot 2) and the OPEN sign over the workshop (slot 3). Slots 0 and 1 are the line and the watch.
+  mood.focusOn(bike, { slot: 2, strength: 0.7, decay: 0.3, floor: 0.45, offsetY: 0.55, radius: 0.16 });
+  if (W.shop?.openSign) mood.focusOn(W.shop.openSign, { slot: 3, strength: 0.7, decay: 0.3, floor: 0.45, offsetY: 0, radius: 0.12 });
   // Sami loops lazily up and down the right-hand side of the street.
   const LOOP = [
     [3.5, -27],
@@ -336,8 +414,10 @@ async function fullRun(ctx, d, W) {
     const rot = c.root.rotation.y;
     faceTo(c.root, p.x, p.z);
     player.face(c.root.position.x, c.root.position.z);
+    c.play('talk', 0.3);
     await d.say(lines);
     c.root.rotation.y = rot;
+    c.play(n.clip || 'idle', 0.3);
   };
   const optional = [];
   const addOptional = (o) => {
@@ -370,7 +450,9 @@ async function fullRun(ctx, d, W) {
     required: true,
     onInteract: async () => {
       player.face(odile.root.position.x, odile.root.position.z);
+      odile.play('sit_talk', 0.4);
       await d.say(T.opening);
+      odile.play('sit_idle', 0.5);
     },
   });
   await d.interact('meet');
@@ -459,7 +541,10 @@ async function fullRun(ctx, d, W) {
       if (n.char === ines) return;
       n.char.root.position.set(2.7 + (i % 2) * 0.7, 0, n.pos[1]);
       n.char.root.rotation.y = -Math.PI / 2;
+      n.char.play(i % 2 ? 'arms_crossed' : 'idle', 0);
     });
+    if (W.muralLadder) W.muralLadder.visible = false; // out of the way of the line
+
     parkAt(3.4, -33.2, Math.PI / 2); // wherever he'd got to, he's at the bike shop window now
     player.scripted = true;
     player.teleport(W.lineX, LINE_Z0 + TIP_LEAD, Math.PI + 0.3);
@@ -506,7 +591,7 @@ async function fullRun(ctx, d, W) {
       warn: Math.abs(steer.offset.y) > 0.6,
     });
     const a = H.play('walk', 0.3);
-    if (a) a.timeScale = 0.95;
+    if (a) a.timeScale = H.strideRate('walk', LINE_SPEED);
     // Boot steps (the Player is scripted, so it doesn't play them) and the brush on the wall.
     stepT -= dt;
     if (stepT <= 0) {
@@ -568,23 +653,30 @@ async function fullRun(ctx, d, W) {
     await walkNpc(ines, spot, { speed: 1.4, face: -Math.PI / 2, max: 6 });
     faceTo(ines.root, p.x, p.z);
     player.face(ines.root.position.x, ines.root.position.z);
+    ines.play('hold_can', 0.3);
     await d.say(T.line.photo);
-    await d.wait(0.4);
+    ines.play('reach', 0.25, { once: true });
+    await d.wait(0.75);
     mood.flash(0.5);
     audio.tick({ volume: 0.45 });
     await d.wait(0.9);
   }
   // Everyone back where they were (the street camera looks the other way).
-  homes.forEach((n) => {
-    n.char.root.position.set(n.pos[0], 0, n.pos[1]);
-    n.char.root.rotation.y = n.rot;
-    n.char.play('idle', 0.3);
-  });
+  homes.forEach((n) => homePose(n));
+  if (W.muralLadder) W.muralLadder.visible = true;
 
   // ==================================================================== The run club passes
   {
     const p = player.root.position;
     clubSpot = clampToBounds(bounds, p.x + 1.15, p.z + 0.4);
+    // Anyone standing where Bastien will jog on the spot steps out of the way (down the street, out
+    // of the camera's way).
+    for (const n of homes) {
+      const r = n.char.root.position;
+      if (!n.char.root.visible || Math.hypot(r.x - clubSpot[0], r.z - clubSpot[1]) > 1.3) continue;
+      r.set(clubSpot[0] + 1.3, 0, clubSpot[1] - 1.9);
+      faceTo(n.char.root, p.x, p.z);
+    }
     const lanes = [-0.6, 0.3, -1.3, 1.0, -0.1];
     runners.forEach((r, i) => {
       r.x = r === bastien ? -0.4 : lanes[i];
@@ -631,11 +723,7 @@ async function fullRun(ctx, d, W) {
     faceTo(odile.root, player.root.position.x, player.root.position.z);
     player.face(odile.root.position.x, odile.root.position.z);
     await d.say(T.boot.ask);
-    walkNpc(odile, [chX, chZ], { speed: 1.0, face: chairFacing, max: 9, gated: false }).then(() => {
-      odile.root.position.set(chX, 0, chZ);
-      odile.root.rotation.y = chairFacing;
-      sit(odile, true);
-    });
+    walkNpc(odile, [chair.seat.x, chair.seat.z], { speed: 1.0, face: chairFacing, max: 9, gated: false }).then(() => seatOdile());
     ui.objective(T.objectives.boot);
     const [bx, bz] = S.bench;
     // S.bench is where you stand to use it; S.seat is on the planks (Ch2 contract).
@@ -648,7 +736,9 @@ async function fullRun(ctx, d, W) {
       required: true,
       onInteract: async () => {
         player.frozen = true;
-        player.teleport(sx, sz, Math.PI / 2);
+        runner.clear?.();
+        seatOdile();
+        player.teleport(sx, sz, Math.PI / 2, groundAt(sx, sz));
         await d.gate(player.setPose('sit', 0.7));
       },
     });
@@ -676,7 +766,7 @@ async function fullRun(ctx, d, W) {
   // ==================================================================== Golden hour: the walk home
   await fade(1, 1.4);
   W.setGolden();
-  mood.applyPreset('golden');
+  mood.applyPreset('golden', GOLDEN_LIGHT);
   d.hope(1.0, 0);
   odile.root.visible = false;
   for (const n of homes) n.char.root.visible = false;
@@ -712,12 +802,14 @@ async function fullRun(ctx, d, W) {
   let jogged = false;
   let jogT = 0;
   let stoppedSaid = false;
-  player.on('jog', () => {
+  const firstJog = () => {
     if (!jogged) {
       jogged = true;
       thoughtSoon(T.walk.firstJog, 3);
     }
-  });
+  };
+  player.on('jog', firstJog);
+  if (player.jogging) firstJog(); // Shift+W held through the fade-in: 'jog' already fired
   let muralSaid = false;
   let bikeSaid = false;
   let watchObjective = false;
@@ -822,7 +914,9 @@ async function fullRun(ctx, d, W) {
   input.enabled = false;
   player.frozen = true;
   ui.letterbox(true);
-  const crane = cam.tween({ pos: [2.2, 13.5, -40.5], look: [-3.4, 2.2, -15], fov: 52 }, 8);
+  // Up and back out of the workshop door, over the street: the mural in the low sun on the left,
+  // the line under every panel, No. 14 at the end.
+  const crane = cam.tween({ pos: [3.8, 11, -10.5], look: [-5.2, 2.0, -26], fov: 55 }, 8);
   await d.say(T.walk.crane);
   await d.gate(crane);
   await d.wait(0.8);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { L } from './script.js';
+import { parseNum } from './i18n.js';
 import { buildScene2 } from '../world/scenes/scene2.js';
 
 // Ch2 "Never Stop": Rue des Tanneurs, late evening, rain (docs/DESIGN.md).
@@ -19,8 +20,6 @@ const FADE_Z = -46; // the club fades out here
 const STILL_SECS = 7; // HOLD STILL: seconds of stillness to fill the gauge
 const ASSIST_AFTER = 25;
 const MOVE_KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'];
-// The lap line when he looks at his wrist ("How far?").
-const LAST_WEEK = L.ch2.howFarLap;
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const parseLap = (s) => {
@@ -31,26 +30,30 @@ const fmtLap = (t) => {
   const s = Math.floor(t);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
-/** Shuffled bag: no repeats until every item has been drawn. */
+/** Shuffled bag: no repeats until every item has been drawn. Shuffles indices, so a language change applies at once. */
 function bag(items) {
   let pool = [];
   let last = null;
   return () => {
     if (!pool.length) {
-      pool = [...items].sort(() => Math.random() - 0.5);
+      pool = items.map((_, i) => i).sort(() => Math.random() - 0.5);
       if (pool.length > 1 && pool[pool.length - 1] === last) pool.unshift(pool.pop());
     }
     last = pool.pop();
-    return last;
+    return items[last];
   };
 }
 
 export default {
   id: 'street',
-  title: T.title,
+  get title() {
+    return T.title;
+  },
   hope: 0.07,
   preset: 'street',
-  objective: T.objectives.start,
+  get objective() {
+    return T.objectives.start;
+  },
   music: { name: 'contemplation', volume: 0.3 },
   ambience: ['rain'],
   camera: { offset: CAM.offset, look: CAM.look },
@@ -70,7 +73,7 @@ export default {
 
     // ------------------------------------------------------------ the live watch
     const seed = L.watch?.atChapter?.[1] || {};
-    const face0 = parseFloat(seed.face) || 0.32;
+    const face0 = parseNum(seed.face) || 0.32;
     const lap0 = parseLap(T.lapStart);
     const lap1 = parseLap(T.lapEnd);
     const z0 = player.position.z;
@@ -137,7 +140,12 @@ export default {
         },
         { letterbox: false },
       );
-    if (spots.ghost) hotspots.add({ id: 'ghost', pos: spots.ghost, radius: 2.3, prompt: T.prompts.ghost, enabled: () => !lock, onInteract: () => look(shots.ghost, T.ghost) });
+    const ghostLook = () => {
+      // Hand-painted letters: a breath of their old ochre while he reads them, fading after.
+      if (S.signs?.ghost) ctx.mood.focusOn(S.signs.ghost, { slot: 3, strength: 0.6, decay: 0.08, floor: 0, offsetY: 0, radius: 0.3 });
+      return look(shots.ghost, T.ghost);
+    };
+    if (spots.ghost) hotspots.add({ id: 'ghost', pos: spots.ghost, radius: 2.3, prompt: T.prompts.ghost, enabled: () => !lock, onInteract: ghostLook });
     if (spots.billboard) hotspots.add({ id: 'billboard', pos: spots.billboard, radius: 2.5, prompt: T.prompts.billboard, enabled: () => !lock, onInteract: () => look(shots.billboard, T.billboard) });
     if (spots.shop) hotspots.add({ id: 'shop', pos: spots.shop, radius: 2.2, prompt: T.prompts.shop, enabled: () => !lock, onInteract: () => look(shots.shop, T.shop) });
     if (spots.bench) {
@@ -208,14 +216,21 @@ export default {
     player.face(leg[0], leg[1]);
     player.frozen = true;
     if (shots.hold) cam.set(shots.hold);
+    // Staging: one hand round the tower leg (the player stays frozen; the clip is only the pose).
+    player.scripted = true;
+    player.char.play('hold_can', 0.4);
     await d.gate(ui.fade(0, 0.45));
     await holdStill(ctx, d, S);
     ui.objective(null);
     d.hope(0.09);
+    // The finished lettering is the first thing in the street to take colour back.
+    if (S.fascia?.mesh) ctx.mood.focusOn(S.fascia.mesh, { slot: 2, strength: 0.85, decay: 0.12, floor: 0.3, offsetY: 0, radius: 0.2 });
 
     // Odile climbs down behind a short cut.
     await d.wait(0.6);
     await d.gate(ui.fade(1, 0.35));
+    player.scripted = false;
+    player.char.play('idle', 0.2);
     S.odileDown?.(spot);
     if (S.odileGround) player.face(S.odileGround[0], S.odileGround[1]);
     if (shots.after) cam.set(shots.after);
@@ -243,7 +258,7 @@ export default {
     }
     await d.say(T.leaving);
     // He looks down at his wrist.
-    ui.watch(L.watch.zero, { label: L.watch.labels.week, lap: LAST_WEEK, tick: true });
+    ui.watch(L.watch.zero, { label: L.watch.labels.week, lap: T.howFarLap, tick: true });
     ui.watchFocus(true, { flare: T.flare });
     await d.wait(1.8);
     await d.gate(ui.fade(1, 0.25, '#fff'));
@@ -282,9 +297,10 @@ async function runClub(ctx, d, S, { follow }) {
     char.root.rotation.y = Math.PI;
     char.setOpacity(1);
     char.root.visible = true;
+    const v = 3.5 + i * 0.07;
     const a = char.play('run', 0.1);
-    if (a) a.timeScale = 0.95 + i * 0.03;
-    return { char, lane, v: 3.5 + i * 0.07, mode: i === 0 ? 'approach' : 'run', fading: false, gone: false, beside: 0 };
+    if (a) a.timeScale = char.strideRate('run', v); // cadence from ground speed: planted feet
+    return { char, lane, v, mode: i === 0 ? 'approach' : 'run', fading: false, gone: false, beside: 0 };
   });
   const B = runners[0];
   let patter = 0;
@@ -302,13 +318,27 @@ async function runClub(ctx, d, S, { follow }) {
         p.x += (tx - p.x) * k;
         p.z += (tz - p.z) * k;
         r.char.root.rotation.y = Math.atan2(hp.x - p.x, hp.z - p.z);
+        // Jogging on the spot: the run cycle blended half-and-half with idle shortens the stride
+        // to a bounce (the run alone at low speed reads as a lunge).
         const a = r.char.play('run', 0.3);
-        if (a) a.timeScale = 0.55;
+        if (a) {
+          a.timeScale = 0.75;
+          a.setEffectiveWeight(0.5);
+        }
+        const idle = r.char.actions?.idle;
+        if (idle && !idle.isRunning()) {
+          idle.reset();
+          idle.enabled = true;
+          idle.setEffectiveWeight(0.5);
+          idle.play();
+        }
         r.beside += dt;
       } else {
         p.z -= r.v * dt;
         p.x += (r.lane - p.x) * (1 - Math.exp(-2 * dt));
         r.char.root.rotation.y = Math.PI;
+        const run = r.char.actions?.run;
+        if (run) run.timeScale = r.char.strideRate('run', r.v);
         if (r.mode === 'approach' && p.z <= hp.z + 0.4) {
           r.mode = 'beside';
           r.beside = 0;
@@ -356,7 +386,11 @@ async function runClub(ctx, d, S, { follow }) {
   B.lane = clamp(player.position.x + side * 1.2, -4.6, 4.6);
   B.v = 3.7;
   const a = B.char.play('run', 0.25);
-  if (a) a.timeScale = 1.0;
+  if (a) {
+    a.timeScale = B.char.strideRate('run', B.v);
+    a.setEffectiveWeight(1);
+  }
+  if (B.char.actions?.idle?.isRunning()) B.char.actions.idle.fadeOut(0.3);
   player.root.rotation.y = Math.PI;
   follow();
 

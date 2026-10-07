@@ -1,5 +1,13 @@
 import * as THREE from 'three';
-import { ground, box, mat, pointLight, sign, canvasTexture, instancedBoxes, grimeTexture, rain as makeRain, rng as seeded } from '../build.js';
+import { box, mat, pointLight, sign, relabel, relangTexture, canvasTexture, grimeTexture, rain as makeRain, rng as seeded } from '../build.js';
+import { Batch, boxGeo, cbox, cyl, rod, tubeGeo, compose, atlasPlane, noOcclude } from './scene2/kit.js';
+import { windowAtlas, posterAtlas } from './scene2/art.js';
+import { FRONT_X, BUILDINGS, LIT_CELLS, addBuilding, addWindow, addDoor, addShopfront, facadeFrame } from './scene2/facades.js';
+import { buildStreet, SIDEWALK_Y } from './scene2/street.js';
+import { addLamp, addBench, addDumpster, addCables, addAwning, buildTowerFrame } from './scene2/fixtures.js';
+import { streetMaterials } from './scene2/materials.js';
+import { splashes, stream, steam } from './scene2/fx.js';
+import { bakeryWindow } from './scene2/bakery.js';
 
 // Rue des Tanneurs. Built for Ch2 ("Never Stop": late evening, rain) and Ch5 ("The Wall": day,
 // then golden hour) from one STREET CONTRACT (docs/DESIGN.md):
@@ -7,17 +15,22 @@ import { ground, box, mat, pointLight, sign, canvasTexture, instancedBoxes, grim
 //   buildScene2(ctx, { variant: 'evening' | 'wall' })
 //
 // Layout (metres; the player walks toward -Z; spawn z +8..+3):
-//   road + sidewalks     x -6..6, z +14..-48 (Kenney road tiles); facades at |x| = 5.95
-//   left  (x < 0)        bakery (Benali) z -5.7..-12 | BLIND WALL z -12..-32, h 8, face +X | Marco's kebab z -32..-36.3
-//                        | bench [-5.32, -36.5] | row houses to -48
+//   road + sidewalks     asphalt x -3.5..3.5 with cobbled gutters and kerbs, sidewalks to the facades at
+//                        |x| = 5.95 (3.5 cm up), z +14..-45, then the pavement in front of No. 14
+//   left  (x < 0)        row | bakery (Benali) z -5.7..-12 | BLIND WALL z -12..-32, h 8, face +X | Marco's kebab
+//                        z -32..-36.3 | bench [-5.32, -36.5] | row houses to -48
 //   right (x > 0)        row | gable with the MARCHAL & FILLE ghost sign z -6.3..-13.7 (sign at z -10, high)
 //                        | row | doorway with the buzzing tube z -20.3..-24.5 | row | CYCLES DURAND z -31.3..-36.7 | row
 //   end of the street    No. 14 at z -48 (facade faces +Z): the workshop garage door x -1.6..1.6 (h 2.7) under a deep
-//                        awning, the fascia above it, Hugo's lit third-floor window. Interior room x -2.6..2.6, z -48..-53.2.
+//                        corrugated lean-to, the fascia above it, Hugo's lit third-floor window. Interior room x -2.6..2.6,
+//                        z -48..-53.2.
 //   evening only         STRIDE billboard on the blind wall (z -18, high), Odile's scaffold tower at [-1, -46.2],
-//                        Odile on it, the five-runner club (hidden until Ch2 needs them), rain.
+//                        Odile on it, the five-runner club (hidden until Ch2 needs them), rain, fly-posters.
 //   wall only            primed wall + the neighbours' mural panels (z -12..-32, y 1.8..4.3), the pale billboard
 //                        rectangle with bolt holes above them, the garage door fully open, no rain, no street lights.
+//
+// The buildings, street surface and furniture are procedural (scene2/*.js): look.js recipes on every big
+// surface, merged per material into a few draw calls (see scene2/kit.js Batch).
 //
 // Extras on the returned object (both variants unless noted):
 //   seat, shots, interior, wallLine, fascia, lights, setRain(v), signs
@@ -28,9 +41,7 @@ const SODIUM = 0xd9a35a;
 const NEON = 0xff3d6e;
 const TUBE = 0xcfe6d0;
 const WARM = 0xffb36b;
-const LAMP_INTENSITY = 60;
-const FRONT_X = 5.95; // building facades
-const LAMP_X = 5.75; // lamp poles, on the sidewalk outside the walkable rect
+const LAMP_INTENSITY = 95;
 const WALL = { x: -5.95, z0: -12, z1: -32, h: 8 };
 const BILLBOARD = { z: -18, y0: 4.7, w: 7.4, h: 3.0 };
 const PANEL = { y0: 1.8, h: 2.5, gap: 0.2 };
@@ -43,18 +54,6 @@ const SEAT = { x: -5.32, z: -36.5, facing: Math.PI / 2, standX: -4.8 };
 const HOLD_LEG = [TOWER.x + 0.95, TOWER.z + 0.95]; // the tower's front-right leg
 const HOLD_SPOT = [TOWER.x + 1.32, TOWER.z + 1.32];
 const ODILE_GROUND = [1.8, -45.55]; // beside Hugo, not hidden behind him from shots.after
-
-// Kenney city kit, native sizes [x (frontage), y, z (depth)]; fronts face -Z natively.
-const BUILDINGS = {
-  a: { size: [0.88, 1.29, 0.94], h: [9, 11.5] },
-  b: { size: [0.98, 1.29, 0.94], h: [9, 11.5] },
-  c: { size: [0.88, 0.89, 1.1], h: [8, 9] },
-  d: { size: [0.84, 1.29, 0.9], h: [9, 11.5] },
-  e: { size: [1.64, 0.89, 1.0], h: [8, 8.8] },
-  f: { size: [0.84, 1.69, 1.03], h: [11.5, 14] },
-  g: { size: [0.98, 1.69, 0.92], h: [11.5, 14] },
-  h: { size: [0.88, 1.29, 1.0], h: [9, 11.5] },
-};
 
 // Street lamps (none in front of the blind wall: the Ch5 line runs along it). light: real PointLight.
 const LAMPS = [
@@ -80,84 +79,10 @@ function hexA(hex, a) {
   return `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${a})`;
 }
 
-/** Pack Kenney buildings along one side, inside [from, to] z segments (from > to). */
-function packRow(side, segments, rng) {
-  const keys = Object.keys(BUILDINGS);
-  const out = [];
-  for (const [from, to] of segments) {
-    let z = from;
-    for (let guard = 0; guard < 24; guard++) {
-      const room = z - to;
-      const order = [...keys].sort(() => rng() - 0.5);
-      let pick = null;
-      for (const k of order) {
-        const b = BUILDINGS[k];
-        for (const H of [b.h[0] + rng() * (b.h[1] - b.h[0]), b.h[0]]) {
-          const w = (b.size[0] / b.size[1]) * H;
-          if (w <= room) {
-            pick = { k, H, w };
-            break;
-          }
-        }
-        if (pick) break;
-      }
-      if (!pick) {
-        // Squeeze a shorter building into what is left (no narrow voids in the row).
-        const k = 'd';
-        const ratio = BUILDINGS[k].size[0] / BUILDINGS[k].size[1];
-        const H = (room - 0.1) / ratio;
-        if (H >= 4.5) pick = { k, H: Math.min(H, BUILDINGS[k].h[0]), w: Math.min(H, BUILDINGS[k].h[0]) * ratio };
-      }
-      if (!pick) break;
-      out.push({ ...pick, side, z: z - pick.w / 2 });
-      z -= pick.w + 0.12;
-    }
-  }
-  return out;
-}
-
-/** Rotate a local offset (x, z) by rotation.y = r. */
-function rotXZ(x, z, r) {
-  const c = Math.cos(r);
-  const s = Math.sin(r);
-  return [x * c + z * s, -x * s + z * c];
-}
-
-/** Desaturate the Kenney city palette (bright awnings) so the street stays drab. One copy per source image. */
-function muteBuildingPalette(root, cache, amount = 0.72, darken = 0.86) {
-  root.traverse((o) => {
-    if (!o.isMesh) return;
-    for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
-      const img = m.map?.image;
-      if (!img || !img.width) continue;
-      let tex = cache.get(img);
-      if (!tex) {
-        const c = document.createElement('canvas');
-        c.width = img.width;
-        c.height = img.height;
-        const g = c.getContext('2d');
-        g.drawImage(img, 0, 0);
-        const px = g.getImageData(0, 0, c.width, c.height);
-        const d = px.data;
-        for (let i = 0; i < d.length; i += 4) {
-          const l = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-          for (let k = 0; k < 3; k++) d[i + k] = (d[i + k] + (l - d[i + k]) * amount) * darken + 6;
-        }
-        g.putImageData(px, 0, 0);
-        tex = new THREE.CanvasTexture(c);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.flipY = m.map.flipY;
-        tex.wrapS = m.map.wrapS;
-        tex.wrapT = m.map.wrapT;
-        tex.magFilter = m.map.magFilter;
-        tex.minFilter = m.map.minFilter;
-        cache.set(img, tex);
-      }
-      m.map = tex;
-      m.needsUpdate = true;
-    }
-  });
-}
+// TEXT: the street-name plaques (dressing)
+const STREET_NAME = 'RUE DES\nTANNEURS';
+// TEXT: Marco's fascia (shop dressing, not story text)
+const MARCO_FASCIA = 'GRILL · KEBAB · FRITES';
 
 // ------------------------------------------------------------------ textures
 
@@ -308,9 +233,8 @@ function ghostTexture(text) {
     const draw = (t, y, size, spacing) => {
       c.font = `700 ${size}px ${SERIF}`;
       if ('letterSpacing' in c) c.letterSpacing = `${spacing}px`;
-      c.fillStyle = 'rgba(176,132,60,0.55)'; // the shade (offset drop)
-      c.fillText(t, w / 2 + 9, y + 9);
-      c.fillStyle = 'rgba(236,226,200,0.78)';
+      // Forty winters took the shade line; what is left of the cream is thin and chalky.
+      c.fillStyle = 'rgba(236,226,200,0.46)';
       c.fillText(t, w / 2, y);
     };
     draw(lines[0], h * 0.36, 190, 6);
@@ -338,68 +262,190 @@ function ghostTexture(text) {
       c.fillStyle = g;
       c.fillRect(x, 0, 6 + R() * 26, h);
     }
+    // Patched render: whole patches gone where the wall was repaired.
+    for (let i = 0; i < 5; i++) {
+      const x = R() * w;
+      const y = R() * h;
+      c.fillStyle = 'rgba(0,0,0,0.9)';
+      c.beginPath();
+      for (let k = 0; k < 9; k++) {
+        const a = (k / 9) * Math.PI * 2;
+        const r = 60 + R() * 110;
+        c.lineTo(x + Math.cos(a) * r * 1.6, y + Math.sin(a) * r * 0.7);
+      }
+      c.closePath();
+      c.fill();
+    }
     c.globalCompositeOperation = 'source-over';
   });
 }
 
-/** Corrugated roller shutter: horizontal slats, grime, a tag or two. */
-function shutterTexture(seed, { tags = 2, base = '#8d9093' } = {}) {
-  const tex = grimeTexture({ w: 512, h: 320, base, spread: 0.08, stains: 5, drips: 3, tags, posters: 0, seed });
-  const c = tex.userData.canvas.getContext('2d');
-  for (let y = 0; y < 320; y += 11) {
-    c.fillStyle = 'rgba(20,22,24,0.35)';
-    c.fillRect(0, y, 512, 2);
-    c.fillStyle = 'rgba(255,255,255,0.06)';
-    c.fillRect(0, y + 3, 512, 2);
-  }
-  const g = c.createLinearGradient(0, 230, 0, 320);
-  g.addColorStop(0, 'rgba(122,70,38,0)');
-  g.addColorStop(1, 'rgba(122,70,38,0.55)');
-  c.fillStyle = g;
-  c.fillRect(0, 230, 512, 90);
-  tex.needsUpdate = true;
-  return tex;
+/** Shop window: Marco's kebab interior (the bakery has its own, scene2/bakery.js). */
+function windowTexture() {
+  return kebabWindowTexture();
 }
 
-/** Shop window: warm interior with shelves (bakery loaves / kebab menu boards). */
-function windowTexture(kind, lit) {
-  return canvasTexture(512, 256, (c, w, h) => {
-    const g = c.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, lit ? '#e9dcc0' : '#6d6a64');
-    g.addColorStop(1, lit ? '#b49b74' : '#45423e');
-    c.fillStyle = g;
+// TEXT: Marco's menu board (shop dressing, not story text)
+const MARCO_MENU = [['KEBAB', '6,50'], ['ASSIETTE', '9,00'], ['FRITES', '3,00'], ['BOISSONS', '2,00']];
+
+/**
+ * Marco's at night, through the glass: tiled back wall, a lit menu board, the doner on its spit in
+ * front of the grill's glow, a drinks fridge, the counter; condensation fogging the lower glass,
+ * droplets and a grimy film. The window plane is 3.2 x 1.86 m.
+ */
+function kebabWindowTexture() {
+  const R = seeded(343);
+  return canvasTexture(1024, 600, (c, w, h) => {
+    // Back wall: white tiles gone cream under the fluorescent.
+    c.fillStyle = '#cdc4ae';
     c.fillRect(0, 0, w, h);
-    if (kind === 'kebab') {
-      for (let i = 0; i < 3; i++) {
-        c.fillStyle = 'rgba(30,26,22,0.8)';
-        c.fillRect(40 + i * 150, 30, 120, 70);
-        c.fillStyle = 'rgba(236,226,200,0.7)';
-        for (let k = 0; k < 4; k++) c.fillRect(52 + i * 150, 42 + k * 14, 70 + ((k * 13) % 30), 5);
-      }
-      c.fillStyle = 'rgba(120,70,40,0.85)';
+    c.strokeStyle = 'rgba(120,110,90,0.35)';
+    c.lineWidth = 2;
+    for (let y = 0; y < h; y += 34) {
       c.beginPath();
-      c.moveTo(370, 120);
-      c.lineTo(430, 120);
-      c.lineTo(414, 236);
-      c.lineTo(386, 236);
-      c.closePath();
+      c.moveTo(0, y);
+      c.lineTo(w, y);
+      c.stroke();
+    }
+    for (let x = 0; x < w; x += 34) {
+      c.beginPath();
+      c.moveTo(x, 0);
+      c.lineTo(x, h);
+      c.stroke();
+    }
+    const glow = c.createRadialGradient(w * 0.62, h * 0.35, 20, w * 0.62, h * 0.35, w * 0.6);
+    glow.addColorStop(0, 'rgba(255,236,190,0.55)');
+    glow.addColorStop(1, 'rgba(120,90,50,0.35)');
+    c.fillStyle = glow;
+    c.fillRect(0, 0, w, h);
+    // The menu board: a dark lightbox with photos and prices.
+    c.fillStyle = '#20201e';
+    c.fillRect(40, 30, w - 80, 150);
+    MARCO_MENU.forEach(([name, price], i) => {
+      const x = 60 + i * ((w - 120) / 4);
+      const bw = (w - 120) / 4 - 20;
+      const ph = c.createLinearGradient(0, 44, 0, 120);
+      ph.addColorStop(0, ['#c8823c', '#b06a3a', '#e0b050', '#7a8a9a'][i]);
+      ph.addColorStop(1, '#5a3a22');
+      c.fillStyle = ph;
+      c.fillRect(x, 44, bw, 78);
+      c.fillStyle = 'rgba(255,255,255,0.15)';
+      c.beginPath();
+      c.ellipse(x + bw / 2, 86, bw * 0.32, 22, 0, 0, Math.PI * 2);
       c.fill();
-    } else {
-      c.fillStyle = 'rgba(70,58,44,0.4)';
-      for (const y of [110, 190]) c.fillRect(20, y, w - 40, 8);
-      c.fillStyle = 'rgba(190,140,80,0.9)';
-      for (let i = 0; i < 9; i++) {
-        c.beginPath();
-        c.ellipse(52 + i * 50, 96 + (i % 2) * 80, 20, 10, 0, 0, Math.PI * 2);
-        c.fill();
+      c.fillStyle = '#f2ead6';
+      c.font = `800 26px ${SANS}`;
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillText(name, x, 146);
+      c.fillStyle = '#ffd36a';
+      c.textAlign = 'right';
+      c.fillText(price, x + bw, 146);
+    });
+    // The grill's glow and the doner on its spit.
+    const gr = c.createLinearGradient(0, 200, 0, 470);
+    gr.addColorStop(0, 'rgba(255,140,60,0.0)');
+    gr.addColorStop(1, 'rgba(255,120,40,0.55)');
+    c.fillStyle = gr;
+    c.fillRect(620, 200, 150, 270);
+    c.fillStyle = '#3a3a3c';
+    c.fillRect(690, 190, 8, 300);
+    const cone = c.createLinearGradient(640, 0, 750, 0);
+    cone.addColorStop(0, '#5a3218');
+    cone.addColorStop(0.45, '#a8683a');
+    cone.addColorStop(1, '#4a2a14');
+    c.fillStyle = cone;
+    c.beginPath();
+    c.moveTo(642, 220);
+    c.lineTo(748, 220);
+    c.lineTo(722, 450);
+    c.lineTo(668, 450);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = 'rgba(40,20,10,0.4)';
+    c.lineWidth = 3;
+    for (let y = 236; y < 450; y += 16) {
+      c.beginPath();
+      c.moveTo(650 + (y - 220) * 0.1, y);
+      c.lineTo(740 - (y - 220) * 0.1, y + 4);
+      c.stroke();
+    }
+    // Drinks fridge on the left: a cold rectangle of cans.
+    c.fillStyle = '#cfe0e8';
+    c.fillRect(70, 210, 190, 260);
+    for (let r = 0; r < 4; r++) {
+      for (let k = 0; k < 7; k++) {
+        c.fillStyle = ['#b83a32', '#2f5f9a', '#e0c040', '#3a8a4a', '#d8d8d8'][(r * 7 + k) % 5];
+        c.fillRect(80 + k * 25, 222 + r * 62, 18, 40);
+      }
+      c.fillStyle = 'rgba(80,90,100,0.6)';
+      c.fillRect(70, 266 + r * 62, 190, 4);
+    }
+    c.strokeStyle = '#8a9298';
+    c.lineWidth = 6;
+    c.strokeRect(70, 210, 190, 260);
+    // The counter: steel front, a glass sneeze guard with trays of salad.
+    c.fillStyle = '#8c8f90';
+    c.fillRect(0, 470, w, 130);
+    c.fillStyle = 'rgba(255,255,255,0.18)';
+    for (let x = 0; x < w; x += 46) c.fillRect(x, 470, 3, 130);
+    for (let k = 0; k < 6; k++) {
+      c.fillStyle = ['#7a9a4a', '#c84a3a', '#e8e0c8', '#d8a040', '#6a8a3a', '#e8d8b0'][k];
+      c.fillRect(300 + k * 52, 446, 44, 22);
+    }
+    c.fillStyle = 'rgba(220,235,240,0.25)';
+    c.fillRect(290, 380, 330, 70);
+    // A figure behind the counter (Marco, mid-shift), soft.
+    c.fillStyle = 'rgba(40,34,30,0.55)';
+    c.beginPath();
+    c.ellipse(860, 300, 38, 44, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillRect(800, 340, 120, 140);
+    // Condensation on the lower glass, droplets, a wiped arc, grime film.
+    const fog = c.createLinearGradient(0, h * 0.45, 0, h);
+    fog.addColorStop(0, 'rgba(230,226,216,0)');
+    fog.addColorStop(1, 'rgba(230,226,216,0.6)');
+    c.fillStyle = fog;
+    c.fillRect(0, 0, w, h);
+    c.globalCompositeOperation = 'destination-out';
+    c.lineWidth = 46;
+    c.strokeStyle = 'rgba(0,0,0,0.35)';
+    c.beginPath();
+    c.arc(420, 620, 200, Math.PI * 1.15, Math.PI * 1.75);
+    c.stroke();
+    c.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 240; i++) {
+      const x = R() * w;
+      const y = h * 0.35 + R() * h * 0.65;
+      const r = 1 + R() * 3.5;
+      c.fillStyle = `rgba(255,255,255,${0.2 + R() * 0.3})`;
+      c.beginPath();
+      c.arc(x, y, r, 0, Math.PI * 2);
+      c.fill();
+      if (R() < 0.12) {
+        c.fillStyle = 'rgba(255,255,255,0.18)';
+        c.fillRect(x - 1, y, 2, 20 + R() * 60);
       }
     }
-    c.fillStyle = 'rgba(60,55,50,0.12)';
-    for (let i = 0; i < 20; i++) {
+    // A grimy film and one diagonal sheen of the street reflected in the glass.
+    for (let i = 0; i < 40; i++) {
+      c.fillStyle = `rgba(70,64,52,${0.03 + R() * 0.04})`;
       c.beginPath();
-      c.arc((i * 97) % w, (i * 53) % h, 18 + (i % 5) * 9, 0, Math.PI * 2);
+      c.ellipse(R() * w, R() * h, 20 + R() * 60, 10 + R() * 30, R() * 3, 0, Math.PI * 2);
       c.fill();
     }
+    const sheen = c.createLinearGradient(0, 0, w, h);
+    sheen.addColorStop(0.3, 'rgba(255,255,255,0)');
+    sheen.addColorStop(0.42, 'rgba(255,255,255,0.12)');
+    sheen.addColorStop(0.5, 'rgba(255,255,255,0)');
+    c.fillStyle = sheen;
+    c.fillRect(0, 0, w, h);
+    // Depth: the room falls off into shadow at the edges and under the ceiling.
+    const v = c.createRadialGradient(w * 0.55, h * 0.5, h * 0.3, w * 0.55, h * 0.5, w * 0.7);
+    v.addColorStop(0, 'rgba(20,14,8,0)');
+    v.addColorStop(1, 'rgba(20,14,8,0.55)');
+    c.fillStyle = v;
+    c.fillRect(0, 0, w, h);
   });
 }
 
@@ -408,6 +454,8 @@ function neonTexture(text) {
   return canvasTexture(640, 200, (c, w, h) => {
     c.clearRect(0, 0, w, h);
     c.font = `italic 800 112px ${SANS}`;
+    const fit = Math.min(112, Math.floor((112 * (w - 70)) / c.measureText(text).width)); // 'CHEZ MARCO' fits too
+    c.font = `italic 800 ${fit}px ${SANS}`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.shadowColor = 'rgba(255,61,110,0.95)';
@@ -437,20 +485,6 @@ function litWindowTexture() {
     c.fillRect(w / 2 - 2, 0, 4, h);
     c.fillRect(0, h * 0.45, w, 4);
   });
-}
-
-/** Faded striped awning canvas. */
-function awningTexture() {
-  const tex = grimeTexture({ w: 512, h: 256, base: '#8a8478', spread: 0.06, stains: 7, drips: 0, tags: 0, posters: 0, seed: 404 });
-  const c = tex.userData.canvas.getContext('2d');
-  c.globalCompositeOperation = 'multiply';
-  for (let x = 0; x < 512; x += 64) {
-    c.fillStyle = '#7a4a40';
-    c.fillRect(x, 0, 32, 256);
-  }
-  c.globalCompositeOperation = 'source-over';
-  tex.needsUpdate = true;
-  return tex;
 }
 
 /**
@@ -587,7 +621,7 @@ function panelTexture(id, seed) {
         c.fill();
       }
     } else if (id === 'ines') {
-      c.font = `italic 900 150px ${SANS}`;
+      c.font = `italic 900 104px ${SANS}`; // the whole street name fits the panel
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.lineWidth = 22;
@@ -724,112 +758,69 @@ function panelTexture(id, seed) {
         c.fill();
       }
     }
+    paintOnRender(c, W, H, R);
   });
 }
 
-// ------------------------------------------------------------------ lamp cones
-
-/** Soft additive light cones under the lit lamps (one instanced draw). */
-function makeCones(heads) {
-  const H = 3.9;
-  const geo = new THREE.CylinderGeometry(0.14, 1.9, H, 24, 1, true);
-  const material = new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(SODIUM) }, uAlpha: { value: 0.12 }, uH: { value: H } },
-    vertexShader: /* glsl */ `
-      uniform float uH; varying float vY; varying vec3 vN; varying vec3 vV; varying vec3 vC; varying float vD;
-      void main(){
-        vec4 p = vec4(position, 1.0);
-        #ifdef USE_INSTANCING
-          p = instanceMatrix * p;
-        #endif
-        vec4 mv = modelViewMatrix * p;
-        vY = position.y / uH + 0.5;
-        vN = normalize(normalMatrix * normal);
-        vV = normalize(-mv.xyz);
-        vC = vec3(1.0);
-        #ifdef USE_INSTANCING_COLOR
-          vC = instanceColor;
-        #endif
-        vD = length(mv.xyz);
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: /* glsl */ `
-      uniform vec3 uColor; uniform float uAlpha; varying float vY; varying vec3 vN; varying vec3 vV; varying vec3 vC; varying float vD;
-      void main(){
-        float e = abs(dot(normalize(vN), normalize(vV)));
-        float edge = e * sqrt(e);
-        float y = clamp(vY, 0.0, 1.0);
-        float fall = smoothstep(0.0, 0.45, y) * y;
-        float a = uAlpha * edge * fall * exp(-vD * 0.03);
-        gl_FragColor = vec4(uColor * vC, a);
-      }`,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-  });
-  const im = new THREE.InstancedMesh(geo, material, Math.max(1, heads.length));
-  const m = new THREE.Matrix4();
-  heads.forEach((h, i) => {
-    im.setMatrixAt(i, m.makeTranslation(h.x, h.y - H / 2 + 0.05, h.z));
-    im.setColorAt(i, new THREE.Color(1, 1, 1));
-  });
-  im.count = heads.length;
-  im.instanceMatrix.needsUpdate = true;
-  im.castShadow = false;
-  im.receiveShadow = false;
-  im.renderOrder = 3;
-  im.frustumCulled = false;
-  im.name = 'lamp-cones';
-  return im;
+/**
+ * Make a crisp canvas motif read as paint brushed onto render: drips run down from the bottom of
+ * painted shapes, every edge is dry-brushed (alpha eroded by a noise streaked along the stroke),
+ * and the solid fills thin out in places so the wall shows through. The wall's own render relief
+ * comes from Materials.enhance on the panel material.
+ */
+function paintOnRender(c, W, H, R) {
+  // Drips: from the lowest painted pixel of a few columns, in that pixel's colour.
+  const src = c.getImageData(0, 0, W, H).data;
+  for (let i = 0; i < 9; i++) {
+    const x = Math.floor(30 + R() * (W - 60));
+    let y = H - 1;
+    while (y > 0 && src[(y * W + x) * 4 + 3] < 200) y--;
+    if (y < H * 0.2 || y > H - 12) continue;
+    const k = (y * W + x) * 4;
+    c.strokeStyle = `rgba(${src[k]},${src[k + 1]},${src[k + 2]},0.85)`;
+    c.lineCap = 'round';
+    c.lineWidth = 2 + R() * 3;
+    const len = 14 + R() * 50;
+    c.beginPath();
+    c.moveTo(x, y - 2);
+    c.lineTo(x + (R() - 0.5) * 2, Math.min(H - 4, y + len));
+    c.stroke();
+  }
+  const img = c.getImageData(0, 0, W, H);
+  const d = img.data;
+  // Value noise, stretched along x (the brush runs horizontally across the panel).
+  const G = 64;
+  const grid = new Float32Array(G * G).map(() => R());
+  const at = (gx, gy) => grid[((gy % G) + G) % G * G + (((gx % G) + G) % G)];
+  const noise = (x, y) => {
+    const xi = Math.floor(x);
+    const yi = Math.floor(y);
+    const fx = x - xi;
+    const fy = y - yi;
+    const sx = fx * fx * (3 - 2 * fx);
+    const sy = fy * fy * (3 - 2 * fy);
+    const a = at(xi, yi) + (at(xi + 1, yi) - at(xi, yi)) * sx;
+    const b2 = at(xi, yi + 1) + (at(xi + 1, yi + 1) - at(xi, yi + 1)) * sx;
+    return a + (b2 - a) * sy;
+  };
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const k = (y * W + x) * 4 + 3;
+      const a = d[k] / 255;
+      if (a <= 0) continue;
+      const n = noise(x / 9, y / 2.2) * 0.65 + noise(x / 2.5, y / 1.2) * 0.35;
+      // The primer wash only breathes a little; motif edges go ragged; solids thin out in places.
+      let edge;
+      if (a < 0.6) edge = a * (0.8 + 0.4 * n);
+      else if (a < 0.98) edge = (a - 0.5 + (n - 0.5) * 0.9) * 2.4 + 0.5;
+      else edge = 1 - (0.3 * Math.max(0, n - 0.66)) / 0.34;
+      d[k] = Math.round(255 * Math.min(1, Math.max(0, Math.min(a, edge))));
+    }
+  }
+  c.putImageData(img, 0, 0);
 }
 
 // ------------------------------------------------------------------ geometry helpers
-
-/** A street-facing building block with its facade at x = side * FRONT_X, painted windows above the ground floor. */
-function facadeBlock({ side, z0, z1, h, depth = 8, base = '#8a8276', seed = 1, posters = 1, tags = 2, stains = 9, drips = 6, floors = [], cols = 2 }) {
-  const front = z0 - z1;
-  const W = 512;
-  const H = Math.round((W * h) / front);
-  const tex = grimeTexture({ w: W, h: Math.min(2048, H), base, seed, posters, tags, stains, drips });
-  const c = tex.userData.canvas.getContext('2d');
-  const ch = tex.userData.canvas.height;
-  const R = seeded(seed + 9);
-  for (const fy of floors) {
-    for (let k = 0; k < cols; k++) {
-      const u = (k + 0.5) / cols;
-      const ww = (1.1 / front) * W;
-      const wh = (1.5 / h) * ch;
-      const x = u * W - ww / 2;
-      const y = (1 - fy / h) * ch - wh / 2;
-      c.fillStyle = 'rgba(38,40,44,0.92)';
-      c.fillRect(x, y, ww, wh);
-      c.fillStyle = R() < 0.4 ? 'rgba(150,140,120,0.55)' : 'rgba(90,96,104,0.5)'; // curtain or sky
-      c.fillRect(x + 4, y + 4, ww * (0.3 + R() * 0.4), wh - 8);
-      c.fillStyle = 'rgba(200,196,186,0.6)';
-      c.fillRect(x - 6, y + wh, ww + 12, 7); // sill
-      c.fillStyle = 'rgba(30,26,20,0.25)';
-      c.fillRect(x, y + wh + 7, ww, 24); // sill stain
-    }
-  }
-  // A darker plinth.
-  const pg = c.createLinearGradient(0, ch * (1 - 0.9 / h), 0, ch);
-  pg.addColorStop(0, 'rgba(26,24,20,0.0)');
-  pg.addColorStop(1, 'rgba(26,24,20,0.5)');
-  c.fillStyle = pg;
-  c.fillRect(0, ch * (1 - 0.9 / h), W, ch);
-  tex.needsUpdate = true;
-  const m = box(depth, h, front, { color: '#ffffff', map: tex, roughness: 0.92, pos: [side * (FRONT_X + depth / 2), 0, (z0 + z1) / 2] });
-  m.name = 'facade-block';
-  return m;
-}
-
-/** A plane facing the street from the side-`side` facade (offset a few cm out). Origin at its centre. */
-function onFacade(mesh, side, z, y, out = 0.03) {
-  mesh.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-  mesh.position.set(side * (FRONT_X - out), y, z);
-  return mesh;
-}
 
 /** Shape with a U-notch (the garage opening) at the bottom, UVs in 0..1 over the whole face. */
 function notchedFacade(W, H, x0, x1, hh) {
@@ -851,6 +842,40 @@ function notchedFacade(W, H, x0, x1, hh) {
   return geo;
 }
 
+// ------------------------------------------------------------------ helpers
+
+/** Place a mesh in a facade-local frame: parent (Matrix4) x local [x, y, z] (+ optional rotY). */
+function placeOn(mesh, parent, local, rotY = 0) {
+  const m = compose({ pos: local, rotY }).premultiply(parent);
+  m.decompose(mesh.position, mesh.quaternion, mesh.scale);
+  return mesh;
+}
+
+/** Fly-posters and tags: quads into the 'poster' batch, layered a few millimetres apart. */
+function posterWall(batch, cells, { side, z0, z1, y0 = 0.5, y1 = 2.5, count, seed, tags = 0, plane = FRONT_X, base = 0.01 }) {
+  const R = seeded(seed);
+  const posters = cells.filter((c) => c.kind === 'poster');
+  const tagCells = cells.filter((c) => c.kind === 'tag');
+  let layer = 0;
+  const put = (cell, w, h, z, y, rot) => {
+    const g = atlasPlane(w, h, cell.uv).rotateZ(rot);
+    const parent = compose({ pos: [side * (plane - base - layer * 0.0025), y, z], rotY: side < 0 ? Math.PI / 2 : -Math.PI / 2 });
+    batch.add('poster', g, { parent });
+    layer++;
+  };
+  for (let i = 0; i < count; i++) {
+    const s = 0.62 + R() * 0.55;
+    // Pasted in loose rows (fly-posting crews work along a line), some on top of each other.
+    const row = R() < 0.65 ? 0 : 1;
+    const y = Math.min(y1 - s * 0.5, y0 + s * 0.5 + row * (s * 0.92) + (R() - 0.5) * 0.12);
+    put(posters[(R() * posters.length) | 0], s, s, z0 - R() * (z0 - z1), y, (R() - 0.5) * 0.05);
+  }
+  for (let i = 0; i < tags; i++) {
+    const s = 1.1 + R() * 0.9;
+    put(tagCells[(R() * tagCells.length) | 0], s, s, z0 - R() * (z0 - z1), 0.7 + R() * 1.4, (R() - 0.5) * 0.15);
+  }
+}
+
 // ------------------------------------------------------------------ builder
 
 /**
@@ -868,111 +893,55 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
   const prop = (path, opts) => assets.prop(path, opts);
   const env = skyEnv(!evening);
   const haloTex = radialTexture();
+  const posters = posterAtlas(31);
+  const M = streetMaterials(ctx, { evening, env, windowTex: windowAtlas(), decalTex: null, posterTex: posters.texture });
+  const batch = new Batch();
+  const street = buildStreet(ctx, batch);
+  M.decal.material.map = street.texture;
+  for (const [k, v] of Object.entries(M)) batch.material(k, v.material, v.opts);
+  const signs = {};
 
   // ---------------------------------------------------------------- ground
-  // Wet street base (mid-value so the grade can darken it). It stops at No. 14's facade.
-  group.add(ground({ size: [70, 64], color: evening ? '#7a7d80' : '#8c8b86', roughness: evening ? 0.86 : 0.95, metalness: evening ? 0.12 : 0.02, pos: [0, -16], y: -0.02, tile: 3, spread: 0.12 }));
+  for (const g of street.geos) batch.add('decal', g);
 
-  // Road tiles (Kenney): 12 m wide incl. sidewalks. Flattened so the kerb is 3 cm.
-  const roadZ = [6, -6, -18, -30, -42];
-  const roads = await Promise.all(roadZ.map(() => prop('kenney/roads/road-straight.glb', { width: 12 })));
-  roads.forEach((r, i) => {
-    r.rotation.y = Math.PI / 2;
-    r.scale.y = 0.25;
-    r.position.set(0, -0.03, roadZ[i]);
-    r.traverse((o) => {
-      if (!o.isMesh) return;
-      o.material = o.material.clone();
-      o.material.color.multiplyScalar(evening ? 1.45 : 1.6);
-      o.material.roughness = evening ? 0.86 : 0.95;
-      o.material.metalness = evening ? 0.12 : 0.02;
-      o.userData.noDispose = false; // our cloned material is disposed (geometry stays shared)
-      o.castShadow = false;
-    });
-    group.add(r);
-  });
-
-  // Puddles (drying in the 'wall' variant).
-  const PUDDLES = [
-    [-3.1, -0.8, 1.6, 0.8, 0.3], [2.4, -6.5, 1.1, 0.6, -0.4], [-1.6, -12.2, 2.0, 0.9, 0.1],
-    [3.0, -17.8, 1.5, 0.7, 0.6], [-3.3, -22.6, 1.8, 1.0, -0.2], [0.9, -27.5, 1.2, 0.55, 0.9],
-    [2.9, -30.6, 1.7, 0.8, 0.2], [-2.8, -35.5, 1.4, 0.75, -0.5], [1.6, -41.2, 1.9, 0.8, 0.3],
-    [-3.4, -44.2, 1.0, 0.6, 0.7], [-0.2, -8.8, 0.7, 0.4, 0.2], [0.4, -38.5, 0.8, 0.45, -0.3],
-    [1.2, -45.9, 1.3, 0.55, 0.1],
-  ];
-  const puddleMat = new THREE.MeshStandardMaterial({
-    color: evening ? '#555a60' : '#6a6d70',
-    roughness: evening ? 0.06 : 0.22,
-    metalness: 0,
-    envMap: env,
-    envMapIntensity: evening ? 0.85 : 0.5,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  });
-  {
-    const shrink = evening ? 1 : 0.55;
-    const puddles = new THREE.InstancedMesh(new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2), puddleMat, PUDDLES.length);
-    const dummy = new THREE.Object3D();
-    PUDDLES.forEach(([x, z, rx, rz, rot], i) => {
-      dummy.position.set(x, 0.004, z);
-      dummy.rotation.set(0, rot, 0);
-      dummy.scale.set(rx * shrink, 1, rz * shrink);
-      dummy.updateMatrix();
-      puddles.setMatrixAt(i, dummy.matrix);
-    });
-    puddles.instanceMatrix.needsUpdate = true;
-    puddles.receiveShadow = true;
-    puddles.castShadow = false;
-    puddles.computeBoundingSphere();
-    puddles.name = 'puddles';
-    group.add(puddles);
+  // ---------------------------------------------------------------- facades
+  const shopSigns = [];
+  for (const b of BUILDINGS) addBuilding(batch, b, { evening, rng, litCells: LIT_CELLS, shopSigns });
+  for (const s of shopSigns) {
+    const m = sign(s.text, s.w, 0.42, { bg: null, fg: '#cfc4a8', font: SERIF, weathered: 0.6, letterSpacing: 5, pxPerM: 200 });
+    placeOn(m, s.parent, [s.pos[0], s.pos[1], s.pos[2] + 0.005]);
+    m.material.polygonOffset = true;
+    m.material.polygonOffsetFactor = -1;
+    m.userData.noOcclude = true;
+    group.add(m);
   }
 
-  // ---------------------------------------------------------------- Kenney rows
-  const rows = [
-    ...packRow(-1, [[14, -5.6], [-36.5, -47.9]], rng),
-    ...packRow(1, [[14, -6.2], [-13.8, -20.2], [-24.6, -31.2], [-36.8, -47.9]], rng),
-  ];
-  const buildingProps = await Promise.all(rows.map((b) => prop(`kenney/city/building-${b.k}.glb`, { height: b.H, tint: 0xffffff })));
-  const muted = new Map();
-  buildingProps.forEach((g, i) => {
-    muteBuildingPalette(g, muted);
-    const b = rows[i];
-    const depth = g.userData.size?.z ?? (BUILDINGS[b.k].size[2] / BUILDINGS[b.k].size[1]) * b.H;
-    g.rotation.y = b.side < 0 ? -Math.PI / 2 : Math.PI / 2; // native front (-Z) faces the street
-    g.position.set(b.side * (FRONT_X + depth / 2), 0, b.z);
-    group.add(g);
-  });
+  // Blue enamel street-name plaques on the corners either side of the bakery / ghost-sign blocks.
+  for (const [side, z] of [[-1, -4.55], [1, -5.15], [-1, 13.0]]) {
+    const plaque = sign(STREET_NAME, 0.72, 0.36, { bg: '#2a4a74', fg: '#eeeae0', border: '#eeeae0', weathered: 0.35, pxPerM: 360, weight: 600 });
+    group.add(placeOn(plaque, facadeFrame(side, z, 3.05), [0, 0, 0.012]));
+  }
 
-  // Dim skyline behind the rows, mostly swallowed by the fog.
+  // Dim skyline behind the rows (Kenney low-detail blocks, restyled; mostly swallowed by the fog).
   const skyline = [];
   for (let i = 0; i < 7; i++) {
     for (const side of [-1, 1]) {
-      skyline.push({ k: 'abcd'[(i + (side > 0 ? 2 : 0)) % 4], x: side * (20 + rng() * 6), z: 10 - i * 9 - rng() * 4, H: 15 + rng() * 9, r: rng() * Math.PI });
+      skyline.push({ k: 'abcd'[(i + (side > 0 ? 2 : 0)) % 4], x: side * (20 + rng() * 6), z: 10 - i * 9 - rng() * 4, H: 17 + rng() * 9, r: rng() * Math.PI });
     }
   }
-  const skylineProps = await Promise.all(skyline.map((s) => prop(`kenney/city/low-detail-building-${s.k}.glb`, { height: s.H, castShadow: false, tint: 0xa8acb2 })));
+  const skylineProps = await Promise.all(skyline.map((s) => prop(`kenney/city/low-detail-building-${s.k}.glb`, { height: s.H, castShadow: false, tint: 0x9a9ea4 })));
   skylineProps.forEach((g, i) => {
     g.position.set(skyline[i].x, 0, skyline[i].z);
     g.rotation.y = skyline[i].r;
+    noOcclude(g);
     group.add(g);
   });
-
-  // ---------------------------------------------------------------- procedural blocks
-  // Left: the bakery (z -5.7..-12) and Marco's kebab (z -32..-36.3).
-  group.add(facadeBlock({ side: -1, z0: -5.7, z1: -11.95, h: 9.5, base: '#8e8778', seed: 31, floors: [4.6, 7.6], cols: 3 }));
-  group.add(facadeBlock({ side: -1, z0: -32.05, z1: -36.35, h: 10.5, base: '#857f74', seed: 33, posters: 2, floors: [4.6, 7.8], cols: 2 }));
-  // Right: the ghost-sign gable (tall, blind brick), the tube doorway, the bike shop.
-  group.add(facadeBlock({ side: 1, z0: -6.3, z1: -13.7, h: 12.5, base: '#8a6c5c', seed: 35, posters: 2, tags: 4, stains: 12, drips: 10, floors: [4.4], cols: 2 }));
-  group.add(facadeBlock({ side: 1, z0: -20.3, z1: -24.5, h: 9, base: '#878279', seed: 37, posters: 3, tags: 4, floors: [4.4, 7.2], cols: 2 }));
-  group.add(facadeBlock({ side: 1, z0: -31.3, z1: -36.7, h: 10, base: '#8b857a', seed: 39, posters: 2, tags: 3, floors: [4.6, 7.6], cols: 3 }));
 
   // ---------------------------------------------------------------- the blind wall
   const wallLen = WALL.z0 - WALL.z1; // 20
   const WT = { w: 2048, h: Math.round((2048 * WALL.h) / wallLen) };
   const wallTex = evening
-    ? grimeTexture({ w: WT.w, h: WT.h, base: '#8f8a7e', seed: 7, posters: 11, tags: 12, stains: 18, drips: 16 })
+    ? grimeTexture({ w: WT.w, h: WT.h, base: '#9a9486', spread: 0.05, seed: 7, posters: 0, tags: 3, stains: 16, drips: 14 })
     : grimeTexture({ w: WT.w, h: WT.h, base: '#c6bfad', spread: 0.06, seed: 21, posters: 0, tags: 0, stains: 7, drips: 6, damp: '#6b6a5a' });
   {
     // Canvas mapping for the +X face: canvas left = +Z end (z -12), top = wall top.
@@ -987,7 +956,28 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       c.fillStyle = g;
       c.fillRect(U(z) - 26, 0, 52, WT.h);
     }
-    if (!evening) {
+    if (evening) {
+      // Paste ghosts: pale rectangles where older posters were scraped off, glue tide marks.
+      const R = seeded(71);
+      for (let i = 0; i < 26; i++) {
+        const x = R() * WT.w;
+        const y = V(0.5 + R() * 2.4);
+        const w = 50 + R() * 70;
+        c.fillStyle = `rgba(214,206,186,${0.12 + R() * 0.18})`;
+        c.fillRect(x, y - w * 1.3, w, w * 1.3);
+        c.strokeStyle = 'rgba(60,52,40,0.18)';
+        c.lineWidth = 2;
+        c.strokeRect(x, y - w * 1.3, w, w * 1.3);
+      }
+      // Rain darkening under the coping and the billboard's lower edge.
+      for (const [y, a] of [[WALL.h, 0.4], [BILLBOARD.y0, 0.35]]) {
+        const g = c.createLinearGradient(0, V(y), 0, V(y) + 160);
+        g.addColorStop(0, `rgba(30,30,26,${a})`);
+        g.addColorStop(1, 'rgba(30,30,26,0)');
+        c.fillStyle = g;
+        c.fillRect(0, V(y), WT.w, 160);
+      }
+    } else {
       // Old tags ghosting through the primer.
       const R = seeded(88);
       c.globalAlpha = 0.12;
@@ -1042,57 +1032,87 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
   {
     const depth = 7;
     const geo = new THREE.BoxGeometry(depth, WALL.h, wallLen).translate(0, WALL.h / 2, 0);
-    const side = mat('#7d786e', { map: grimeTexture({ w: 512, h: 256, base: '#8a8478', seed: 8 }), roughness: 0.95 });
-    const face = mat('#ffffff', { map: wallTex, roughness: 0.94 });
+    const face = mat('#ffffff', { map: wallTex, roughness: 0.92, surface: 'mural.wall' });
+    const side = M.brick.material;
     const wall = new THREE.Mesh(geo, [face, side, side, side, side, side]); // +X face = the street
     wall.position.set(WALL.x - depth / 2, 0, (WALL.z0 + WALL.z1) / 2);
     wall.castShadow = true;
     wall.receiveShadow = true;
     wall.name = 'blind-wall';
     group.add(wall);
-    // Coping along the top and two rusty downpipes.
-    group.add(box(0.5, 0.18, wallLen + 0.3, { color: '#6d6a64', pos: [WALL.x - 0.15, WALL.h, (WALL.z0 + WALL.z1) / 2] }));
-    const pipeMat = mat('#6e4c38', { roughness: 0.6, metalness: 0.35 });
+    // Coping, a plinth course, two downpipes with brackets and shoes.
+    batch.add('trim', boxGeo(0.5, 0.18, wallLen + 0.3), { pos: [WALL.x - 0.15, WALL.h, (WALL.z0 + WALL.z1) / 2] });
+    batch.add('trim', boxGeo(0.08, 0.35, wallLen), { pos: [WALL.x, 0, (WALL.z0 + WALL.z1) / 2] });
     for (const z of [-12.4, -31.6]) {
-      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, WALL.h, 8).translate(0, WALL.h / 2, 0), pipeMat);
-      p.position.set(WALL.x + 0.09, 0, z);
-      p.castShadow = true;
-      group.add(p);
+      batch.add('pipe', cyl(0.055, 0.055, WALL.h - 0.25, 10), { pos: [WALL.x + 0.1, 0.12, z] });
+      batch.add('pipe', cbox(0.22, 0.22, 0.22), { pos: [WALL.x + 0.12, WALL.h - 0.2, z] });
+      for (let y = 1.4; y < WALL.h - 0.5; y += 2.1) batch.add('iron', cbox(0.16, 0.05, 0.14), { pos: [WALL.x + 0.06, y, z] });
+    }
+    // Fly-posters (evening): the wheat-paste wall at street level, a few tags over them.
+    if (evening) {
+      posterWall(batch, posters.cells, { side: -1, z0: -12.6, z1: -16.4, count: 9, seed: 5, tags: 1 });
+      posterWall(batch, posters.cells, { side: -1, z0: -19.5, z1: -25.8, count: 15, seed: 6, tags: 2 });
+      posterWall(batch, posters.cells, { side: -1, z0: -27.4, z1: -31.4, count: 7, seed: 9, tags: 2 });
     }
   }
 
   // ---------------------------------------------------------------- shopfronts
-  const signs = {};
-  // Bakery: fascia; shutter down at night, up by day.
+  // Bakery (Benali): shutter down at night, open by day.
   {
     const zc = (-5.7 + -11.95) / 2;
-    const fascia = sign(T.signs.bakery, 5.4, 0.55, { bg: '#5a4a3c', fg: '#e6d9bc', font: SERIF, weathered: 0.5, letterSpacing: 4 });
-    group.add(onFacade(fascia, -1, zc, 3.05));
+    const P = facadeFrame(-1, zc, 0);
+    addShopfront(batch, P, { w: 4.6, open: evening ? 0 : 1, glass: false, tint: '#b8b2a4', fasciaTint: '#5a4a3c' });
+    const fascia = sign(T.signs.bakery, 4.9, 0.48, { bg: null, fg: '#e6d9bc', font: SERIF, weathered: 0.45, letterSpacing: 4 });
+    fascia.material.polygonOffset = true;
+    fascia.material.polygonOffsetFactor = -1;
+    group.add(placeOn(fascia, P, [0, 3.36, 0.12]));
     signs.bakery = fascia;
     if (evening) {
-      const sh = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 2.6), mat('#ffffff', { map: shutterTexture(61, { tags: 3 }), roughness: 0.6, metalness: 0.35 }));
-      group.add(onFacade(sh, -1, zc, 1.3, 0.02));
+      posterWall(batch, posters.cells, { side: -1, z0: zc + 2.1, z1: zc - 2.1, count: 0, seed: 41, tags: 2, plane: FRONT_X - 0.075, base: 0.004 });
     } else {
-      const win = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 2.1), new THREE.MeshStandardMaterial({ map: windowTexture('bakery', true), roughness: 0.25, metalness: 0.1, envMap: env, envMapIntensity: 0.4 }));
-      group.add(onFacade(win, -1, zc, 1.25, 0.02));
-      group.add(box(0.3, 0.32, 5.4, { color: '#7d8084', metalness: 0.4, roughness: 0.5, pos: [-FRONT_X + 0.15, 2.45, zc] })); // rolled shutter box
+      // A shop with depth behind the glass (interior mapping), under a reflective film like Marco's.
+      const win = bakeryWindow(4.5, 2.55, { depth: 1.2 });
+      group.add(placeOn(win, P, [0, 1.3, 0.02]));
+      const film = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.55), new THREE.MeshStandardMaterial({ color: '#000000', roughness: 0.05, metalness: 0, envMap: env, envMapIntensity: 1.3, transparent: true, opacity: 0.24, depthWrite: false }));
+      film.renderOrder = 2;
+      film.userData.noOcclude = true;
+      group.add(placeOn(film, P, [0, 1.3, 0.035]));
     }
   }
-  // Marco's kebab: lit window, a projecting neon blade sign.
+  // Marco's kebab: lit window, a stall riser, a projecting neon blade sign, steam from the extractor.
   let neonMat = null;
   let neonLight = null;
+  let marcoSpill = null;
   {
     const zc = (-32.05 + -36.35) / 2;
-    const win = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.0), new THREE.MeshBasicMaterial({ map: windowTexture('kebab', true), color: evening ? 0xcfc6b4 : 0x9a958c }));
-    group.add(onFacade(win, -1, zc, 1.3, 0.02));
-    group.add(box(0.12, 0.08, 3.8, { color: '#5f5c58', pos: [-FRONT_X + 0.06, 2.3, zc] }));
+    const P = facadeFrame(-1, zc, 0);
+    addShopfront(batch, P, { w: 3.3, open: 1, glass: false, tint: '#a8a49a', fasciaTint: '#4a2e26' });
+    batch.add('trim', cbox(3.3, 0.6, 0.12), { parent: P, pos: [0, 0.3, 0.06] });
+    batch.add('casement', cbox(3.3, 0.06, 0.06), { parent: P, pos: [0, 2.48, 0.04] });
+    for (const x of [-0.55, 0.55]) batch.add('casement', cbox(0.05, 1.9, 0.05), { parent: P, pos: [x, 1.55, 0.04] });
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.86), new THREE.MeshBasicMaterial({ map: windowTexture(), color: evening ? 0xb4a892 : 0x8a857c }));
+    group.add(placeOn(win, P, [0, 1.55, 0.012]));
+    // The glass itself: a faint reflective film over the interior (catches the lamp and the street).
+    const film = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.86), new THREE.MeshStandardMaterial({ color: '#000000', roughness: 0.04, metalness: 0, envMap: env, envMapIntensity: 1.4, transparent: true, opacity: 0.28, depthWrite: false }));
+    film.renderOrder = 2;
+    film.userData.noOcclude = true;
+    group.add(placeOn(film, P, [0, 1.55, 0.03]));
+    const fas = sign(MARCO_FASCIA, 3.4, 0.4, { bg: null, fg: '#e8d6b0', font: SANS, weight: 800, weathered: 0.4, letterSpacing: 6 });
+    fas.material.polygonOffset = true;
+    fas.material.polygonOffsetFactor = -1;
+    group.add(placeOn(fas, P, [0, 3.36, 0.12]));
+    // Extractor louvre above the fascia.
+    batch.add('trim', cbox(0.5, 0.36, 0.14), { parent: facadeFrame(-1, -35.7, 4.55), pos: [0, 0, 0.07] });
+    for (let k = 0; k < 4; k++) batch.add('casement', cbox(0.44, 0.03, 0.04), { parent: facadeFrame(-1, -35.7, 4.55), pos: [0, -0.12 + k * 0.08, 0.15], rot: [0.5, 0, 0] });
     // Blade sign at the +Z end of the shop, readable from up the street.
     const bladeZ = -32.5;
-    group.add(box(1.4, 0.06, 0.06, { color: '#4a4a4c', metalness: 0.5, roughness: 0.5, pos: [-FRONT_X + 0.7, 3.95, bladeZ] }));
-    group.add(box(1.36, 0.46, 0.08, { color: '#1a1b1e', roughness: 0.6, pos: [-FRONT_X + 0.72, 3.25, bladeZ] }));
+    batch.add('iron', cbox(1.4, 0.06, 0.06), { pos: [-FRONT_X + 0.7, 3.95, bladeZ] });
+    batch.add('iron', rod([-FRONT_X + 0.02, 3.55, bladeZ], [-FRONT_X + 1.2, 3.95, bladeZ], 0.015));
+    batch.add('casement', cbox(1.36, 0.46, 0.08), { pos: [-FRONT_X + 0.72, 3.25, bladeZ] });
     neonMat = new THREE.MeshBasicMaterial({ map: neonTexture(T.signs.kebab), transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
     neonMat.color.setScalar(evening ? 1.6 : 0.55);
-    const neon = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.42), neonMat);
+    relangTexture(neonMat, () => neonTexture(T.signs.kebab));
+    const neon =new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.42), neonMat);
     neon.position.set(-FRONT_X + 0.72, 3.48, bladeZ + 0.05);
     neon.renderOrder = 4;
     group.add(neon);
@@ -1101,51 +1121,76 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     back.rotation.y = Math.PI;
     group.add(back);
     neonLight = pointLight(NEON, evening ? 7 : 0, { pos: [-FRONT_X + 1.1, 3.1, bladeZ + 0.4], distance: 8 });
+    neonLight.userData.noCone = true;
     group.add(neonLight);
     signs.kebab = neon;
+    // Warm light from the window on the wet pavement (additive; fog-faded in update).
+    marcoSpill = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.6, 4.2).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: haloTex, color: 0xffcf96, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
+    );
+    marcoSpill.position.set(-FRONT_X + 1.2, SIDEWALK_Y + 0.01, zc);
+    marcoSpill.renderOrder = 4;
+    group.add(marcoSpill);
   }
-  // The tube doorway (right, z -22.4): a recessed door and a fluorescent tube that buzzes and fails.
+  // The tube doorway (right, z -22.4): a porch with a canopy, a steel door, a fluorescent tube that buzzes and fails.
   let tubeMat = null;
   let tubeLight = null;
   {
     const zc = -22.4;
-    group.add(box(0.5, 2.4, 1.4, { color: '#2e2f30', roughness: 0.7, pos: [FRONT_X - 0.2, 0, zc] }));
-    const door = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.2), mat('#ffffff', { map: shutterTexture(71, { tags: 2, base: '#6f6a62' }), roughness: 0.7 }));
-    door.rotation.y = -Math.PI / 2;
-    door.position.set(FRONT_X - 0.46, 1.1, zc);
-    group.add(door);
+    const P = facadeFrame(1, zc - 0.6, 0);
+    for (const x of [-0.85, 0.85]) batch.add('render', cbox(0.16, 2.85, 0.55), { parent: P, pos: [x, 1.425, 0.275] });
+    batch.add('trim', cbox(1.95, 0.14, 0.7), { parent: P, pos: [0, 2.92, 0.33] });
+    batch.add('roller', cbox(1.3, 2.4, 0.05), { parent: P, pos: [0, 1.2, 0.03], color: '#8e8c86' });
+    batch.add('iron', cbox(0.04, 0.22, 0.05), { parent: P, pos: [0.45, 1.05, 0.08] });
+    batch.add('trim', cbox(1.6, 0.08, 0.6), { parent: P, pos: [0, 0.04, 0.3] });
+    batch.add('iron', cbox(1.25, 0.06, 0.12), { parent: P, pos: [0, 2.7, 0.3] });
+    addWindow(batch, facadeFrame(1, zc + 1.25, 1.85), { w: 1.0, h: 1.6, grille: true });
     tubeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(TUBE).multiplyScalar(evening ? 2.2 : 0.7), toneMapped: false });
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8), tubeMat);
-    tube.rotation.x = Math.PI / 2;
-    tube.position.set(FRONT_X - 0.5, 2.55, zc);
-    group.add(tube);
-    group.add(box(0.12, 0.06, 1.3, { color: '#8a8c8e', pos: [FRONT_X - 0.48, 2.6, zc] }));
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.15, 8).rotateZ(Math.PI / 2), tubeMat);
+    group.add(placeOn(tube, P, [0, 2.63, 0.32]));
     if (evening) {
-      tubeLight = pointLight(TUBE, 5, { pos: [FRONT_X - 0.9, 2.4, zc], distance: 6.5 });
+      tubeLight = pointLight(TUBE, 5, { pos: [0, 0, 0], distance: 6.5 });
+      placeOn(tubeLight, P, [0, 2.3, 0.75]);
+      tubeLight.userData.noCone = true;
       group.add(tubeLight);
+      posterWall(batch, posters.cells, { side: 1, z0: zc + 2.0, z1: zc + 0.4, count: 3, seed: 61, y0: 0.6, y1: 3.0 });
     }
   }
   // CYCLES DURAND: shutter down for good, a hand-written thank-you taped to it.
   {
     const zc = (-31.3 + -36.7) / 2;
-    const name = String(T.signs.shop).split(/\s+—\s+/);
-    const fascia = sign(name[0] || 'CYCLES DURAND', 4.8, 0.55, { bg: '#3d4a52', fg: '#d8d2c4', weathered: 0.75, letterSpacing: 6 });
-    group.add(onFacade(fascia, 1, zc, 3.05));
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.6), mat('#ffffff', { map: shutterTexture(81, { tags: 4 }), roughness: 0.6, metalness: 0.35 }));
-    group.add(onFacade(sh, 1, zc, 1.3, 0.02));
+    const P = facadeFrame(1, zc, 0);
+    const shopName = () => String(T.signs.shop).split(/\s+—\s+/);
+    const name = shopName();
+    addShopfront(batch, P, { w: 4.4, tint: '#a8998a', fasciaTint: '#3d4a52' });
+    const fascia = sign(name[0] || 'CYCLES DURAND', 4.4, 0.48, { bg: null, fg: '#d8d2c4', weathered: 0.7, letterSpacing: 6 });
+    relabel(fascia, () => shopName()[0] || 'CYCLES DURAND');
+    fascia.material.polygonOffset = true;
+    fascia.material.polygonOffsetFactor = -1;
+    group.add(placeOn(fascia, P, [0, 3.36, 0.12]));
     const note = sign(name.join('\n'), 0.8, 0.6, { bg: '#e6e0cf', fg: '#2b2a28', font: HANDWRITING, weight: 400, weathered: 0.3, pxPerM: 420, pad: 0.1 });
-    note.rotation.z = 0.04;
-    group.add(onFacade(note, 1, zc + 0.8, 1.55, 0.04));
-    note.rotation.z = 0.04;
+    relabel(note, () => shopName().join('\n'));
+    placeOn(note, P, [0.8, 1.55, 0.085]);
+    note.rotateZ(0.04);
+    group.add(note);
     signs.shopNote = note;
+    if (evening) posterWall(batch, posters.cells, { side: 1, z0: zc - 0.6, z1: zc - 2.0, count: 1, seed: 81, tags: 2, plane: FRONT_X - 0.075, base: 0.004 });
   }
   // The ghost sign, high on the gable brick.
   {
-    const g = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.9), new THREE.MeshStandardMaterial({ map: ghostTexture(T.signs.ghost), transparent: true, depthWrite: false, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -1 }));
-    group.add(onFacade(g, 1, -10, 8.7, 0.02));
+    const gm = new THREE.MeshStandardMaterial({ map: ghostTexture(T.signs.ghost), transparent: true, depthWrite: false, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -1 });
+    ctx.materials?.enhance?.(gm, 'facade_brick_painted', { albedo: 0.6, normalScale: 1 }); // the letters follow the brick
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.9), gm);
+    g.rotation.y = -Math.PI / 2;
+    g.position.set(FRONT_X - 0.02, 8.7, -10);
     g.renderOrder = 1;
+    group.add(g);
     signs.ghost = g;
+    posterWall(batch, posters.cells, { side: 1, z0: -7.0, z1: -11.8, count: 6, seed: 91, tags: 2 }); // still there in Ch5
   }
+  // More paper on the row by the club's straight (both variants: it is the same street weeks later).
+  posterWall(batch, posters.cells, { side: 1, z0: -14.3, z1: -15.6, count: 3, seed: 95 });
 
   // ---------------------------------------------------------------- the STRIDE billboard (evening)
   let bbMat = null;
@@ -1154,15 +1199,25 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     bb.name = 'billboard';
     const tex = strideTexture(T.signs.billboard);
     bbMat = new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.6 });
+    relangTexture(bbMat, () => strideTexture(T.signs.billboard), ['map', 'emissiveMap']);
     const face = new THREE.Mesh(new THREE.PlaneGeometry(BILLBOARD.w, BILLBOARD.h), bbMat);
     face.rotation.y = Math.PI / 2;
     face.position.set(WALL.x + 0.2, BILLBOARD.y0 + BILLBOARD.h / 2, BILLBOARD.z);
-    const frameMat = mat('#5d6166', { roughness: 0.65, metalness: 0.35 });
-    bb.add(face, box(0.18, BILLBOARD.h + 0.24, BILLBOARD.w + 0.24, { material: frameMat, pos: [WALL.x + 0.09, BILLBOARD.y0 - 0.12, BILLBOARD.z] }));
-    // Two lamp arms over the top edge.
+    bb.add(face);
+    // Steel frame, stand-off brackets, a service walkway with a rail, two gooseneck lamps.
+    const zc = BILLBOARD.z;
+    const top = BILLBOARD.y0 + BILLBOARD.h;
+    batch.add('iron', boxGeo(0.12, 0.14, BILLBOARD.w + 0.3), { pos: [WALL.x + 0.14, top, zc] });
+    batch.add('iron', boxGeo(0.12, 0.14, BILLBOARD.w + 0.3), { pos: [WALL.x + 0.14, BILLBOARD.y0 - 0.14, zc] });
+    for (const dz of [-BILLBOARD.w / 2 - 0.08, BILLBOARD.w / 2 + 0.08]) batch.add('iron', boxGeo(0.12, BILLBOARD.h + 0.28, 0.12), { pos: [WALL.x + 0.14, BILLBOARD.y0 - 0.14, zc + dz] });
+    for (let k = -2; k <= 2; k++) batch.add('iron', rod([WALL.x + 0.02, BILLBOARD.y0 - 1.6, zc + k * 1.7], [WALL.x + 0.78, BILLBOARD.y0 - 0.95, zc + k * 1.7], 0.025));
+    batch.add('iron', boxGeo(0.7, 0.04, BILLBOARD.w), { pos: [WALL.x + 0.45, BILLBOARD.y0 - 0.95, zc] });
+    batch.add('iron', boxGeo(0.04, 0.04, BILLBOARD.w), { pos: [WALL.x + 0.78, BILLBOARD.y0 - 0.02, zc] });
+    for (let k = -4; k <= 4; k++) batch.add('iron', boxGeo(0.025, 0.95, 0.025), { pos: [WALL.x + 0.78, BILLBOARD.y0 - 0.95, zc + k * (BILLBOARD.w / 8.2)] });
     for (const dz of [-2, 2]) {
-      bb.add(box(0.7, 0.05, 0.05, { material: frameMat, pos: [WALL.x + 0.45, BILLBOARD.y0 + BILLBOARD.h + 0.2, BILLBOARD.z + dz] }));
-      bb.add(box(0.14, 0.08, 0.5, { color: '#2a2c2e', pos: [WALL.x + 0.8, BILLBOARD.y0 + BILLBOARD.h + 0.14, BILLBOARD.z + dz] }));
+      batch.add('iron', tubeGeo([[WALL.x + 0.15, top + 0.07, zc + dz], [WALL.x + 0.6, top + 0.45, zc + dz], [WALL.x + 1.05, top + 0.3, zc + dz]], 0.02, 12, 5));
+      batch.add('iron', new THREE.CylinderGeometry(0.05, 0.16, 0.18, 10, 1, true).rotateZ(-0.7), { pos: [WALL.x + 1.08, top + 0.24, zc + dz] });
+      batch.add('lampGlass', new THREE.CircleGeometry(0.13, 10).rotateX(Math.PI / 2).rotateZ(-0.7), { pos: [WALL.x + 1.04, top + 0.18, zc + dz], color: new THREE.Color(0xfff1d8).multiplyScalar(3.2) });
     }
     group.add(bb);
     signs.billboard = face;
@@ -1179,6 +1234,8 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       const z1 = z0 - slot;
       const target = new THREE.Color(p.color || '#d9a441');
       const m = new THREE.MeshStandardMaterial({ map: panelTexture(p.id, 300 + i * 7), color: GREY.clone(), transparent: true, depthWrite: false, roughness: 0.88, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      // Paint on render: the wall's own relief and tone come through the motif.
+      ctx.materials?.enhance?.(m, 'wall_mural_render', { albedo: 0.55, normalScale: 1.1, roughnessVar: 0.5 });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(slot - PANEL.gap, PANEL.h), m);
       mesh.rotation.y = Math.PI / 2;
       mesh.position.set(WALL.x + 0.015, PANEL.y0 + PANEL.h / 2, (z0 + z1) / 2);
@@ -1205,97 +1262,86 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
   const fasciaW = 3.6;
   const fasciaH = 0.6;
   const fascia = fasciaBoard(T.signs.fascia, evening ? T.signs.fasciaStart : T.signs.fascia, fasciaW, fasciaH);
-  let windowMat = null;
   {
-    const ftex = grimeTexture({ w: 1024, h: 512, base: '#8c8478', seed: 14, posters: 4, tags: 6, stains: 14, drips: 12 });
-    const c = ftex.userData.canvas.getContext('2d');
-    const U = (x) => ((x + FACADE.w / 2) / FACADE.w) * 1024;
-    const V = (y) => (1 - y / FACADE.h) * 512;
-    c.fillStyle = 'rgba(40,36,30,0.3)';
-    for (const y of [3.55, 6.65, 9.75, 12.85]) c.fillRect(0, V(y) - 3, 1024, 6); // string courses
-    const pg = c.createLinearGradient(0, V(1.0), 0, 512);
-    pg.addColorStop(0, 'rgba(26,24,20,0)');
-    pg.addColorStop(1, 'rgba(26,24,20,0.55)');
-    c.fillStyle = pg;
-    c.fillRect(0, V(1.0), 1024, 512 - V(1.0));
-    // Damp spreading out under the awning, rust under its brackets.
-    const dg = c.createRadialGradient(U(0), V(3.9), 10, U(0), V(3.9), 120);
-    dg.addColorStop(0, 'rgba(50,52,40,0.4)');
-    dg.addColorStop(1, 'rgba(50,52,40,0)');
-    c.fillStyle = dg;
-    c.fillRect(U(-6), V(7), U(6) - U(-6), V(0) - V(7));
-    ftex.needsUpdate = true;
-    const facade = new THREE.Mesh(notchedFacade(FACADE.w, FACADE.h, GARAGE.x0, GARAGE.x1, GARAGE.h), mat('#ffffff', { map: ftex, roughness: 0.93 }));
-    facade.position.set(0, 0, DOOR_Z);
-    facade.castShadow = true;
-    facade.receiveShadow = true;
-    facade.name = 'no14';
-    group.add(facade);
-    // Roof parapet and a chimney stack against the sky.
-    group.add(box(FACADE.w, 0.5, 0.6, { color: '#6c6862', pos: [0, FACADE.h, DOOR_Z - 0.3] }));
-    group.add(box(1.2, 2.4, 0.9, { color: '#6a5a50', pos: [-7.5, FACADE.h, DOOR_Z - 2] }));
-    // Garage door jambs and lintel.
-    const jamb = mat('#5b5853', { roughness: 0.8 });
-    group.add(box(0.16, GARAGE.h + 0.16, 0.2, { material: jamb, pos: [GARAGE.x0 - 0.08, 0, DOOR_Z + 0.05] }));
-    group.add(box(0.16, GARAGE.h + 0.16, 0.2, { material: jamb, pos: [GARAGE.x1 + 0.08, 0, DOOR_Z + 0.05] }));
-    group.add(box(GARAGE.x1 - GARAGE.x0 + 0.32, 0.16, 0.2, { material: jamb, pos: [0, GARAGE.h, DOOR_Z + 0.05] }));
-    // The fascia board.
-    const fm = new THREE.Mesh(new THREE.PlaneGeometry(fasciaW, fasciaH), new THREE.MeshStandardMaterial({ map: fascia.tex, roughness: 0.7 }));
-    fm.position.set(0, 3.2, DOOR_Z + 0.04);
+    const GFH = 4.2;
+    const lower = new THREE.Mesh(notchedFacade(FACADE.w, GFH, GARAGE.x0, GARAGE.x1, GARAGE.h), M.brickPlaster.material);
+    lower.position.set(0, 0, DOOR_Z);
+    const upper = new THREE.Mesh(new THREE.PlaneGeometry(FACADE.w, FACADE.h - GFH).translate(0, (FACADE.h + GFH) / 2, 0), M.render.material);
+    upper.position.set(0, 0, DOOR_Z);
+    for (const m of [lower, upper]) {
+      m.castShadow = true;
+      m.receiveShadow = true;
+      m.name = 'no14';
+      group.add(m);
+    }
+    // Trims: plinth, string courses, cornice; parapet and a chimney stack against the sky.
+    const zf = DOOR_Z;
+    for (const [x0, x1] of [[-FACADE.w / 2, GARAGE.x0 - 0.16], [GARAGE.x1 + 0.16, FACADE.w / 2]]) batch.add('trim', boxGeo(x1 - x0, 0.45, 0.1), { pos: [(x0 + x1) / 2, 0, zf] });
+    batch.add('trim', boxGeo(FACADE.w, 0.2, 0.18), { pos: [0, GFH - 0.1, zf] });
+    for (const y of [7.25, 10.35]) batch.add('trim', boxGeo(FACADE.w, 0.12, 0.1), { pos: [0, y, zf] });
+    batch.add('trim', boxGeo(FACADE.w, 0.24, 0.5), { pos: [0, FACADE.h - 0.5, zf] });
+    batch.add('trim', boxGeo(FACADE.w, 0.5, 0.6), { pos: [0, FACADE.h, zf - 0.3] });
+    batch.add('brick', boxGeo(1.2, 2.4, 0.9), { pos: [-7.5, FACADE.h, zf - 2] });
+    batch.add('brick', boxGeo(0.9, 1.8, 0.7), { pos: [6.2, FACADE.h, zf - 2.4] });
+    // Garage door jambs and lintel (steel).
+    batch.add('iron', boxGeo(0.16, GARAGE.h + 0.16, 0.2), { pos: [GARAGE.x0 - 0.08, 0, zf + 0.05] });
+    batch.add('iron', boxGeo(0.16, GARAGE.h + 0.16, 0.2), { pos: [GARAGE.x1 + 0.08, 0, zf + 0.05] });
+    batch.add('iron', boxGeo(GARAGE.x1 - GARAGE.x0 + 0.32, 0.16, 0.2), { pos: [0, GARAGE.h, zf + 0.05] });
+    // The fascia board in a moulded frame.
+    const fm = new THREE.Mesh(new THREE.PlaneGeometry(fasciaW, fasciaH), new THREE.MeshStandardMaterial({ map: fascia.tex, roughness: 0.62 }));
+    fm.position.set(0, 3.2, DOOR_Z + 0.06);
     group.add(fm);
+    batch.add('door', cbox(fasciaW + 0.2, fasciaH + 0.16, 0.05), { pos: [0, 3.2, DOOR_Z + 0.025], color: '#3a4440' });
     fascia.mesh = fm;
     fascia.draw(evening ? fascia.startN : fascia.fullN);
     // The stairwell door and its enamel number.
-    const sdoor = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.25), mat('#ffffff', { map: shutterTexture(91, { tags: 1, base: '#6a5444' }), roughness: 0.75 }));
-    sdoor.position.set(3.75, 1.125, DOOR_Z + 0.02);
-    group.add(sdoor);
+    addDoor(batch, compose({ pos: [3.75, 0, DOOR_Z] }), { w: 1.1, h: 2.2, fan: 0.45, tint: '#5a4636', lit: evening ? { cell: LIT_CELLS[3], color: '#a08a68' } : null });
     const num = sign(T.signs.number, 0.42, 0.22, { bg: '#2d4a6e', fg: '#e8e4da', border: '#e8e4da', weathered: 0.3, pxPerM: 400 });
-    num.position.set(4.6, 1.85, DOOR_Z + 0.03);
+    relabel(num, () => T.signs.number);
+    num.position.set(4.95, 1.85, DOOR_Z + 0.03); // clear of the door surround (x <= 4.5, 0.18 deep), seen from the left
     group.add(num);
     signs.number = num;
     // Windows: three upper floors. Hugo's (third floor, above the workshop) is lit.
-    const glass = [];
-    const sills = [];
     const cols = [-11.5, -8.3, -5.1, -1.3, 1.3, 5.1, 8.3, 11.5];
-    const floorsY = [4.7, 7.8, 10.9];
-    const HUGO = { x: 1.3, y: 10.9 };
-    for (const y of floorsY) {
+    const floorsY = [5.6, 8.7, 11.8];
+    const HUGO = { x: 1.3, y: 11.8 };
+    const R = seeded(1448);
+    floorsY.forEach((y, fi) => {
       for (const x of cols) {
-        sills.push({ pos: [x, y - 0.86, DOOR_Z + 0.08], size: [1.4, 0.08, 0.18], color: '#b8b2a6' });
-        if (evening && x === HUGO.x && y === HUGO.y) continue; // his lamp is on (evening only)
-        glass.push([x, y]);
+        const hugo = evening && x === HUGO.x && y === HUGO.y;
+        const r = R();
+        const lit = evening && !hugo && r < 0.12 ? { cell: LIT_CELLS[(R() * 4) | 0], color: new THREE.Color('#ffd7a0').multiplyScalar(0.8 + R() * 0.5) } : null;
+        addWindow(batch, compose({ pos: [x, y, DOOR_Z] }), {
+          w: 1.05,
+          h: fi === 0 ? 2.1 : 1.7,
+          balcony: fi === 0 && Math.abs(x) > 4,
+          shutters: hugo ? 'open' : R() < 0.2 ? 'closed' : R() < 0.75 ? 'open' : null,
+          shutterTint: '#8c979e',
+          lit,
+        });
+        if (hugo) {
+          const litM = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.65), new THREE.MeshBasicMaterial({ map: litWindowTexture(), fog: false, toneMapped: false }));
+          litM.position.set(HUGO.x, HUGO.y, DOOR_Z + 0.018);
+          litM.name = 'hugo-window';
+          group.add(litM);
+          signs.hugoWindow = litM;
+        }
       }
-    }
-    windowMat = new THREE.MeshStandardMaterial({ color: '#4a5056', roughness: 0.18, metalness: 0.55, envMap: env, envMapIntensity: 0.7 });
-    const gm = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.15, 1.6), windowMat, glass.length);
-    const dm = new THREE.Object3D();
-    glass.forEach(([x, y], i) => {
-      dm.position.set(x, y, DOOR_Z + 0.03);
-      dm.updateMatrix();
-      gm.setMatrixAt(i, dm.matrix);
     });
-    gm.instanceMatrix.needsUpdate = true;
-    gm.computeBoundingSphere();
-    group.add(gm);
-    group.add(instancedBoxes(sills, mat(0xffffff, { roughness: 0.9 })));
-    if (evening) {
-      const lit = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.6), new THREE.MeshBasicMaterial({ map: litWindowTexture(), fog: false, toneMapped: false }));
-      lit.position.set(HUGO.x, HUGO.y, DOOR_Z + 0.03);
-      lit.name = 'hugo-window';
-      group.add(lit);
-      signs.hugoWindow = lit;
-    }
   }
 
   // Interior room behind the garage door (Ch5 dresses it; the evening variant gets clutter here).
-  const interiorLight = pointLight(WARM, evening ? 16 : 9, { pos: [0, 2.35, -50.4], distance: 10 });
+  const interiorLight = pointLight(WARM, evening ? 12 : 9, { pos: [0, 2.35, -50.4], distance: 10 });
+  interiorLight.userData.noCone = true;
   group.add(interiorLight);
   {
     const iw = INTERIOR.maxX - INTERIOR.minX;
     const idp = INTERIOR.maxZ - INTERIOR.minZ;
     const zc = (INTERIOR.maxZ + INTERIOR.minZ) / 2;
-    const wallM = mat('#ffffff', { map: grimeTexture({ w: 512, h: 256, base: '#a49a88', seed: 141, posters: 2, tags: 0, stains: 8, drips: 4 }), roughness: 0.95 });
-    const floorM = mat('#8a8680', { roughness: 0.92 });
+    // The same whitewashed brick recipe as Ch4's workshop (no grime canvas on top: its own drawn
+    // pattern fought the PBR courses and doubled the bricks).
+    const wallM = ctx.look ? ctx.look.surface('workshop.brick') : mat(evening ? '#a89e8c' : '#ffffff', { map: grimeTexture({ w: 512, h: 256, base: '#a49a88', seed: 141, posters: 2, tags: 0, stains: 8, drips: 4 }), roughness: 0.95 });
+    const floorM = ctx.look ? ctx.look.surface('workshop.concrete') : mat('#8a8680', { roughness: 0.92 });
     const ceilM = mat('#6e6a64', { roughness: 0.95 });
     const plane = (w, h, m) => new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
     const back = plane(iw, INTERIOR.h, wallM);
@@ -1318,12 +1364,28 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(WARM).multiplyScalar(3), toneMapped: false }));
     bulb.position.set(0, 2.45, -50.4);
     group.add(bulb, box(0.01, 0.6, 0.01, { color: '#222222', pos: [0, 2.5, -50.4], castShadow: false }));
+    if (evening) {
+      // What the light under the door shows: a bench with tins, a sign board leaning, shelving.
+      batch.add('timber', cbox(2.2, 0.06, 0.7), { pos: [-0.9, 0.9, -52.75] });
+      for (const x of [-1.9, 0.1]) for (const z of [-52.5, -53.0]) batch.add('steel', cyl(0.03, 0.03, 0.88, 6), { pos: [x, 0, z] });
+      batch.add('timber', cbox(1.6, 0.6, 0.03), { pos: [1.7, 0.33, -50.0], rot: [0, -1.2, 0.18] });
+      batch.add('timber', cbox(1.2, 0.04, 0.4), { pos: [-2.3, 1.6, -51.0], rot: [0, Math.PI / 2, 0] });
+      batch.add('timber', cbox(1.2, 0.04, 0.4), { pos: [-2.3, 2.1, -51.0], rot: [0, Math.PI / 2, 0] });
+      // Tins on the shelves and the bench, old sign blanks leaning on the back wall, a stool.
+      const R = seeded(52);
+      for (const y of [1.62, 2.12]) for (let k = 0; k < 5; k++) batch.add('steel', cyl(0.07, 0.07, 0.13 + R() * 0.06, 10), { pos: [-2.3, y, -51.45 + k * 0.22 + R() * 0.05] });
+      for (let k = 0; k < 4; k++) batch.add('steel', cyl(0.08, 0.08, 0.16, 10), { pos: [-1.6 + k * 0.32, 0.93, -52.7 + R() * 0.1] });
+      for (let k = 0; k < 3; k++) batch.add('door', cbox(0.9 + R() * 0.5, 0.5 + R() * 0.3, 0.025), { pos: [1.1 + k * 0.25, 0.4, -53.05 + k * 0.05], rot: [-0.12, 0, 0], color: ['#6a5a48', '#4a5a52', '#7a6a50'][k] });
+      batch.add('timber', cyl(0.18, 0.2, 0.04, 12), { pos: [-0.4, 0.62, -51.6] });
+      for (const [dx, dz] of [[-0.12, -0.12], [0.12, -0.12], [-0.12, 0.12], [0.12, 0.12]]) batch.add('steel', rod([-0.4 + dx * 1.4, 0, -51.6 + dz * 1.4], [-0.4 + dx, 0.62, -51.6 + dz], 0.015));
+    }
   }
   // Garage door: half down at night (warm light under it), rolled up by day.
   let doorPanel = null;
   {
-    group.add(box(3.4, 0.32, 0.34, { color: '#6f7276', metalness: 0.4, roughness: 0.55, pos: [0, GARAGE.h - 0.02, DOOR_Z - 0.22] }));
-    doorPanel = new THREE.Mesh(new THREE.BoxGeometry(3.24, 1.38, 0.05).translate(0, 0.69, 0), mat('#ffffff', { map: shutterTexture(101, { tags: 3, base: '#7f8488' }), roughness: 0.55, metalness: 0.4 }));
+    batch.add('roller', boxGeo(3.4, 0.32, 0.34), { pos: [0, GARAGE.h - 0.02, DOOR_Z - 0.22], color: '#9a9ea2' });
+    doorPanel = new THREE.Mesh(new THREE.BoxGeometry(3.24, 1.38, 0.05).translate(0, 0.69, 0), M.roller.material);
+    doorPanel.geometry.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(doorPanel.geometry.attributes.position.count * 3).fill(0.75), 3));
     doorPanel.position.set(0, GARAGE.h - 1.38, DOOR_Z - 0.06);
     doorPanel.castShadow = true;
     doorPanel.visible = evening;
@@ -1334,64 +1396,26 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     new THREE.PlaneGeometry(4.6, 3.4).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ map: haloTex, color: 0xffc58a, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
   );
-  spill.position.set(0, 0.03, DOOR_Z + 1.6);
+  spill.position.set(0, SIDEWALK_Y + 0.01, DOOR_Z + 1.6);
   spill.renderOrder = 4;
   group.add(spill);
 
-  // The deep awning over the workshop front.
-  {
-    const aw = new THREE.Group();
-    aw.position.set(0, 4.3, DOOR_Z);
-    const canvasM = mat('#ffffff', { map: awningTexture(), roughness: 0.9, side: THREE.DoubleSide });
-    const top = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.05, 3.5).translate(0, 0, 1.75), canvasM);
-    top.rotation.x = 0.12; // the front edge dips
-    top.castShadow = true;
-    top.receiveShadow = true;
-    aw.add(top);
-    const val = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.32, 0.03), canvasM);
-    val.position.set(0, -0.58, 3.47);
-    aw.add(val);
-    const armM = mat('#4a4c4e', { metalness: 0.5, roughness: 0.5 });
-    for (const x of [-3.3, 3.3]) {
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 3.6), armM);
-      arm.position.set(x, -0.2, 1.75);
-      arm.rotation.x = 0.12;
-      aw.add(arm);
-    }
-    group.add(aw);
-  }
+  // The deep lean-to over the workshop front, the cables overhead.
+  const awning = addAwning(batch, { doorZ: DOOR_Z });
+  addCables(batch);
 
-  // Overhead cables across the street (the retro kit's sagging cable run).
-  {
-    const cables = await Promise.all([-14, -39].map(() => prop('kenney/retro/detail-cables-type-a.glb', { width: 12, castShadow: false })));
-    cables.forEach((cb, i) => {
-      cb.position.set(0, 6.2 + i * 0.6, [-14, -39][i]);
-      cb.traverse((o) => {
-        if (!o.isMesh) return;
-        o.material = mat('#222426', { roughness: 0.6 });
-        o.userData.noDispose = false;
-      });
-      group.add(cb);
-    });
-  }
-
-  // ---------------------------------------------------------------- street lamps
-  const lampProps = await Promise.all(LAMPS.map((l) => prop(`kenney/roads/light-${l.model}.glb`, { height: 4.5, center: false })));
+  // ---------------------------------------------------------------- street lamps (wall consoles)
   const heads = [];
   const lights = [];
   let flickerLight = null;
-  LAMPS.forEach((l, i) => {
-    const g = lampProps[i];
-    const rot = l.side < 0 ? -Math.PI / 2 : Math.PI / 2; // arm (native -Z) reaches over the road
-    g.rotation.y = rot;
-    g.position.set(l.side * LAMP_X, 0, l.z);
-    group.add(g);
-    const reach = Math.max(0.9, (g.userData.size?.z ?? 1.8) * 0.82);
-    const [ox, oz] = rotXZ(0, -reach, rot);
-    const head = { x: l.side * LAMP_X + ox, y: 4.5 * 0.84, z: l.z + oz, lamp: l };
+  LAMPS.forEach((l) => {
+    const lit = l.light && evening;
+    const glassColor = l.bulb === false ? '#2a2a28' : lit ? new THREE.Color(SODIUM).multiplyScalar(5) : evening ? new THREE.Color(SODIUM).multiplyScalar(1.4) : '#a8a396';
+    const p = addLamp(batch, { side: l.side, z: l.z, glassKey: l.flicker && lit ? 'lampGlassFlicker' : 'lampGlass', glassColor });
+    const head = { x: p.x, y: p.y, z: p.z, lamp: l };
     if (l.bulb !== false) heads.push(head);
-    if (l.light && evening) {
-      const pl = pointLight(SODIUM, LAMP_INTENSITY, { pos: [head.x, head.y - 0.25, head.z], distance: 16 });
+    if (lit) {
+      const pl = pointLight(SODIUM, LAMP_INTENSITY, { pos: [p.x, p.y - 0.12, p.z], distance: 18 });
       pl.userData.base = LAMP_INTENSITY;
       group.add(pl);
       lights.push(pl);
@@ -1399,108 +1423,80 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       if (l.flicker) flickerLight = pl;
     }
   });
-  const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }), heads.length);
-  {
-    const hot = new THREE.Color(SODIUM).multiplyScalar(5);
-    const dim = new THREE.Color(SODIUM).multiplyScalar(evening ? 1.6 : 0.5);
-    const dummy = new THREE.Object3D();
-    heads.forEach((h, i) => {
-      dummy.position.set(h.x, h.y + 0.02, h.z);
-      dummy.scale.set(1.3, 0.55, 1.3);
-      dummy.updateMatrix();
-      bulbs.setMatrixAt(i, dummy.matrix);
-      bulbs.setColorAt(i, h.light ? hot : dim);
-    });
-    bulbs.instanceMatrix.needsUpdate = true;
-    bulbs.castShadow = false;
-    bulbs.computeBoundingSphere();
-    group.add(bulbs);
-  }
   const litHeads = heads.filter((h) => h.light);
   let halos = null;
   let haloGeo = null;
   let haloBase = null;
-  let cones = null;
   if (evening && litHeads.length) {
     haloGeo = new THREE.BufferGeometry();
-    haloGeo.setAttribute('position', new THREE.Float32BufferAttribute(heads.flatMap((h) => [h.x, h.y - 0.05, h.z]), 3));
+    haloGeo.setAttribute('position', new THREE.Float32BufferAttribute(heads.flatMap((h) => [h.x, h.y, h.z]), 3));
     const hc = new THREE.Color(SODIUM);
-    haloGeo.setAttribute('color', new THREE.Float32BufferAttribute(heads.flatMap((h) => (h.light ? [hc.r, hc.g, hc.b] : [hc.r * 0.4, hc.g * 0.4, hc.b * 0.4])), 3));
+    haloGeo.setAttribute('color', new THREE.Float32BufferAttribute(heads.flatMap((h) => (h.light ? [hc.r, hc.g, hc.b] : [hc.r * 0.3, hc.g * 0.3, hc.b * 0.3])), 3));
     halos = new THREE.Points(
       haloGeo,
-      new THREE.PointsMaterial({ map: haloTex, size: 2.6, sizeAttenuation: true, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
+      new THREE.PointsMaterial({ map: haloTex, size: 2.4, sizeAttenuation: true, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
     );
     haloBase = Float32Array.from(haloGeo.getAttribute('color').array);
     halos.renderOrder = 4;
     halos.frustumCulled = false;
     group.add(halos);
-    cones = makeCones(litHeads);
-    group.add(cones);
   }
-  const flickIndex = litHeads.findIndex((h) => h.light === flickerLight);
 
-  // ---------------------------------------------------------------- bench and litter
+  // ---------------------------------------------------------------- bench, dumpster and the kerbside
+  addBench(batch, { x: SEAT.x, z: SEAT.z });
+  addDumpster(batch, { x: 5.42, z: -38.9, side: 1 });
   const litter = evening
     ? [
         ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [5.3, -3.1], 0.4, 'lying'],
         ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [-5.25, -27.6], 1.9, 'lying'],
-        ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [5.45, -38.0], 0],
-        ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [-5.4, -14.4], 0.8, 'lying'],
-        ['kenney/furniture/cardboardBoxOpen.glb', { height: 0.38 }, [5.35, -8.4], 0.5],
-        ['kenney/furniture/cardboardBoxOpen.glb', { height: 0.38 }, [-5.4, -40.4], 2.2],
-        ['kenney/survival/box-open.glb', { height: 0.5 }, [5.4, -29.6], 0.3],
+        ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [5.45, -37.6], 0],
+        ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [-3.75, -14.4], 0.8, 'lying'],
         ['kenney/retro/pallet-small.glb', { width: 1.0 }, [5.42, -19.4], 0.05],
         ['kenney/retro/pallet-small.glb', { width: 1.0 }, [5.42, -19.4], 0.25, 'stack'],
-        ['kenney/retro/detail-dumpster-closed.glb', { height: 1.3, tint: 0x8e9a8a }, [5.4, -38.9], Math.PI / 2],
-        ['kenney/survival/barrel.glb', { height: 0.9, tint: 0x9a8a7a }, [5.45, -44.7], 0.3],
-        ['kenney/survival/barrel-open.glb', { height: 0.9, tint: 0x8a7a6a }, [-5.45, -43.6], 1.1],
         ['kenney/roads/construction-cone.glb', { height: 0.5, castShadow: false }, [-2.45, -47.35], 0],
         ['kenney/roads/construction-cone.glb', { height: 0.5, castShadow: false }, [-2.85, -47.0], 0.6],
-        ['kenney/retro/detail-bricks-type-a.glb', { height: 0.22, castShadow: false }, [-5.5, -29.4], 0.4],
-        ['kenney/retro/detail-bricks-type-a.glb', { height: 0.22, castShadow: false }, [5.45, -12.9], 1.2],
+        ['kenney/retro/detail-bricks-type-a.glb', { height: 0.2, castShadow: false }, [-5.5, -29.4], 0.4],
+        ['props/trash_bag.glb', { height: 0.62 }, [-5.45, -4.6], 0.3],
+        ['props/trash_bag.glb', { height: 0.55 }, [-5.6, -4.05], 2.1],
+        ['props/trash_bag.glb', { height: 0.6 }, [5.5, -37.5], 1.2],
+        ['props/trash_bag.glb', { height: 0.5 }, [-5.4, -46.7], 0.7],
+        ['props/trash_bag.glb', { height: 0.55 }, [5.55, -14.9], 2.6],
+        ['props/bin_metal.glb', { height: 0.9 }, [5.5, -13.0], -1.2],
+        ['props/bin_metal.glb', { height: 0.9 }, [-5.45, 3.6], 1.4],
+        ['props/cardboard_box.glb', { height: 0.34 }, [5.4, -8.4], 0.5],
+        ['props/cardboard_box.glb', { height: 0.3 }, [-5.45, -40.4], 2.2],
+        ['props/barrel.glb', { height: 0.9 }, [5.45, -44.7], 0.3],
+        ['props/milk_crate.glb', { height: 0.26 }, [-5.55, -31.9], 0.2],
+        ['props/milk_crate.glb', { height: 0.26 }, [-5.55, -31.9], 0.5, 'stack'],
+        ['props/milk_crate.glb', { height: 0.26 }, [-5.5, -32.45], 1.4],
+        ['props/crate_wood.glb', { width: 0.8 }, [-5.4, -43.6], Math.PI / 2],
+        ['props/cafe_set.glb', { height: 0.86 }, [-5.25, -11.1], 0.08],
       ]
     : [
-        ['kenney/retro/detail-dumpster-closed.glb', { height: 1.3, tint: 0x8e9a8a }, [5.4, -38.9], Math.PI / 2],
-        ['kenney/survival/barrel.glb', { height: 0.9, tint: 0x9a8a7a }, [5.45, -44.7], 0.3],
         ['kenney/survival/bottle-large.glb', { height: 0.32, castShadow: false }, [5.3, -3.1], 0.4, 'lying'],
-        ['kenney/furniture/cardboardBoxOpen.glb', { height: 0.38 }, [5.35, -8.4], 0.5],
+        ['props/trash_bag.glb', { height: 0.6 }, [5.5, -37.5], 1.2],
+        ['props/trash_bag.glb', { height: 0.5 }, [-5.4, -46.7], 0.7],
+        ['props/bin_metal.glb', { height: 0.9 }, [5.5, -13.0], -1.2],
+        ['props/cardboard_box.glb', { height: 0.34 }, [5.4, -8.4], 0.5],
+        ['props/barrel.glb', { height: 0.9 }, [5.45, -44.7], 0.3],
+        ['props/milk_crate.glb', { height: 0.26 }, [-5.5, -32.45], 1.4],
+        ['props/cafe_set.glb', { height: 0.86 }, [-5.25, -11.1], 0.08],
       ];
-  const [bench, ...litterProps] = await Promise.all([prop('kenney/retro/detail-bench.glb', { height: 0.9 }), ...litter.map(([p, o]) => prop(p, o))]);
-  bench.position.set(-5.45, 0, SEAT.z);
-  bench.rotation.y = -Math.PI / 2; // backrest against the facade, seat faces the street (+X)
-  group.add(bench);
+  const litterProps = await Promise.all(litter.map(([p, o]) => prop(p, o)));
   litterProps.forEach((g, i) => {
-    const [, , [x, z], rot, how] = litter[i];
-    g.position.set(x, 0, z);
+    const [path, , [x, z], rot, how] = litter[i];
+    g.position.set(x, SIDEWALK_Y, z);
     g.rotation.y = rot;
     if (how === 'lying') {
       g.rotation.set(0, rot, Math.PI / 2);
-      g.position.y = (g.userData.size?.x ?? 0.18) / 2;
+      g.position.y = SIDEWALK_Y + (g.userData.size?.x ?? 0.18) / 2;
     } else if (how === 'stack') {
-      g.position.y = g.userData.size?.y ?? 0.3;
+      g.position.y = SIDEWALK_Y + (g.userData.size?.y ?? 0.3);
     }
+    if (path.startsWith('props/') && (g.userData.size?.y ?? 1) < 0.7) g.traverse((o) => o.isMesh && (o.castShadow = false));
+    noOcclude(g);
     group.add(g);
   });
-  // Bin bags (one instanced draw).
-  {
-    const BAGS = evening
-      ? [[-5.4, -4.7, 1.0], [-5.55, -4.1, 0.85], [5.5, -37.6, 0.95], [-5.35, -46.6, 0.9], [5.55, -14.8, 0.8], [-5.5, -38.0, 0.7]]
-      : [[5.5, -37.6, 0.95], [-5.35, -46.6, 0.9]];
-    const bagGeo = new THREE.IcosahedronGeometry(0.34, 1).scale(1, 0.75, 0.9).translate(0, 0.22, 0);
-    const bags = new THREE.InstancedMesh(bagGeo, new THREE.MeshStandardMaterial({ color: '#3a3c3f', roughness: 0.32, metalness: 0.1, envMap: env, envMapIntensity: 0.5 }), BAGS.length);
-    const dm = new THREE.Object3D();
-    BAGS.forEach(([x, z, s], i) => {
-      dm.position.set(x, 0, z);
-      dm.rotation.set(0, i * 1.7, 0);
-      dm.scale.setScalar(s);
-      dm.updateMatrix();
-      bags.setMatrixAt(i, dm.matrix);
-    });
-    bags.instanceMatrix.needsUpdate = true;
-    bags.castShadow = true;
-    bags.computeBoundingSphere();
-    group.add(bags);
-  }
 
   // ---------------------------------------------------------------- evening: Odile's tower, Odile, the club
   let tower = null;
@@ -1511,40 +1507,44 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
   if (evening) {
     tower = new THREE.Group();
     tower.name = 'scaffold';
-    tower.position.set(TOWER.x, 0, TOWER.z);
-    const [frame, deck, pot] = await Promise.all([
-      prop('kenney/retro/scaffolding-structure.glb', { height: TOWER.size, tint: '#6f6b62' }),
-      prop('kenney/retro/scaffolding-floor.glb', { width: TOWER.size, tint: '#6b604f' }),
-      prop('kenney/survival/bucket.glb', { height: 0.26, tint: 0xb0a090 }),
-    ]);
-    frame.position.y = TOWER.lift;
-    deck.position.y = TOWER.lift + TOWER.size - 0.02;
-    const deckTop = TOWER.lift + TOWER.size - 0.02 + (deck.userData.size?.y ?? 0.14);
-    pot.position.set(-0.55, deckTop, -0.25);
-    tower.add(frame, deck, pot);
-    // Casters (one of them has given up).
-    const casterM = mat('#2a2b2d', { roughness: 0.5 });
-    for (const [x, z] of [[-0.93, -0.93], [0.93, -0.93], [-0.93, 0.93], [0.93, 0.93]]) {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12), casterM);
-      w.rotation.z = Math.PI / 2;
-      w.position.set(x, 0.06, z);
-      tower.add(w);
-    }
-    // Clamp-on work lamp.
-    const lampHead = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.16, 12, 1, true), mat('#3c3e40', { side: THREE.DoubleSide, metalness: 0.4, roughness: 0.5 }));
-    lampHead.position.set(0.85, deckTop + 1.05, -0.85);
-    lampHead.rotation.x = -2.2;
-    const lampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(WARM).multiplyScalar(3), toneMapped: false }));
-    lampBulb.position.copy(lampHead.position).add(new THREE.Vector3(0, -0.03, -0.05));
-    tower.add(lampHead, lampBulb, box(0.02, 1.05, 0.02, { color: '#3c3e40', pos: [0.88, deckTop, -0.88], castShadow: false }));
-    clampLight = pointLight(WARM, 6, { pos: [0.85, deckTop + 0.9, -1.2], distance: 6 });
+    tower.position.set(TOWER.x, SIDEWALK_Y, TOWER.z);
+    const tb = new Batch();
+    for (const k of ['steel', 'timber', 'iron']) tb.material(k, M[k].material, M[k].opts);
+    const { deckTop } = buildTowerFrame(tb, { size: TOWER.size, lift: TOWER.lift });
+    // Clamp-on work lamp on a short pole at the back-right post, well above Odile's head (it used to
+    // sit at head height and read as part of her from the street), aimed down at the fascia.
+    tb.add('iron', rod([0.88, deckTop + 0.9, 0.88], [0.88, deckTop + 1.75, 0.88], 0.014));
+    tb.add('iron', rod([0.88, deckTop + 1.75, 0.88], [0.74, deckTop + 1.86, 0.66], 0.012));
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 14, 1, true), new THREE.MeshStandardMaterial({ color: '#3c3e40', side: THREE.DoubleSide, metalness: 0.4, roughness: 0.5 }));
+    head.position.set(0.7, deckTop + 1.86, 0.6);
+    head.rotation.x = -2.35;
+    const lampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(WARM).multiplyScalar(4), toneMapped: false }));
+    lampBulb.position.set(0.7, deckTop + 1.8, 0.54);
+    tower.add(head, lampBulb);
+    clampLight = pointLight(WARM, 7, { pos: [0.6, deckTop + 1.6, 0.25], distance: 6 });
+    clampLight.userData.noCone = true;
     tower.add(clampLight);
-    // Odile, on the deck, facing the fascia.
-    odile = assets.makeCharacter({ tint: 0x9a7a4e, scale: 0.94, name: 'Odile' });
-    odile.root.position.set(0.25, deckTop, -0.5);
+    const frame = tb.build('scaffold');
+    noOcclude(frame);
+    tower.add(frame);
+    // Odile's kit on the deck: tins, a jar of brushes.
+    const [can1, can2] = await Promise.all([prop('props/paint_can.glb', { height: 0.15 }), prop('props/paint_can.glb', { height: 0.15 })]);
+    can1.position.set(-0.55, deckTop, -0.3);
+    can2.position.set(-0.32, deckTop, -0.55);
+    can2.rotation.y = 1.3;
+    tower.add(can1, can2);
+    for (let k = 0; k < 4; k++) {
+      const br = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.01, 0.26, 5), M.timber.material);
+      br.position.set(-0.55 + (k - 1.5) * 0.015, deckTop + 0.2, -0.3 + (k % 2) * 0.012);
+      br.rotation.z = (k - 1.5) * 0.12;
+      tower.add(br);
+    }
+    // Odile, on the deck, close to the fascia, lettering.
+    odile = assets.makeCharacter({ preset: 'odile', tint: 0x9a7a4e, name: 'Odile' });
+    odile.root.position.set(0.15, deckTop, -0.72);
     odile.root.rotation.y = Math.PI;
-    odile.model.rotation.x = 0.08;
-    odile.play('idle');
+    odile.model.rotation.x = 0.1;
+    odile.play('paint');
     tower.add(odile.root);
     const hand = odile.bone?.('RightHand');
     if (hand) {
@@ -1558,10 +1558,11 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     }
     group.add(tower);
 
-    // The run club: Bastien (hi-vis yellow) + four muted hi-vis runners. Hidden until Ch2 sends them.
-    const tints = [0xd6e04a, 0xe0a040, 0x8fb0c8, 0xb8c040, 0xc89a5a];
+    // The run club: Bastien (hi-vis yellow) + four runners in club colours (lime, cobalt, teal, navy).
+    // No tans or oranges: under the grey grade those read as bare skin.
+    const tints = [0xd6e04a, 0xa8c43a, 0x2f56a8, 0x1d6a72, 0x22314f];
     for (let i = 0; i < tints.length; i++) {
-      const c = assets.makeCharacter({ tint: tints[i], name: i === 0 ? 'Bastien' : `Runner ${i}` });
+      const c = assets.makeCharacter({ preset: i === 0 ? 'bastien' : 'runner', variant: 'long', tint: tints[i], name: i === 0 ? 'Bastien' : `Runner ${i}` });
       c.root.position.set(0, 0, 30);
       c.root.rotation.y = Math.PI;
       c.root.visible = false;
@@ -1570,9 +1571,32 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     }
   }
 
-  // ---------------------------------------------------------------- rain
-  const rain = evening ? makeRain() : null;
+  // ---------------------------------------------------------------- rain and its details
+  const rain = evening ? makeRain({ count: 2200, opacity: 0.3 }) : null;
   if (rain) group.add(rain.object);
+  const fx = [];
+  let splash = null;
+  let pour = null;
+  if (evening) {
+    splash = splashes();
+    group.add(splash.object);
+    pour = stream({ pos: awning.gap, length: awning.gap[1] - SIDEWALK_Y });
+    group.add(pour.object);
+    const vent = steam({ pos: [-FRONT_X + 0.25, 4.75, -35.7], map: haloTex, rise: 0.55, spread: 0.6 });
+    group.add(vent.object);
+    fx.push(splash, pour, vent);
+    // A splash cluster where the gutter pours.
+    const sp = splashes({ count: 26, box: [0.5, 0.5], y: SIDEWALK_Y + 0.01 });
+    sp.object.material.uniforms.uCam.value.set(awning.gap[0], 0, awning.gap[2] + 4);
+    sp.object.material.uniforms.uMinZ.value = -99;
+    sp.object.material.uniforms.uScale.value = 260;
+    sp.object.name = 'gutter-splash';
+    group.add(sp.object);
+    fx.push({ update: (dt) => (sp.object.material.uniforms.uTime.value += dt) });
+  }
+
+  // ---------------------------------------------------------------- merge the batch
+  group.add(batch.build('street'));
 
   // ---------------------------------------------------------------- bounds
   const bounds = evening
@@ -1588,11 +1612,13 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       ];
 
   // ---------------------------------------------------------------- animation
-  const state = { t: 0, rain: rain ? 0.32 : 0, rainTarget: rain ? 0.32 : 0, rainUser: 1, bbFlick: 0, bbNext: 3, lampFlick: 0, lampNext: 2, neonFlick: 0, neonNext: 4, tubeFlick: 0, tubeNext: 1.5, buzzAt: 0 };
+  const state = { t: 0, rain: rain ? 0.3 : 0, rainTarget: rain ? 0.3 : 0, rainUser: 1, bbFlick: 0, bbNext: 3, lampFlick: 0, lampNext: 2, neonFlick: 0, neonNext: 4, tubeFlick: 0, tubeNext: 1.5, buzzAt: 0 };
   state.neonBase = neonMat ? neonMat.color.r : 1;
   state.neonLightBase = neonLight ? neonLight.intensity : 0;
   const tubeBase = new THREE.Color(TUBE).multiplyScalar(evening ? 2.2 : 0.7);
-  const coneColor = new THREE.Color();
+  const flickGlass = M.lampGlassFlicker.material;
+  let flickCone = undefined; // core light cone under the flickering lamp (found after the build)
+  let flickConeBase = 0;
   const _hp = new THREE.Vector3();
   /** 1 - FogExp2 factor at world point p (1 = clear, 0 = fully fogged). */
   const fogVis = (p) => {
@@ -1619,11 +1645,14 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     if (rain) {
       const pz = ctx.player?.root?.position.z ?? 0;
       const ease = pz > -30 ? 1 : pz > -40 ? 1 - 0.75 * ((-30 - pz) / 10) : pz > -44.5 ? 0.25 : 0.12;
-      state.rainTarget = 0.32 * ease * state.rainUser;
+      state.rainTarget = 0.3 * ease * state.rainUser;
       state.rain += (state.rainTarget - state.rain) * (1 - Math.exp(-1.2 * raw));
       rain.opacity = state.rain;
       rain.update(dt, ctx.camera);
+      if (splash) splash.opacity = state.rain * 1.25;
+      if (pour) pour.opacity = 0.18 + state.rain * 0.7;
     }
+    for (const f of fx) f.update(dt, ctx.camera);
     // Additive glows ignore fog (it would grey them); fade them with the same FogExp2 curve.
     if (halos) {
       const hc = haloGeo.getAttribute('color');
@@ -1636,20 +1665,23 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     }
     const spillVis = Math.pow(fogVis(spill.position), 0.5);
     spill.material.opacity = (evening ? 0.32 : 0.12) * spillVis;
+    if (marcoSpill) marcoSpill.material.opacity = (evening ? 0.22 : 0.06) * Math.pow(fogVis(marcoSpill.position), 0.5);
     const lit = signs.hugoWindow;
     if (lit) lit.material.color.setScalar(0.25 + 0.95 * Math.pow(fogVis(lit.position), 0.3));
 
     // Billboard: one tube is going.
     if (bbMat) bbMat.emissiveIntensity = flick('bbFlick', 'bbNext', 3, 8, 0.25, 0.75, raw) ? (Math.sin(state.t * 47) > 0.2 ? 0.55 : 0.12) : 0.55;
 
-    // One sodium lamp buzzes.
+    // One sodium lamp buzzes (its light, its glass and the core's light cone under it).
     if (flickerLight) {
       const f = flick('lampFlick', 'lampNext', 2.5, 6.5, 0.4, 1.2, raw) ? (Math.sin(state.t * 31) > -0.1 ? 0.85 : 0.15) : 1;
       flickerLight.intensity = flickerLight.userData.base * f;
-      if (cones && flickIndex >= 0) {
-        cones.setColorAt(flickIndex, coneColor.setScalar(f));
-        cones.instanceColor.needsUpdate = true;
+      flickGlass.color.setScalar(0.12 + 0.88 * f);
+      if (flickCone === undefined && result.lightCones) {
+        flickCone = result.lightCones.find((c) => c.userData.light === flickerLight) || null;
+        flickConeBase = flickCone?.material.uniforms.uOpacity.value ?? 0;
       }
+      if (flickCone) flickCone.material.uniforms.uOpacity.value = flickConeBase * f;
     }
     // Marco's neon: short dropouts.
     if (neonMat) {
@@ -1701,7 +1733,7 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
   const shots = {
     ghost: { pos: [-2.2, 1.6, -4.8], look: [5.9, 8.2, -10], fov: 54 },
     billboard: { pos: [2.4, 1.7, -10.6], look: [-5.9, 6.0, -18], fov: 54 },
-    shop: { pos: [1.0, 1.6, -31.0], look: [5.9, 1.6, -34.5], fov: 50 },
+    shop: { pos: [2.0, 1.95, -29.3], look: [5.9, 1.55, -33.9], fov: 46 }, // over Hugo's shoulder: the note stays clear of him
     bench: { pos: [-1.6, 1.5, -34.4], look: [-5.2, 0.9, -36.7], fov: 52 },
     hold: { pos: [2.9, 1.55, -41.3], look: [-0.55, 2.35, -46.2], fov: 52 },
     after: { pos: [-1.3, 1.65, -41.4], look: [1.05, 1.35, -45.3], fov: 48 },
@@ -1750,10 +1782,10 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       odileDown(face = HOLD_SPOT) {
         if (!odile) return;
         group.attach(odile.root);
-        odile.root.position.set(ODILE_GROUND[0], 0, ODILE_GROUND[1]);
+        odile.root.position.set(ODILE_GROUND[0], SIDEWALK_Y, ODILE_GROUND[1]);
         odile.root.rotation.set(0, Math.atan2(face[0] - ODILE_GROUND[0], face[1] - ODILE_GROUND[1]), 0);
         odile.model.rotation.x = 0;
-        odile.play('idle');
+        odile.play('arms_crossed', 0.1);
       },
     });
   } else {
@@ -1769,14 +1801,13 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
         state.neonBase = 1.4;
         state.neonLightBase = 3;
         interiorLight.intensity = 12;
-        // Puddles reflect the warm sky, not the overcast one (a pale-grey wash under the low sun).
-        if (!puddleMat.userData.golden) {
-          puddleMat.userData.golden = true;
-          puddleMat.envMap = skyEnv(true, true);
-          puddleMat.envMapIntensity = 0.32;
-          puddleMat.color.set('#3e3d3a');
-          puddleMat.roughness = 0.16;
-          puddleMat.needsUpdate = true;
+        // Glass reflects the warm sky, not the overcast one.
+        const g = M.glass.material;
+        if (!g.userData.golden) {
+          g.userData.golden = true;
+          g.envMap = skyEnv(true, true);
+          g.envMapIntensity = 0.6;
+          g.needsUpdate = true;
         }
       },
       nailPos: [0, 1.6, INTERIOR.minZ + 0.06],

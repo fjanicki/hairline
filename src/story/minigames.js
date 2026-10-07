@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { L } from './script.js';
+import { retext } from './i18n.js';
 
 // Shared craft / running minigames (core-owned). Every helper:
 //   - finishes on its own with no input (idle assists), so nothing soft-locks;
@@ -59,7 +60,7 @@ const now = (ctx) => ctx.engine.now;
  *                                  until the player presses again. Pass null to disable.
  *   gauge = { label, scale = 1, unit, max } draws ui.gauge each frame: value rate*scale, band*scale,
  *                                  readout `${round(rate*scale)} ${unit}`. Omit or null for no gauge.
- *   prompt                         prompt text while it runs (default '[A / D] ' + L.hints.rhythm); null = none
+ *   prompt                         prompt text while it runs (default L.ch3.keys.both + ' ' + L.hints.rhythm); null = none
  *   freeze = true                  sets player.frozen while it runs (A/D won't walk him); restored after
  *   steadyAfter = 4                seconds in band before onSteady fires
  *   cooldown = 6                   minimum seconds between two onMash / onLow / onSteady calls
@@ -92,7 +93,7 @@ export async function rhythm(ctx, d, opts = {}) {
   } = opts;
   const mashAt = opts.mashAt ?? band[1] * 1.1;
   const idle = opts.idleAuto === null ? null : { after: 5, rate: (band[0] + band[1]) / 2, ...(opts.idleAuto || {}) };
-  const prompt = opts.prompt === undefined ? `[A / D] ${L.hints?.rhythm || 'Alternate. Steady, not fast.'}` : opts.prompt;
+  const prompt = opts.prompt === undefined ? `${L.ch3.keys.both} ${L.hints.rhythm}` : opts.prompt;
   const { input, ui, player } = ctx;
 
   const s = { rate: 0, spread: 0, inBand: false, strokes: 0, t: 0, idle: 0, auto: false, steadyFor: 0, lastKey: null, mashing: false };
@@ -187,7 +188,7 @@ export async function rhythm(ctx, d, opts = {}) {
     if (gauge) {
       const k = gauge.scale ?? 1;
       const max = gauge.max ?? Math.max(band[1] * 1.45, mashAt * 1.15) * k;
-      ui.gauge(gauge.label, {
+      ui.gauge(retext(gauge.label), { // retext: a label string captured before a language change
         value: s.rate * k,
         band: [band[0] * k, band[1] * k],
         max,
@@ -217,7 +218,7 @@ export async function rhythm(ctx, d, opts = {}) {
  * opts:
  *   hits = 4, rings = 8           ends at `hits` hits or `rings` rings, whichever comes first
  *   duration = 2.4, window = 0.18 ring travel (s) and hit window (± s)
- *   cue = '[Space]', shout = null, missText = null   passed to driveRing
+ *   cue = '[' + L.hints.space + ']', shout = null, missText = null   passed to driveRing
  *   widenAfter = 3, widen = 1.6   after `widenAfter` misses the window is multiplied by `widen`
  *   autoHitFrom = 5               from this miss on, a miss counts as a (assisted) hit; 0 disables
  *   gap = 0.35                    pause between rings (s)
@@ -233,7 +234,7 @@ export async function timing(ctx, d, opts = {}) {
     rings: maxRings = 8,
     duration = 2.4,
     window = 0.18,
-    cue = '[Space]',
+    cue = `[${L.hints.space}]`,
     shout = null,
     missText = null,
     widenAfter = 3,

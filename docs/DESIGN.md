@@ -24,12 +24,13 @@ Revision 2. The editor and producer critiques are applied here. The points I rej
   - The game leads him to things other than sport (art, DIY) and **expands what he is able to do**.
   - The multi-chapter format stays, with a grimy look.
 - **Target:** about 11–12 minutes of play (see the pacing budget). No fail state blocks progress, every minigame finishes with no input, and every beat can be skipped with `__game.debug.skip()`.
-- **Assets:**
-  - Xbot (Mixamo, private demo only).
-  - Kenney CC0 kits, including the new **survival** kit and the extra **retro** pieces.
-  - Music and ambience: `contemplation.mp3`, `piano.wav`, `rain.ogg`, `crowd.ogg`.
-  - Footstep samples.
-  - Bicycles, the boot, the watch, the main workbench, the garage door, the blind wall and all signs are procedural.
+- **Assets** (as built; all CC0, fetched by `npm run setup:assets`, listed in `docs/CREDITS.md`):
+  - Characters and animations: the Quaternius "Universal" modular cast (the original Xbot plan is gone; nothing is Mixamo).
+  - Hero props: Poly Haven photo-scans. Large surfaces: Poly Haven PBR sets and ambientCG grime. Lighting: Poly Haven HDRIs.
+  - A few restyled Kenney pieces as distant street filler (skyline blocks, cones, bottles, pallets, a dumpster).
+  - Music and ambience: `contemplation.mp3`, `piano.ogg` (transcoded from the OGA WAV), `rain.ogg`, `crowd.ogg` (OpenGameArt; authors and pages in CREDITS.md). Concrete footstep samples (Kenney).
+  - Bicycles, the boot, the watch, the workbenches, the garage door, the facades, the blind wall, the mural and all signs are procedural.
+  - See "Art direction (as built)" for the look.
 
 ## Concept & Story
 
@@ -790,6 +791,40 @@ The title screen controls list is `L.title.controls`.
   - `items` holds the canonical entry texts. Chapters reference `L.notebook.items.sand` and so on, never literal strings.
   - `atChapter[N]` is the seeded entry list (`[{text, struck?, note?, hand?}]`) or null.
 
+## Art direction (as built)
+
+**Target:** a polished, premium-indie look. Grounded, semi-realistic, grimy and atmospheric, not photoreal. Consistency beats fidelity: characters, props and surfaces are all weathered and slightly stylised so they read as one world.
+
+**Colour is hope.** The MoodShader keeps the world near-grey at low hope and lets colour back first on the things Hugo makes (four focus slots: the door, the wheel, the sign, the mural line). Grain, lens dirt and a tinted vignette stay to the end ("still dirty, lit differently"). Hope values are in the schedule below.
+
+**What sells it, in order:**
+
+1. **Light.** An HDRI per chapter for image-based light (normalised, key aligned with the sun), ACES tone mapping, soft PCF shadows, GTAO, bloom only on practicals, soft light cones and dust only where light passes. Practical lights carry the interiors: the CRT and the sodium streetlight in Ch1, lanterns on wall consoles in Ch2, the bare bulb and the window shaft in Ch4.
+2. **Real materials on large surfaces.** 23 PBR sets, mapped in world space and normalised to one value band (`level`), with shared weathering driven by each chapter's weather: macro breakup, leaks under storey lines, splash-back dirt at the foot of walls, wet floors and puddles. Recipes are named in `src/world/look.js` (`street.asphalt`, `facade.brick`, `workshop.timber`...), so the same surface looks the same wherever it is used.
+3. **Believable humans.** The Quaternius modular cast, posed per beat with the clip library (slumped at the TV, arms crossed, seated, crouched at the wheel, riding).
+4. **Hero props up close.** Poly Haven scans where the camera gets close (the CRT, the sofa, the bed, the vice, the tools on the pegboard, the bins and crates in the street). Distant filler can stay low-poly, restyled to match.
+
+**Per chapter:**
+
+| Chapter | Light | Palette and surfaces |
+|---|---|---|
+| Ch1 flat, night | Sun off. The CRT (tinted per broadcast shot), an amber streetlight through the rain-streaked window, a floor lamp pool, a flickering strip light; the `interior_dim` HDRI only fills. | Near-monochrome. Damp wallpaper over plaster, stained floorboards, worn painted joinery, scans of the TV, sofa and iron bed. |
+| Ch2 street, dusk, rain | Sodium lanterns with halos and cones, a pink neon blade, the `night_street` HDRI. | Wet asphalt, cobbled gutters, brick and render facades with shutters and balconies, fly-posters and tags, puddles from the wet layer. Grey-blue. |
+| Ch3 flashback, dawn | A low sun, thin fog, four real street lamps (the rest are glowing heads), the `dawn_fog` HDRI. Darker each training block. | Cold and saturated (hope above 1, neutral tint) with STRIDE green `#c6f432` on Hugo. A sprite crowd baked from the real cast. |
+| Ch4 workshop | One bare bulb as key (with its own shadow), a window daylight shaft, the tube until Week 7, Odile's floor lamp; the `workshop` HDRI. | Whitewashed brick, concrete with oil and sawdust, timber and plywood, scanned tools over painted outlines. Warms with hope. |
+| Ch5 street, day → golden hour | A low warm sun over the right-hand roofs, then golden hour down the street; the `golden_street` HDRI throughout; a soft bounce keeps the mural lit. | The Ch2 street from the same recipes, drying (wet 0.25). The mural panels stay grey until the line passes under them. |
+
+**Continuity (the same in every chapter):**
+
+- **Hugo:** blue-grey shirt `#4a5260`, dark trousers, the walking boot on the left leg until Ch5. In Ch3 he wears the STRIDE kit (`runner_dawn`, then `runner`).
+- **Odile:** ochre apron `#9a7a4e`, grey sleeves, white hair in buns, a slight stoop.
+- **Sami:** red hoodie `#c24a3a`, small (scale 0.74, a bigger head).
+- **Runners:** every runner (Hugo's kits, Bastien's club, the race field) shares the slimmed athletic build (0.86 in x/z).
+- **Bikes:** Hugo's race bike is team blue `#34506e`: rusted on the Ch1 hooks, chalky on the Ch4 stand, clean in the Ch5 workshop. Sami's bike is red `#8a2b22` in Ch4 and Ch5.
+- **The street:** Ch2 and Ch5 are one builder (`buildScene2`, variants `'evening'` and `'wall'`) with one set of recipes. The fly-posters on the right-hand row stay; the blind wall's posters are gone under the primer in Ch5.
+
+**Budgets:** at most 250 draw calls in the scene pass (shadows included) and 1.5 M triangles per chapter at 1280 × 800 on `high`; 60 fps on the target GPU tier. Assets: `public/assets` ≤ 150 MB (about 92 MB), 1k textures by default and 2k only on the three hero surfaces, nothing shipped that no scene uses. Quality tiers (`low` / `medium` / `high`) trade MSAA, AO, bloom and shadow size; `low` must still look acceptable.
+
 ## Mood / hope schedule
 
 | Beat | hope | Preset / notes |
@@ -823,7 +858,9 @@ The title screen controls list is `L.title.controls`.
 
 ## Scene reuse
 
-| Ch | Scene file | Decision | Kenney props |
+The "Kenney props" column is the original plan. Every scene was later re-dressed to the art direction above; the as-built sources are in `docs/CREDITS.md` and `CHAPTER_LOOKS` (`src/world/look.js`).
+
+| Ch | Scene file | Decision | Kenney props (original plan) |
 |---|---|---|---|
 | 1 | `scene1.js` | **Adapt.** Keep the room, bounds, TV flicker, window moonlight and door spill. Changes:<br>- TV CanvasTexture → cycling broadcast (`L.ch1.tvTicker`)<br>- stopwatch → watch on a charger (small box + emissive face)<br>- shoebox → hanging bike (`build.bicycle({rust: 0.8})`) on the left-wall hooks<br>- rehab sheet → X-ray (canvas: blue-black film, white tibia, biro circle)<br>- add the bibs grid (one CanvasTexture atlas on 3 planes, 38 bibs)<br>- add a grime texture on the walls (`build.grimeTexture`)<br>- add the fluorescent strip, takeaway boxes, bin bag and dead plant<br>Spots: watch `[-0.95,-1.9]`, tv `[0.55,1.3]`, phone `[1.75,-0.95]`, xray = old fridge `[1.95,0.85]`, bike `[-2.4,0.4]`, bibs `[-1.4,-1.3]`, door unchanged. | furniture: bedSingle, loungeSofa, tableCoffee, cabinetTelevision, televisionVintage, kitchenFridge, kitchenCabinet, cardboardBoxOpen/Closed, trashcan, pottedPlant (tinted dead `#6b6450`), lampRoundFloor, rugRectangle (tinted stained) |
 | 2 | `scene2.js` | **Adapt** to the STREET CONTRACT, with both variants. Keep the road, sidewalks, lamps and building fronts. The blind wall and garage door are procedural boxes with `grimeTexture`, and `wall-a-flat` is used only for small facades. `rain` comes from `build.rain()`; `puddle` stays local. | retro: wall-a-flat, scaffolding-structure/floor/poles, detail-dumpster-closed, pallet-small, detail-bricks-type-a, detail-cables-type-a; roads: light-square, construction-cone, dumpster; survival: bottle-large, box-open, barrel; furniture: cardboardBoxOpen |

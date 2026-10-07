@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { L } from './script.js';
 import { rhythm, timing, makeSteer, rememberOpenSign } from './minigames.js';
 import { buildScene4 } from '../world/scenes/scene4.js';
+import { PRESETS } from '../render/Mood.js';
 
 // Ch4 "Measure Twice": Odile's workshop, Day 5 to Week 7 in the boot (docs/DESIGN.md).
 // Colour comes back on the things he makes and accumulates: the door (focus slot 0), the bike
@@ -12,16 +13,20 @@ import { buildScene4 } from '../world/scenes/scene4.js';
 const T4 = L.ch4;
 const N = L.notebook.items;
 const CAM = { offset: [0, 3.4, 3.6], look: [0, 1.0, -0.6] };
-const ODILE = L.names?.odile || 'Odile';
+// Light: the workshop preset with less ambient and fill, so the bare bulb makes a warm pool and the
+// corners fall off into brown dark (the room is lit by its practicals, see scene4/lights.js).
+const LOOK = { ...PRESETS.workshop, hemiIntensity: 0.9, fillIntensity: 1.5, envIntensity: 0.13, envIntensityHope: 0.2 };
 
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
 const clamp = THREE.MathUtils.clamp;
 
 export default {
   id: 'workshop',
-  title: T4.title,
+  get title() {
+    return T4.title;
+  },
   hope: 0.12,
-  preset: 'workshop',
+  preset: LOOK,
   objective: null,
   music: { name: 'contemplation', volume: 0.3, fade: 3 },
   ambience: [],
@@ -73,6 +78,18 @@ export default {
       if (look) faceTo(char, look[0], look[1]);
       char.play('idle', 0.2);
     };
+    /** Clip choice for an NPC (staging only; a missing clip is a no-op). */
+    const act = (char, clip, fade = 0.35) => char.play(clip, fade);
+    /** Hugo holds a work pose (scripted, so the Player leaves the clip alone); null hands him back. */
+    const pose = (clip) => {
+      if (clip) {
+        player.scripted = true;
+        player.char.play(clip, 0.4);
+      } else {
+        player.char.play('idle', 0.4);
+        player.scripted = false;
+      }
+    };
     const putHugo = ([x, z], look) => {
       player.teleport(x, z);
       if (look) player.face(look[0], look[1]);
@@ -101,7 +118,7 @@ export default {
     };
     /** Correction menu with an optional stage line after a given wrong reply (Day 8 "I know the type"). */
     const correctWith = async (menu, extra = {}) => {
-      const who = menu.who || ODILE;
+      const who = menu.who || L.names?.odile || 'Odile';
       for (let guard = 0; guard < 12; guard++) {
         const r = await d.choose(menu);
         const correctIdx = Math.max(0, menu.options.findIndex((x) => x.correct));
@@ -154,6 +171,7 @@ export default {
     W.rain(1);
     audio.ambience('rain', true, { volume: 0.1, lowpass: 600, fade: 3 });
     put(O, S.odileTrestle, S.spawn);
+    act(O, 'arms_crossed', 0.2);
     follow(true);
     player.scripted = true;
     const walkIn = walk(player.char, [3.05, -1.5], { speed: 0.9 });
@@ -164,22 +182,26 @@ export default {
     faceTo(O, ...hugoXZ());
 
     await d.say(T4.day5.arrive);
-    await d.say(T4.day5.book.slice(0, 1)); // she hands him a pencil and a school exercise book
+    O.play('reach', 0.3, { once: true }); // she hands him a pencil and a school exercise book
+    await d.say(T4.day5.book.slice(0, 1));
     ui.notebook.set([]);
     ui.notebook.open(0);
+    act(O, 'talk');
     await d.say(T4.day5.book.slice(1));
     await nb(ui.notebook.add(N.ride));
     await nb(ui.notebook.add(N.run));
     await d.say(T4.day5.strike);
     await nb(ui.notebook.strike(N.ride));
     await nb(ui.notebook.strike(N.run));
+    act(O, 'arms_crossed');
     await d.say(T4.day5.strikeThink);
+    act(O, 'talk');
     await d.say(T4.day5.holdStill);
     await nb(ui.notebook.add(N.hold));
     ui.notebook.dock();
     await d.say(T4.day5.door);
     // Odile goes back to her bench; he goes to the board.
-    runner.walkTo(O, S.odileBench, { speed: 0.8, face: Math.PI });
+    runner.walkTo(O, S.odileBench, { speed: 0.8, face: Math.PI }).then(() => act(O, 'lean', 0.5)); // back to work at her bench
     ui.objective(T4.objectives.day5);
 
     await required('pegboard', S.pegboard, T4.prompts.pegboard, async () => {
@@ -197,7 +219,9 @@ export default {
         putHugo(S.hugoSand, [W.door.group.position.x, W.door.group.position.z - 1]);
         await shot(W.shots.sand, 1.2);
         await d.say(T4.day5.grain);
+        pose('lean');
         await sanding();
+        pose(null);
         await d.wait(0.5);
         await d.say(T4.day5.after);
         await nb(ui.notebook.add(N.sand));
@@ -222,7 +246,7 @@ export default {
         mashAt: 3.4,
         idleAuto: { after: 6, rate: 2 },
         cooldown: 6,
-        prompt: `[A / D] ${L.hints.sand}`,
+        prompt: `${L.ch3.keys.both} ${L.hints.sand}`,
         gauge: { label: SD.gauge },
         onStroke: (s, inBand) => {
           audio.scrape();
@@ -260,6 +284,7 @@ export default {
         player.limp = 0.82;
         putHugo([1.9, 0.95], [W.doorX, -2.9]);
         put(O, S.odileBench, [W.door.group.position.x, W.door.group.position.z]);
+        act(O, 'arms_crossed', 0.1);
         follow(true);
       },
       { card: T4.cards.day8 },
@@ -293,6 +318,7 @@ export default {
     await back();
     player.face(O.root.position.x, O.root.position.z);
     faceTo(O, ...hugoXZ());
+    act(O, 'talk');
     await d.say(T4.day8.grey);
     await correctWith(T4.day8.greyMenu, { 1: T4.day8.greyLook });
 
@@ -302,9 +328,12 @@ export default {
         await cut(() => {
           putHugo(S.hugoSand, [W.door.group.position.x, W.door.group.position.z - 1]);
           faceTo(O, W.door.group.position.x, W.door.group.position.z);
+          act(O, 'arms_crossed', 0.1);
           cam.set(W.shots.paint);
         });
+        pose('lean');
         await autoPaint();
+        pose(null);
         await d.wait(0.8);
         await d.say(T4.day8.painted);
         await nb(ui.notebook.add(N.grey));
@@ -316,6 +345,7 @@ export default {
       W.hangDoor();
       putHugo(S.hugoSign, [W.doorX, -3]);
       put(O, S.odileSign, [W.doorX, -3]);
+      act(O, 'arms_crossed', 0.1);
       cam.set(W.shots.hungDoor);
     });
     await d.wait(1.6);
@@ -359,8 +389,11 @@ export default {
         audio.ambience('rain', false, { fade: 2 });
         W.rain(0.25);
         putHugo([0.2, 1.1], [-3.5, 0.4]);
-        put(O, S.odileBench);
-        O.root.rotation.y = Math.PI; // at the bench, back to us
+        // At the bench on her stool, back to us, working.
+        W.setStool?.([S.odileBench[0], S.odileBench[1] - 0.02], Math.PI + 0.3);
+        put(O, [S.odileBench[0], S.odileBench[1] - 0.02]);
+        O.root.rotation.y = Math.PI;
+        act(O, 'sit_idle', 0.1);
         K.root.visible = true;
         put(K, S.samiOutside);
         K.root.rotation.y = Math.PI / 2;
@@ -376,14 +409,18 @@ export default {
         await walk(K, S.samiParked, { speed: 1.15 });
         W.bike.follow(null);
         faceTo(K, ...hugoXZ());
+        act(K, 'talk');
         await shot(W.shots.threeShot, 1.1);
         await d.say(T4.week4.sami.slice(0, 1));
         faceTo(O, ...hugoXZ()); // "Don't look at me. Ask him."
+        act(O, 'sit_talk');
         await d.say(T4.week4.sami.slice(1));
+        act(K, 'idle');
       },
       { letterbox: false },
     );
     O.root.rotation.y = Math.PI;
+    act(O, 'sit_idle');
     await back();
     ui.objective(T4.objectives.week4);
     await required('bike', S.bike, T4.prompts.bike);
@@ -394,14 +431,18 @@ export default {
         await d.gate(ui.fade(1, 0.35));
         W.bikeOnStand(); // it flips onto the stand
         put(K, S.samiHold, [W.stand.x, W.stand.z]);
+        act(K, 'push', 0.1); // both hands on the bike
         putHugo(S.hugoBikeStand, [S.hugoBikeStand[0], S.hugoBikeStand[1] + 2]);
         W.bike.setSpin(1 / 2.4, { snap: true });
         cam.set(W.shots.truing);
         await d.gate(ui.fade(0, 0.45));
         await d.say(T4.week4.bike);
+        pose('crouch_idle'); // down at the wheel, an eye on the rim
         await d.say(T4.week4.hold);
         await truing();
         await d.wait(0.9);
+        pose(null);
+        act(K, 'talk');
         await shot(W.shots.bikeTalk, 1.0);
         W.bike.setSpin(1.1); // Sami spins it
         d.after(1.8, () => W.bike.setSpin(0));
@@ -477,8 +518,10 @@ export default {
         W.fluoro('on'); // fixed, at last
         W.rain(0);
         putHugo([1.2, 1.1], [-1.5, -2.5]);
+        W.setStool?.(null);
         put(O, S.odileBench);
         O.root.rotation.y = Math.PI;
+        act(O, 'lean', 0.1);
         W.showBoard(true);
         W.board.guides(true);
         // Hugo's own race bike, chain cleaned, has taken the stand.
@@ -498,6 +541,7 @@ export default {
         const B7 = T4.week7;
         putHugo([-0.72, -2.0], [W.board.group.position.x, W.board.group.position.z]); // beside her, not between her and the lens
         faceTo(O, W.board.group.position.x, W.board.group.position.z);
+        act(O, 'paint'); // the liner brush up to the board
         await shot(W.shots.bench, 1.2);
         // The tip shivers.
         const [u0, v0] = W.board.paths[0].pts[0];
@@ -509,6 +553,7 @@ export default {
         shiver = false;
         offShiver();
         W.board.setBrush(false);
+        act(O, 'talk');
         await d.say(B7.intro.slice(0, 5)); // ... "I need someone to—"
         await d.wait(0.9);
         await d.say(B7.intro.slice(5)); // "...Hold this board." ...
@@ -516,6 +561,7 @@ export default {
         // He takes her place at the board. (POV: Hugo hides so he doesn't fill the lens.)
         await d.gate(ui.fade(1, 0.35));
         put(O, S.odileAside, [W.board.group.position.x, W.board.group.position.z]);
+        act(O, 'arms_crossed', 0.1);
         putHugo(S.hugoBench, [S.hugoBench[0], -3]);
         player.root.visible = false;
         cam.set(W.shots.lettering());
@@ -548,6 +594,7 @@ export default {
         await d.wait(5.2); // let "...Three hours?" clear before the wrap dialogue
         faceTo(O, ...hugoXZ());
         player.face(O.root.position.x, O.root.position.z);
+        act(O, 'talk');
         await d.say(B7.wrap);
       },
       { letterbox: false },

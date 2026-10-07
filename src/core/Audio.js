@@ -8,11 +8,11 @@ import { assetUrl } from './Assets.js';
 
 const FILES = {
   contemplation: 'audio/contemplation.mp3',
-  piano: 'audio/piano.wav',
+  piano: ['audio/piano.ogg', 'audio/piano.wav'], // the WAV only when the fetch had no ffmpeg
   rain: 'audio/rain.ogg',
   crowd: 'audio/crowd.ogg',
 };
-const STEP_SURFACES = ['concrete', 'grass'];
+const STEP_SURFACES = ['concrete']; // the boot's clump is procedural
 
 export class AudioSys {
   constructor() {
@@ -71,28 +71,35 @@ export class AudioSys {
     this.master.gain.setTargetAtTime(this.muted ? 0 : 1, this.t, 0.03);
   }
 
-  /** Start fetching the music/ambience/footstep files in the background. */
-  preload() {
-    for (const name of Object.keys(FILES)) this._buffer(name);
+  /**
+   * Start fetching music/ambience files in the background (default: all of them), plus the footstep
+   * samples. Each file is fetched once; music() and ambience() load anything not preloaded on demand.
+   */
+  preload(names = Object.keys(FILES)) {
+    for (const name of names) if (FILES[name]) this._buffer(name);
     for (const s of STEP_SURFACES) for (let i = 0; i < 5; i++) this._buffer(`step_${s}_${i}`);
   }
 
   _buffer(name) {
     if (!this.ok) return Promise.resolve(null);
     if (!this._buffers.has(name)) {
-      let path = FILES[name];
+      let paths = [FILES[name]].flat();
       const m = name.match(/^step_(\w+)_(\d)$/);
-      if (m) path = `audio/footstep_${m[1]}_00${m[2]}.ogg`;
-      const p = fetch(assetUrl(path))
-        .then((r) => {
-          if (!r.ok) throw new Error(r.status + ' ' + path);
-          return r.arrayBuffer();
-        })
-        .then((ab) => this.ctx.decodeAudioData(ab))
-        .catch((err) => {
-          console.warn('[audio] could not load', path, err?.message || err);
-          return null;
-        });
+      if (m) paths = [`audio/footstep_${m[1]}_00${m[2]}.ogg`];
+      // Each candidate in turn (a missing or undecodable file falls through to the next).
+      const load = (i) =>
+        fetch(assetUrl(paths[i]))
+          .then((r) => {
+            if (!r.ok) throw new Error(r.status + ' ' + paths[i]);
+            return r.arrayBuffer();
+          })
+          .then((ab) => this.ctx.decodeAudioData(ab))
+          .catch((err) => {
+            if (i + 1 < paths.length) return load(i + 1);
+            console.warn('[audio] could not load', paths[i], err?.message || err);
+            return null;
+          });
+      const p = load(0);
       this._buffers.set(name, p);
     }
     return this._buffers.get(name);
@@ -208,7 +215,7 @@ export class AudioSys {
 
   // ------------------------------------------------------------- one-shots
 
-  /** Footstep sample. surface: 'concrete' | 'grass'. opts: { volume=0.35, rate } */
+  /** Footstep sample. surface: 'concrete' (anything else falls back to it). opts: { volume=0.35, rate } */
   async footstep(surface = 'concrete', { volume = 0.35, rate } = {}) {
     if (!this.ok || this.ctx.state !== 'running') return;
     if (!STEP_SURFACES.includes(surface)) surface = 'concrete';
