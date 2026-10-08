@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L } from '../../story/script.js';
 import * as B from '../build.js';
 import { W, D, H, OUT_X, BACK_Z, DOORWAY, DOOR_X, WIN, GARAGE, BENCH, TRESTLE, DOOR_LEN, DOOR_WID, DOOR_THK, STAND, EASEL, BOARD_W, BOARD_H, BOARD_PX, BULB, STOOL, SIGN_RED, WOOD_GREY, clamp, damp } from './scene4/layout.js';
@@ -9,6 +8,9 @@ import { buildShell } from './scene4/shell.js';
 import { dress, buildOldSigns } from './scene4/dressing.js';
 import { buildLights } from './scene4/lights.js';
 import { dustMotes, rainBox } from './scene4/fx.js';
+import { rigBike } from '../bikeRig.js';
+import { buildMixer } from './scene4/mixer.js';
+import { rigTape } from './scene4/tapeRig.js';
 
 // Ch4 "Measure Twice": Odile's repair workshop, ground floor of No. 14 Rue des Tanneurs.
 // A 9 x 6 m dollhouse room (the +Z wall is omitted so the follow camera sits outside it; an
@@ -267,22 +269,35 @@ function buildDoor(surf, materials) {
   B.paintNoise(greyH.getContext('2d'), CW, CH, '#909090', 0.04);
   // Layer 3: the warm grey, laid with a wide brush.
   const grey = makeCanvas(CW, CH);
-  {
+  // Brush ridges drawn once from R (so the streaks below keep their seed); redrawn in any colour by
+  // paintGrey(hex): the Day 8 grey is the one the player mixed (setPaintColor).
+  const ridges = Array.from({ length: 320 }, () => {
+    const y = R() * CH;
+    return { light: R() < 0.5, w: 1 + R() * 3, x0: R() * 100, y, x1: CW - R() * 100, y1: y + (R() - 0.5) * 6 };
+  });
+  // The canvas leans a touch cool and dark against the bulb, so the mixed grey still reads grey.
+  const underBulb = (hex) => {
+    const n = parseInt(hex.slice(1), 16);
+    const k = [0.86, 0.92, 1.0];
+    return '#' + [16, 8, 0].map((s, i) => Math.min(255, Math.round(((n >> s) & 255) * k[i])).toString(16).padStart(2, '0')).join('');
+  };
+  const paintGrey = (hex) => {
     const g = grey.getContext('2d');
-    B.paintNoise(g, CW, CH, L.ch4.day8.paintColor || WOOD_GREY, 0.03);
-    for (let i = 0; i < 320; i++) {
-      const y = R() * CH;
-      g.strokeStyle = R() < 0.5 ? 'rgba(255,250,240,0.06)' : 'rgba(40,36,30,0.06)';
-      g.lineWidth = 1 + R() * 3;
+    B.paintNoise(g, CW, CH, underBulb(hex), 0.03);
+    for (const r of ridges) {
+      g.strokeStyle = r.light ? 'rgba(255,250,240,0.035)' : 'rgba(40,36,30,0.035)';
+      g.lineWidth = r.w;
       g.beginPath();
-      g.moveTo(R() * 100, y);
-      g.lineTo(CW - R() * 100, y + (R() - 0.5) * 6);
+      g.moveTo(r.x0, r.y);
+      g.lineTo(r.x1, r.y1);
       g.stroke();
     }
     mould(g, 'rgba(255,248,236,0.2)', 'rgba(40,36,30,0.38)');
-    g.fillStyle = '#5a554c';
+    const n = parseInt(hex.slice(1), 16);
+    g.fillStyle = `rgb(${[16, 8, 0].map((s) => Math.round(((n >> s) & 255) * 0.64)).join(',')})`; // the knob's shadowed recess
     g.fillRect(CW / 2 - 20, CH - 60, 40, 30);
-  }
+  };
+  paintGrey(L.ch4.day8.paintColor || WOOD_GREY);
 
   // Sanding streaks (back edge first) and paint bands.
   const streaks = [];
@@ -463,7 +478,7 @@ function buildDoor(surf, materials) {
       p = clamp(p, 0, 1);
       if (Math.abs(p - paint) < 0.004 && p < 1) return;
       paint = p;
-      faceMat.bumpScale = 2.2 * (1 - 0.6 * p); // fresh paint fills the grain
+      faceMat.bumpScale = 2.2 * (1 - 0.8 * p); // fresh paint fills the grain
       compose();
     },
     /** Sanding block on the face: x along the length (-1..1 of half-length), f across (0 back .. 1 front). */
@@ -478,6 +493,15 @@ function buildDoor(surf, materials) {
       brush.rotation.set(0, 0, 0);
     },
     lie,
+    /** The face material (Day 8: it dries from wet to matte, crafts/finish.js). */
+    material: faceMat,
+    /** The grey the bands lay down (and the paint on the brush): the player's own mix. */
+    setPaintColor(hex) {
+      if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return;
+      paintGrey(hex);
+      brushBody.children[0]?.material?.color.set(hex);
+      if (paint > 0) compose();
+    },
     /** Stand the door up in the internal doorway, painted face toward the room (+Z). */
     hang() {
       block.visible = false;
@@ -516,108 +540,6 @@ function finishBike(bike, rust = 0) {
   fm.dispose();
   bike.userData.frameMaterial = phys;
   return bike;
-}
-
-/**
- * Wraps build.bicycle() for the workshop: wheel spin, a rear wheel that wobbles out of true once per
- * turn (a yaw pivot around the axle), brake pads that flash on the rub, and "pushed by" follow.
- */
-function rigBike(bike) {
-  const [front, rear] = bike.userData.wheels;
-  // Insert a yaw pivot between the bike and the rear wheel so the whole wheel can wander sideways.
-  const yaw = new THREE.Group();
-  yaw.position.copy(rear.position);
-  bike.add(yaw);
-  bike.remove(rear);
-  rear.position.set(0, 0, 0);
-  yaw.add(rear);
-  // Rear brake pads, where the seat stays bridge over the rim.
-  const padMat = new THREE.MeshStandardMaterial({ color: '#1e1e20', roughness: 0.9, emissive: '#000000' });
-  const padGeo = mergeGeometries([bx(-0.034, -0.018, -0.012, 0.012, -0.022, 0.022), bx(0.018, 0.034, -0.012, 0.012, -0.022, 0.022)]);
-  const pads = new THREE.Mesh(padGeo, padMat);
-  const R = bike.userData.wheelRadius;
-  const ang = Math.atan2(0.27, 0.42); // toward the seat-stay bridge
-  pads.position.set(0, yaw.position.y + Math.cos(ang) * (R - 0.03), yaw.position.z + Math.sin(ang) * (R - 0.03));
-  bike.add(pads);
-  const bridge = new THREE.Mesh(bx(-0.05, 0.05, -0.006, 0.006, -0.008, 0.008), B.mat('#9a9c9e', { roughness: 0.4, metalness: 0.6 }));
-  bridge.position.copy(pads.position);
-  bridge.position.y += 0.02;
-  bike.add(bridge);
-
-  const st = {
-    spin: 0, // rev/s of the rear wheel
-    spinTarget: 0,
-    angle: 0,
-    amp: 0, // wobble amplitude (rad of yaw)
-    rubAngle: 0,
-    flash: 0,
-    follow: null,
-    lastPos: new THREE.Vector3(),
-  };
-  const TAU = Math.PI * 2;
-  const api = {
-    group: bike,
-    rear,
-    front,
-    yaw,
-    pads,
-    st,
-    /** Called each time the rim's worst point passes the pads while the wheel is out of true. */
-    onRub: null,
-    setSpin(revPerSec, { snap = false } = {}) {
-      st.spinTarget = revPerSec;
-      if (snap) st.spin = revPerSec;
-    },
-    setWobble(a) {
-      st.amp = a;
-    },
-    /** The rim's worst point reaches the pad `secs` from now (at the current spin). */
-    syncRub(secs) {
-      st.rubAngle = st.angle + Math.PI * 2 * st.spin * secs;
-    },
-    rub() {
-      st.flash = 1;
-    },
-    /** Walk the bike beside `char` (on the side away from the camera). null stops. */
-    follow(char) {
-      st.follow = char;
-      if (char) st.lastPos.copy(char.root.position);
-    },
-    update(dt) {
-      const before = Math.floor((st.angle - st.rubAngle) / TAU);
-      st.spin = damp(st.spin, st.spinTarget, 2.5, dt);
-      st.angle += TAU * st.spin * dt;
-      rear.rotation.x = -st.angle;
-      const target = st.amp * Math.cos(st.angle - st.rubAngle);
-      yaw.rotation.y = damp(yaw.rotation.y, target, 14, dt);
-      st.flash = Math.max(0, st.flash - dt * 4);
-      padMat.emissive.setRGB(0.5 * st.flash, 0.32 * st.flash, 0.18 * st.flash);
-      if (st.follow) {
-        const r = st.follow.root;
-        const a = r.rotation.y;
-        const fwd = new THREE.Vector3(Math.sin(a), 0, Math.cos(a));
-        const left = new THREE.Vector3(Math.cos(a), 0, -Math.sin(a));
-        if (left.z > 0) left.negate(); // keep the bike on the far side of the kid
-        bike.position.copy(r.position).addScaledVector(left, 0.42).addScaledVector(fwd, 0.12);
-        bike.position.y = 0;
-        bike.rotation.set(0, a, 0);
-        const moved = r.position.distanceTo(st.lastPos);
-        st.lastPos.copy(r.position);
-        front.rotation.x -= moved / R;
-        st.angle += moved / R;
-      }
-      const after = Math.floor((st.angle - st.rubAngle) / TAU);
-      if (after > before && st.amp > 0.015) {
-        st.flash = 1;
-        try {
-          api.onRub?.();
-        } catch (err) {
-          console.error('[scene4] onRub failed', err);
-        }
-      }
-    },
-  };
-  return api;
 }
 
 // ------------------------------------------------------------------ the OPEN sign board
@@ -951,7 +873,11 @@ export async function buildScene4(ctx) {
   // ---- story objects
   const door = buildDoor(surf, ctx.materials);
   group.add(door.group);
-  const tape = props.tape;
+  // Day 8 (D8): the tape runs out across the internal doorway; Odile's mixing crate by the trestles.
+  const tape = rigTape(ctx, props.tape, { x0: DOORWAY.x0 + 0.02, x1: DOORWAY.x1, y: 0.932, z: BACK_Z + 0.04 });
+  const MIX = [1.95, -0.35];
+  const mixer = buildMixer(ctx, group, { pos: MIX });
+  await mixer.ready;
 
   const sbike = rigBike(finishBike(B.bicycle({ frame: '#8a2b22', rust: 0.2 }), 0.2));
   sbike.group.visible = false;
@@ -1058,6 +984,8 @@ export async function buildScene4(ctx) {
     rain.update(t);
     sbike.update(dt);
     board.update();
+    tape.updateTape(ctx.ui?.modal);
+    mixer.update(raw);
     for (const b of blobs) {
       const tg = b.userData.target;
       b.visible = !!tg && tg.visible;
@@ -1109,8 +1037,11 @@ export async function buildScene4(ctx) {
       sand: { pos: [1.75, 1.85, 1.2], look: [TRESTLE.x, 0.76, TRESTLE.z], fov: 42 },
       paint: { pos: [1.4, 1.62, 0.95], look: [TRESTLE.x - 0.1, 0.77, TRESTLE.z], fov: 40 },
       frame: { pos: [1.85, 1.35, -1.25], look: [DOOR_X, 0.95, BACK_Z - 0.05], fov: 46 },
-      // From behind and beside the rear wheel, so its sideways wander reads; wheel left of the ring.
-      truing: { pos: [STAND.x - 1.4, 0.95, STAND.z + 0.55], look: [STAND.x - 0.4, STAND.lift + 0.37, STAND.z + 0.28], fov: 42 },
+      // Day 8 colour toy: a 3/4 top view of the pot and the tins on the crate.
+      mix: { pos: [MIX[0] - 0.12, 1.5, MIX[1] + 0.7], look: [MIX[0] + 0.01, 0.66, MIX[1] + 0.06], fov: 38 }, // Hugo's eyes
+      // From above and behind the rear wheel: its sideways wander reads, the top of the rim (the pluck
+      // point) and the pads are in frame, and the wheel clears the gauge and prompt below it.
+      truing: { pos: [STAND.x - 1.25, 1.4, STAND.z + 0.75], look: [STAND.x - 0.45, 0.6, STAND.z], fov: 44 },
       samiIn: { pos: [-0.9, 1.95, 2.6], look: [-3.9, 0.95, 0.1], fov: 50 },
       threeShot: { pos: [0.9, 2.1, 2.9], look: [-2.0, 1.0, -0.4], fov: 52 },
       bikeTalk: { pos: [-0.9, 1.75, 2.9], look: [-2.6, 0.95, 1.0], fov: 48 },
@@ -1127,6 +1058,9 @@ export async function buildScene4(ctx) {
     raceBike,
     board,
     tape,
+    mixer,
+    /** Day 8 staging at the crate: Hugo behind it, Odile at his shoulder. */
+    mixSpots: { hugo: [MIX[0] - 0.1, MIX[1] + 0.62], odile: [MIX[0] + 0.62, MIX[1] + 0.68] },
     odile,
     sami,
     camRig,

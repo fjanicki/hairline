@@ -2,9 +2,12 @@ import * as THREE from 'three';
 import { L } from './script.js';
 import { PRESETS } from '../render/Mood.js';
 import { buildScene1 } from '../world/scenes/scene1.js';
+import { remember } from './memory.js';
+import { duckUnderVoice } from './crafts/sound.js';
 
 // Ch1 "No Impact": Hugo's flat, night, boot day 4. Hope 0.04 -> 0.06 (watch) -> 0.07 (door).
-// Optional: TV (watch, then turn it off), phone (with the voicemail), X-ray, race bike, race bibs.
+// Optional: TV (watch, then turn it off), phone (with the voicemail), X-ray, race bike, race bibs;
+// after the phone, the rocking table (a folded race bib under its leg: mem.seeds.table).
 // Required: the GPS watch on its charger, which switches on the door; the door gives START WALK?,
 // E starts the walk and the screen fades to black with the hammering still coming through the floor.
 
@@ -43,9 +46,44 @@ const DEFAULT_SPOTS = {
   bike: [-2.4, 0.4],
   bibs: [-1.4, -1.3],
   door: [2.23, -1.85],
+  table: [1.78, -0.38],
 };
 
-const HAMMER = { first: 8, every: 9, gap: 0.9 };
+// Odile's hammering through the floor (docs/assets/sfx.md, Ch1): recorded, pre-muffled blows on the bus
+// through an 850 Hz low-pass. Irregular: gaps x0.85-1.2, one burst in five has 2 or 4 blows (the first
+// always 3, the thought waits for it), bursts every 9 +- 1.5 s; the third blow of a burst at 0.85x.
+const HAMMER = { first: 8, every: 9, spread: 1.5, gap: 0.9, volume: 0.8, lowpass: 850, underVoice: 0.25 /* -12 dB */ };
+const hammerPattern = (first = false) => {
+  const n = first || Math.random() >= 0.2 ? 3 : Math.random() < 0.5 ? 2 : 4;
+  const at = [];
+  let t = 0;
+  for (let i = 0; i < n; i++) {
+    at.push(t);
+    t += HAMMER.gap * (0.85 + Math.random() * 0.35);
+  }
+  return at;
+};
+// Recorded sfx sets this chapter plays (preloaded with the chapter through `sounds`).
+const SOUNDS = [
+  'hammer_floor',
+  'amb_rain_window',
+  'amb_fridge_hum',
+  'fluoro_hum',
+  'fluoro_flicker',
+  'tv_race_bed',
+  'tv_crt_off',
+  'phone_vibrate_table',
+  'table_tock',
+  'mug_clink',
+  'mug_clink_alt',
+  'door_flat_open',
+  'door_flat_close',
+  'amb_stairwell',
+  'step_wood',
+  'boot_step_wood',
+  'body_thud',
+];
+const RAIN = { name: 'amb_rain_window', volume: 0.35 }; // rain on the window, from inside (not rain.ogg)
 // Hugo's clip for each look beat: [clip, play options].
 const CLIPS = {
   tv: ['slump', { timeScale: 0.45 }],
@@ -71,7 +109,9 @@ export default {
     return L.ch1.objectives.start;
   },
   music: MUSIC,
-  ambience: ['rain'],
+  // The Director only toggles 'rain' / 'crowd' itself: run() starts this bed (listed here so it preloads).
+  ambience: [RAIN.name],
+  sounds: SOUNDS,
   camera: CAMERA,
   player: { spawn: [-0.4, 1.5], facing: Math.PI, boot: true, limp: 1, painRate: 1 / 0.7, canJog: true, footsteps: 'boot' },
   build: (ctx) => buildScene1(ctx),
@@ -86,6 +126,11 @@ export default {
 
     // Boot day 4: the first stumble of the game is the fixed line.
     player.firstStumbleDone = false;
+
+    // ---- sound: rain on the window, wooden boards under his steps (the scene runs the fridge, the
+    // tube, the TV and the phone; main.js releases all of it at the next chapter).
+    audio.ambience(RAIN.name, true, { volume: RAIN.volume, fade: 2.5 });
+    audio.surface = 'wood';
 
     // ---- camera: follow a clamped proxy instead of Hugo himself
     const proxy = new THREE.Object3D();
@@ -240,25 +285,43 @@ export default {
 
     d.after(10, () => !player.hasJogged && ui.hint(L.hints.jog));
 
-    // ---- Hammering through the floor: three steady blows, every ~9 s, until he leaves.
+    // ---- Hammering through the floor: irregular bursts, every ~9 s, until he leaves.
     let hammering = true;
     let hammerThought = true; // the first burst plays the thought (deferred while a dialogue is up)
-    const blow = () => {
-      audio.hammer();
+    let firstBurst = true;
+    // One blow (fallback: the procedural audio.hammer()). shake=false under the final fade.
+    const blow = (i = 0, shake = true) => {
+      // French voices: under a line being said (a dialogue, the voicemail) the floor steps back 12 dB (at
+      // full level a blow measured 5-11 dB over the voice, the quieter inner lines included); a line that
+      // starts during a blow dips its tail. The hammer thought itself keeps full blows.
+      const said = ctx.voice?.cur;
+      const under = !!said?.busy && said.text !== L.ch1.hammer;
+      const h = audio.sfx('hammer_floor', {
+        volume: HAMMER.volume * (i === 2 ? 0.85 : 1) * (under ? HAMMER.underVoice : 1),
+        gainJitter: 1.5,
+        jitter: 0.04,
+        bus: 'bus',
+        lowpass: HAMMER.lowpass,
+        q: 0.7,
+      });
+      if (h && !under && ctx.voice?.active) duckUnderVoice(ctx, h, { db: 12 });
+      if (!shake) return;
       call('knock');
       cam.shake(0.006, 0.12);
     };
     const burst = () => {
       if (!hammering) return;
-      for (let i = 0; i < 3; i++) d.after(i * HAMMER.gap, blow);
+      const at = hammerPattern(firstBurst);
+      firstBurst = false;
+      at.forEach((t, i) => d.after(t, () => hammering && blow(i)));
       if (hammerThought && d.state === 'play' && !ui.modal) {
-        d.after(HAMMER.gap * 2 + 0.6, () => {
+        d.after(at[at.length - 1] + 0.6, () => {
           if (!hammerThought || ui.modal || d.state !== 'play') return;
           hammerThought = false;
           d.thought(L.ch1.hammer, 6.5);
         });
       }
-      d.after(HAMMER.every + (Math.random() - 0.5) * 1.2, burst);
+      d.after(HAMMER.every + (Math.random() * 2 - 1) * HAMMER.spread, burst);
     };
     d.after(HAMMER.first, burst);
 
@@ -279,8 +342,7 @@ export default {
             beat(async () => {
               shot('tv', 0.8);
               await approach('tv');
-              call('tvOff');
-              audio.tick({ volume: 0.2 });
+              call('tvOff'); // the scene cuts the broadcast bed and plays the CRT thunk (tv_crt_off)
               mood.tweak(TV_OFF_LIGHTS, 1.2);
               await d.wait(1.0);
               await d.say(L.ch1.tvOff);
@@ -299,6 +361,7 @@ export default {
       onInteract: () =>
         beat(async () => {
           shot('phone');
+          call('phoneBuzz'); // one more notification as he comes over
           await approach('phone');
           // He bends for it, then reads it, and the voicemail goes to his ear.
           const release = pose('pick_up', { once: true });
@@ -311,8 +374,49 @@ export default {
           drop();
           release();
           back();
-        }),
+        }).then(tableRocks),
     });
+
+    // ---- Seed: put down, the phone sets the table rocking on its short leg (optional shim).
+    function tableRocks() {
+      if (!alive() || !scene.tableRock) return;
+      const tock = () => {
+        audio.sfx('table_tock', { volume: 0.35, jitter: 0.05 });
+        call('tableRock');
+      };
+      // Once the camera is back on the room (back() is 0.9 s): two tocks, 0.25 s apart.
+      d.after(0.95, tock);
+      d.after(1.2, tock);
+      d.after(1.6, () =>
+        addSpot({
+          id: 'table',
+          pos: S.table,
+          radius: 1.0,
+          prompt: L.ch1.prompts.table,
+          onInteract: () =>
+            beat(async () => {
+              shot('table', 1.0);
+              await approach('table');
+              const leg = scene.group?.getObjectByName('table-shim');
+              if (leg) {
+                const v = leg.getWorldPosition(new THREE.Vector3());
+                player.face(v.x, v.z); // to the short leg, where the paper goes
+              }
+              await d.gate(player.crouch(0.5));
+              call('tableShim');
+              call('tableRock', 0.04);
+              // The table settles on the shim; the mug clinks.
+              audio.sfx('table_tock', { volume: 0.25, rate: 0.9, fallback: (a) => a.thud({ volume: 0.08 }) });
+              audio.sfx('mug_clink', { volume: 0.3, delay: 0.12, alt: 'mug_clink_alt' });
+              await d.wait(0.5);
+              remember('seeds.table', true);
+              await d.say(L.ch1.table);
+              await d.gate(player.stand(0.5));
+              back();
+            }),
+        }),
+      );
+    }
 
     // ---- X-ray on the fridge, the bike on its hooks, the bibs above the bed.
     addSpot({ id: 'xray', pos: S.xray, radius: 1.0, prompt: L.ch1.prompts.xray, onInteract: () => look('xray', L.ch1.xray, { clip: CLIPS.xray }) });
@@ -393,13 +497,23 @@ export default {
         audio.tone({ freq: 2350, dur: 0.11, volume: 0.1, type: 'square', bus: 'fx', delay: 0.11 });
         ui.watch(L.ch1.walkFace, { label: L.ch1.walkLabel, lap: null });
         pose('reach', { once: true });
-        await d.wait(0.35);
+        // The latch: the recording leads the door's swing by ~70 ms.
+        await d.wait(0.28);
+        audio.sfx('door_flat_open', { volume: 0.5 });
+        await d.wait(0.07);
         call('openDoor');
         await d.wait(0.9);
         // One last burst from downstairs carries through the fade (the regular chain stops).
         hammering = false;
-        for (let i = 0; i < 3; i++) d.after(0.4 + i * HAMMER.gap, () => audio.hammer());
+        hammerPattern(true).forEach((t, i) => d.after(0.4 + t, () => blow(i, false)));
         audio.music(MUSIC.name, { volume: 0.16, fade: 2 });
+        // The door shuts behind him 1.2 s into the fade: the flat drops away, the stairwell comes up.
+        d.after(1.2, () => {
+          audio.sfx('door_flat_close', { volume: 0.45 });
+          call('soundsOff', 0.35);
+          audio.ambience(RAIN.name, true, { volume: 0.08, fade: 0.4 });
+          audio.ambience('amb_stairwell', true, { volume: 0.3, lowpass: 2000, fade: 1.5 });
+        });
         await d.gate(ui.fade(1, 1.8));
         await d.wait(1.8);
       },

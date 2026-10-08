@@ -6,6 +6,10 @@ import { dressWallside } from './scene5/wallside.js';
 import { buildWorkshop } from './scene5/workshop.js';
 import { makeCast, makeRider } from './scene5/cast.js';
 import { makeMotes } from './scene5/fx.js';
+import { makeHugoPanel } from './scene5/hugoPanel.js';
+import { paintNo14 } from './scene5/no14paint.js';
+import { buildJobs } from './scene5/jobs.js';
+import { mem } from '../../story/memory.js';
 
 // Ch5 "The Wall": Rue des Tanneurs by day (Week 12), then golden hour.
 //
@@ -796,6 +800,7 @@ function makeLineKit(wallX) {
     group,
     tip,
     brush,
+    ribbon: main.mesh.material, // the line's colour (ch5 dries it: wet -> #d9a441)
     z0,
     z1,
     x: wallX + 0.04,
@@ -952,6 +957,11 @@ export async function buildScene5(ctx) {
   initials.rotation.y = Math.PI / 2;
   initials.visible = false;
   extras.add(initials);
+  const hugoPanel = makeHugoPanel(ctx, { wallX, doorGrey: mem.doorGrey }); // R3.7: painted before the line
+  extras.add(hugoPanel.mesh);
+  if (!local) paintNo14(extras, mem.doorGrey); // No. 14 in the grey he mixed in Ch4 (scene2's door layout)
+  const jobs = await safe('street jobs', () => buildJobs(ctx, extras, { spots, groundAt, surfaceAt, street: group, signs: base.signs, word: T5.jobs?.board?.word })); // R3.8
+  if (jobs) disposers.push(jobs.dispose);
 
   // ---- the workshop interior
   const shop = await buildWorkshop(ctx, extras, { spots, wallZ: base.interior?.minZ, openSign: ctx.minigames?.memory?.openSign, T5, local, shell: local || !base.interior });
@@ -1016,6 +1026,8 @@ export async function buildScene5(ctx) {
     lineX,
     line,
     initials,
+    hugoPanel,
+    jobs,
     shop,
     cast,
     samiRig,
@@ -1068,6 +1080,7 @@ export async function buildScene5(ctx) {
       }
       shop.tubeMat.color.copy(tubeBase).multiplyScalar(k);
       shop.update(ctx.camera);
+      jobs?.update(dt, raw);
       // Motes ride with the camera's look target (a few metres ahead of the lens).
       const cam = ctx.camera;
       if (cam) {

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { ground } from '../world/build.js';
 import { releaseChapterListeners } from './i18n.js';
+import { beginChapter } from './memory.js';
+import { endingLines } from './ending.js';
 
 /** True for a light CSS hex colour ('#fff', '#f4efe6', ...). */
 function isLightColor(css) {
@@ -264,6 +266,7 @@ export class Director {
     engine.timeScale = 1;
     input.enabled = true;
     audio.restore();
+    this.ctx.voice?.stopAll(); // no line outlives its chapter
     mood.pass.uniforms.uFlash.value = 0;
     mood.clearFocus();
     mood.painOverride = null;
@@ -314,6 +317,7 @@ export class Director {
       this.skipRequested = false;
       await ui.fade(1, 0.8);
       this._resetBetweenChapters();
+      beginChapter(this.index); // replaying a chapter clears its own flags and later ones
       // The title's pale ink needs a dark screen: over a white cut (Ch2 -> Ch3) show it after the fade-in.
       const showTitle = ch.title && !this.skipCards ? () => ui.chapterTitle(this.index + 1, ch.title) : null;
       const lightFade = isLightColor(ui.fadeColor);
@@ -343,6 +347,7 @@ export class Director {
       await ui.fade(0, this.skipCards ? 0.3 : 1.2);
       if (showTitle && lightFade) showTitle();
       this.state = 'play';
+      ctx.voice?.chapter(this.index); // French clips: release the last chapter's, prefetch this one's
 
       try {
         await ch.run(ctx, this);
@@ -355,10 +360,12 @@ export class Director {
     this._resetBetweenChapters();
     // The end card draws no 3D scene worth keeping: free every material set and prop on the GPU.
     ctx.materials?.retain([]);
+    ctx.voice?.chapter(-1);
+    audio.releaseChapter?.(['piano']); // the last chapter's sfx buffers and loops: the end card only has the piano
     ctx.assets?.releaseProps([]);
     audio.music('piano', { volume: 0.4, fade: 3 });
     this.state = 'end';
-    await ui.endCard();
+    await ui.endCard({ ...ui.L.ending, lines: endingLines() });
   }
 
   /** Debug: reload at chapter i with debug flags. */

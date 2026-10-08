@@ -1119,3 +1119,554 @@ The "Kenney props" column is the original plan. Every scene was later re-dressed
 **Rejected:**
 - **Editor C10's "forty" for the ghost sign:** the line is now "before I was born", so Odile keeps the only forty.
 - **The producer's `uFocusPos[4]` as a separate uniform:** it is merged into `uFocus[4]` as a vec4 (xy, radius, strength). Same capability, one array.
+
+---
+
+## Revision 3: crafts you can feel
+
+This section is **binding**. Where it disagrees with anything above, this section wins. Five agents implement it in parallel (see R3.12 for who owns what). Every line of player-facing text below is the exact English; each agent adds its French in the same change, following `docs/i18n-fr.md`, and `node scripts/i18n-check.mjs fr` must report 0 errors.
+
+### R3.0 What changes, and the rules every agent follows
+
+**The eight changes:**
+1. Ch4 Day 8: a **colour-mixing toy** replaces the grey correction menu (R3.3).
+2. Ch4 Day 8: **Measure twice** becomes a tape-measure interaction (R3.2).
+3. Ch4 Week 4: **truing by ear** replaces the Space timing ring (R3.4).
+4. **Juice** on every craft: dust, speed-following scrapes, wet-to-matte paint, spoke pings and a short reveal beat (R3.5).
+5. Ch5: four optional **street jobs**, each reusing a craft and each bringing colour back to its own spot (R3.8).
+6. Ch5: **Hugo's own panel** on the wall, before the line (R3.7).
+7. **Conditional ending cards**, chosen from memory flags (R3.9).
+8. **Seeds** in Ch1 to Ch3: a wobbly table, a lingering look, a thought about wheels (R3.6).
+
+**Rules (all agents):**
+- **Voice.** Dry, warm, understated. Odile is terse. Sami is literal. Nobody states the theme. No new line explains what a craft "means".
+- **No fail states.** Every interaction ends with no input (idle assist), and every one ends through `__game.debug.skip()`. A skip gives the canonical result named in each section.
+- **Keys** are written in text as key tokens (`{KeyA}`, `{KeyW}`, `{KeyE}`, `{KeyT}`, `{Space}`, `{Shift}`, `{Escape}`, `{Arrows}`), resolved for the player's layout by `src/core/KeyLabels.js`. Code reads physical codes (`KeyA`…). Never write a literal layout letter in text. Digits stay literal ("1–5"): the code reads `Digit1`…`Digit5` and `Numpad1`…`Numpad5`, which are physical too. In this section, keys are written as their tokens.
+- **Mouse and keyboard.** Every new interaction works with either, as listed in each section. Mouse input in crafts comes from `crafts/pointer.js` (R3.1). It is active only inside a cinematic (the camera rig ignores the mouse outside free roam, so there is no conflict with mouse look).
+- **Audio has a visual twin.** The game can be muted with `{KeyM}`. Every cue that carries information is also shown (table in R3.10).
+- **Text lives in the text files.** Barks are `{who, text}` or `{who, bag}`; blocking lines are arrays of line objects; menus follow the conventions in "Text layout". Canvas text follows the `relabel()` / `onLangChange` pattern in `src/world/build.js`. New tight UI strings get a `LIMITS` entry in `scripts/i18n-check.mjs` (gauge labels ≤ 41, chip buttons ≤ 39).
+- **Code style.** New mechanics go in new modules. Edits to shared files (`chN.js`, `sceneN.js`, `UI.js`, `Audio.js`, `minigames.js`, `Director.js`, text files) are narrow and local: re-read the file right before each edit. No commits.
+- **Pacing.** Each new interaction lasts 20–60 s. Required play grows by about 1:50, and all the optional content adds about 2:00 more (R3.11).
+
+### R3.1 Shared modules
+
+**`src/story/memory.js`: cross-chapter flags** (owner PANEL, **Phase 0**: land it first with these exact exports; the other agents code against them)
+- `minigames.memory` keeps the OPEN sign canvas only. Every flag lives here.
+- **Exports:**
+  - `DEFAULTS`: the shape and the defaults below. It is frozen.
+  - `mem`: the live object. Read it directly (`mem.doorGrey`, `mem.jobs.radio`).
+  - `remember(path, value)`: `path` is a top-level key or a dotted path (`'jobs.radio'`, `'seeds.table'`). Object values replace the old value. It persists to `sessionStorage['hairline.mem']` in a try/catch, and it never throws.
+  - `beginChapter(index)`: resets to `DEFAULTS` every key whose owner chapter is ≥ `index`, then persists.
+  - `restoreMem()`: at boot, merges the stored JSON over `DEFAULTS`. Unknown keys and bad types are ignored.
+  - `memSnapshot()`: a deep copy, for debug and tests.
+- **Shape and defaults** (owner chapter index in brackets):
+  ```js
+  {
+    seeds:      { table: false /*[0]*/, ghost: false /*[1]*/ },
+    doorGrey:   '#8d877c',                                          // [3] hex the door was painted
+    grey:       { tries: 0, assisted: false },                      // [3] Done presses; Odile finished it
+    measure:    { readings: [], agreed: 81.5, assisted: false },    // [3] cm
+    wheel:      { secs: 0, plucks: 0, assisted: false, overTight: false }, // [3]
+    teachFirst: true,                                               // [4] Sami's menu right first time
+    panel:      null,                                               // [4] 'wheel' | 'door' | 'hand'
+    jobs:       { shutter: false, radio: false, board: false, wheel: false }, // [4]
+  }
+  ```
+- **Wiring** (PANEL, narrow edits):
+  - `Director.start()`: call `beginChapter(this.index)` right after `_resetBetweenChapters()`. So `?chapter=N` and Pause > Restart chapter keep the earlier chapters' flags (a door painted in this tab's Ch4 stays painted in Ch5) and clear the replayed ones.
+  - `main.js`: `restoreMem()` beside `minigames.restoreMemory()`, and `debug.mem = () => memSnapshot()` on `__game.debug`.
+- **Writers:** SEEDS writes `seeds.*`; D8 writes `doorGrey`, `grey`, `measure`; W4 writes `wheel`; PANEL writes `teachFirst`, `panel`; JOBS writes `jobs.*`. A skipped interaction writes its canonical result.
+
+**`src/story/crafts/`: craft modules** (exact exports; the owner lands stubs with these signatures in **Phase 0**)
+
+| Module | Owner | Exports |
+|---|---|---|
+| `crafts/pointer.js` | D8 | `craftPointer(ctx) → P`. `P.update()` once per frame, at the top of your `d.until` callback. State for this frame: `P.ndc` (Vector2), `P.down`, `P.pressed`, `P.released`, `P.click` (press and release within 6 px and 0.35 s), `P.dragX` / `P.dragY` (px moved this frame while down), `P.wheel` (notches this frame, + = toward the user, at most ±3), `P.pick(objects) → {object, point} \| null` (raycast from `ndc`, recursive), `P.cursor(css)`, `P.dispose()`. It listens on the renderer canvas, calls `preventDefault` on `wheel` while alive, and never takes pointer lock. |
+| `crafts/finish.js` | D8 | `dry(ctx, material, {secs = 20, wetRough = 0.18, dryRough = material.roughness, darken = 0.1}) → {done: Promise, stop()}`: the material starts wet (glossy and slightly dark), then eases to matte. For an unlit material only the colour changes. `reveal(ctx, d, {hold = 1.2, pulse = 0.04, volume = 0.14}) → Promise`: the completion beat. It calls `settle()` and `mood.pulse(pulse)`, then a gated `d.wait(hold)`; the caller has already framed the shot, and input does nothing during the hold. `settle(audio, {volume = 0.14})`: a soft low sine 196→180 Hz over 0.6 s plus a 0.25 s low-passed breath of noise at 400 Hz. |
+| `crafts/juice.js` | W4 | `makeDust(ctx, {max = 96, size = 0.012}) → {emit(pos, {n = 8, color, dir, speed = 0.6, spread = 0.5, life = 0.9}), dispose()}`: one `Points` draw, gravity 3 m/s², fades out, updated in `world.onUpdate`. `scrapeAt(audio, rate, {ref = 2.0})`: one stroke sound whose pitch and volume follow the stroke rate, with `k = clamp(rate / ref, 0, 1.3)`, `audio.scrape({volume: 0.1 + 0.14k, freq: 700 + 700k})`. `brushHiss(audio, speed)`: throttled to one burst per 0.12 s, `audio.noise({type: 'bandpass', freq: 3200, q: 0.8, dur: 0.12, volume: 0.035·clamp(speed, 0, 1)})`. `scrubber(pointer, {minTravel = 40}) → () => 'KeyA' \| 'KeyD' \| null`: a mouse stroke is a horizontal drag that reverses after at least 40 px of travel. |
+| `crafts/truing.js` | W4 | `trueWheel(ctx, d, opts) → Promise<{skipped, assisted, plucks, secs, overTight}>` (R3.4). `pluck(audio, freq, {volume = 0.16, decay = 0.7})`: a sine at f plus a triangle at 2.003f with an exponential decay and a 15 ms noise tick on the attack, built on `audio.ctx` into `audio.fx`. `spokeFreq(tension, f0 = 523) = f0·√tension`. |
+| `crafts/letters.js` | W4 | `GLYPHS`: single-path polylines in a unit em box, y down, for `O P E N K B A`. `layoutWord(word, {x, y, w, h, gap = 0.12}) → [{pts, length}]`. `makeLetterBoard({w, h, px = [1024, 512], base, paint = '#a3392b', word, ghost = null}) → board` with the same API as `scene4`'s board (`face`, `group`, `size`, `paths`, `pointAt`, `paintTo`, `lift`, `setBrush`, `perfect`, `guides`, `update`, `snapshot`). `letter(ctx, d, board, {speed = 0.45, kpx = 34, lead = 1.1, gap = 0.7, steer = {dims: 2, drift: 0.7, driftGrow: 0.2, gain: 0.9, recenter: 0.35}, hint = L.hints.steer, onStroke}) → Promise<score>`: this is Ch4's `lettering()` moved here unchanged. Score = mean \|offset\|; a skip paints the guides perfectly and returns 0. |
+| `src/world/bikeRig.js` | W4 | `rigBike(bike) → rig`: `rigBike()` moved out of `scene4.js` unchanged (scene4 imports it), plus a manual mode. `rig.setAngle(rad)` puts the wheel under direct control (spin 0). `rig.setLateral(fn(angle) → rad)` replaces the single cosine wobble. `rig.flashPad()`. `rig.onRub` fires on a crossing in either direction. `rig.spokes` is the rear wheel's `LineSegments` (`bike.userData.spokes[1]`). |
+| `crafts/radio.js` | JOBS | `tuneRadio(ctx, d, opts) → Promise<{skipped, found}>` and `radioVoice(audio) → {set(u), music(on), dispose()}` (R3.8b). |
+
+- **`minigames.rhythm()`** (W4, narrow edit): a new option `poll: () => code | null`, read every frame. A returned code that differs from `s.lastKey` counts as a stroke. This is how `scrubber()` makes sanding and the shutter work with the mouse.
+- **`src/ui/swatch.js` + `src/ui/craft.css`** (D8, new): `mixChip(ui, {tins: [{name, color}], labels: {tip, done, hint}, onTin(i), onTip(), onDone()}) → {set(hex, counts), shake(), dispose()}`. It is a small DOM chip at bottom-centre, above the prompt line: a 28 px swatch in the true mix colour, five tin dots in their tin colours, each with its digit and name, and two buttons. Everything in it is clickable. `swatch.js` imports `craft.css`; it does not edit `UI.js` or `style.css`.
+- **`audio.buffer(name)`** (JOBS, one-line edit to `Audio.js`): a public alias of `_buffer(name)`, so the radio can play a track through its own filters.
+
+### R3.2 Ch4 Day 8: Measure twice, with the tape (owner D8)
+
+- **Prop.** `scene4`'s existing `tape` group (the `tape_measure` scan on its side, plus the blade). D8 exposes `W.tape.setLength(cm)` (the blade's scale along the frame, 0–90 cm), `W.tape.setBow(k)` (0–1, bends the blade's middle up by up to 1.5 cm) and `W.tape.loupe` (below).
+- **Beat order.** It replaces the old `[measure]` dialogue:
+  1. `start`: unchanged ("Door goes back in the frame. It's eighty-two wide. Measure the frame.").
+  2. **Frame** hotspot (REQUIRED, "Measure"). Cinematic: Hugo crouches at the frame and `shots.frame` frames the doorway. The case hooks on the near jamb.
+  3. **Reading 1** (the minigame below). Hugo says the reading: `tape.readings[i]`.
+  4. `tape.twice`: Odile "Measure twice." / Hugo "Again?" / Odile "Yes." These play after the first reading only.
+  5. **Reading 2.** Hugo says `tape.again[i]` (the same numbers with a leading "...").
+  6. If the two latest readings differ: Odile says the next line from `tape.differ` (in order, wrapping), and Hugo measures again. Each new reading is compared with the one before it. It ends when two consecutive readings are equal.
+  7. **Assist:** after 3 disagreements, Odile says `tape.help` and holds the end. The next reading soft-stops at the jamb (81.5) and counts as agreed on its own.
+  8. `tape.cut[i]` for the agreed reading (Odile). Notebook +"Measure twice." (unchanged).
+- **The mechanic.**
+  - **Input:** hold `{Space}`, or hold the left mouse button anywhere on the canvas, to pull the blade. Release to read. The prompt is `tape.hint`.
+  - **The blade** `x` (cm) grows while held: 60 cm/s up to 70 cm, then easing linearly down to 4 cm/s at the jamb (81.5).
+  - **The jamb is 81.5 cm.** When `x` reaches it, the case touches the jamb with a small wooden "tock" (`audio.tick({volume: 0.22})`). From then on, holding presses the case into the jamb: the blade bows (`setBow`) and `x` keeps rising at 0.8 cm/s up to 83 cm, where it stops with a faint creak (`audio.noise({type: 'bandpass', freq: 240, q: 6, dur: 0.3, volume: 0.06})`).
+  - **Release:** if `x < 79.5`, the blade zips back (`audio.noise({type: 'highpass', freq: 2400, dur: 0.25, volume: 0.07})`). Odile barks `tape.short` (non-blocking), and the attempt doesn't count. Otherwise the reading is `snap(x, 0.5)` clamped to [80.5, 82.5], and `i = (reading − 80.5) / 0.5` (0–4).
+  - **Feel:** release within about 0.3 s after the tock and you read 81.5. Release early and you read short; press longer and you read long.
+  - **The loupe** (visual twin of the tock and the creak): a camera-parented plane 0.32 × 0.09 at 0.6 m, in the lower third, drawn on a CanvasTexture, so the grime and grain still apply. It shows the blade magnified about 6×, with mm ticks and cm numbers (digits only, no language), scrolling under a fixed red hairline (the case edge) and the wood edge of the jamb coming in from the right. When the case touches, the jamb edge meets the hairline and the hairline thickens. While the blade bows, the ticks bunch and the hairline turns warm red.
+- **Idle:** after 6 s with no input, the tape pulls itself and releases on the tock (81.5).
+- **Skip:** readings `[81.5, 81.5]`, agreed 81.5.
+- **Memory:** `remember('measure', {readings, agreed, assisted})`.
+- **Camera:** `shots.frame`, unchanged. The loupe is hidden whenever dialogue is open.
+- **Length:** 20–35 s.
+
+### R3.3 Ch4 Day 8: the grey, a colour-mixing toy (owner D8)
+
+- **Replaces** `greyMenu` (removed from EN and FR). The lines before it are unchanged: "Now. Colour. I want a grey." / "Easy." / "A grey that isn't sad."
+- **Staging.**
+  - A cut to `shots.mix`: a 3/4 top view, fov about 38.
+  - **The props** are in `scene4/mixer.js` (new, D8), on an upturned crate beside the trestles, inside the bulb's pool, about 0.75 m high:
+    - an enamel pot (open cylinder, about 0.16 m across), whose paint surface is a disc carrying the live mix colour (roughness 0.2, wet);
+    - five small tins in a row, each with a paint disc in its own colour.
+  - **Colour during mixing:** `mood.focusOn(pot, {slot: 0, strength: 1, floor: 1, decay: 0, radius: 0.12, offsetY: 0})`, so the swatch reads in true colour at hope 0.2. The door's bloom takes slot 0 back later.
+  - Odile stands at the player's shoulder (`arms_crossed`).
+- **Opening line:** `mixer.intro`, a stage line: *"Five tins: white, black, ochre, blue, red oxide. One pot."*
+- **Inputs:**
+  - **A drop:** `1`–`5`, or click a tin (`P.pick`), or click a tin dot on the chip. Each drop tilts its tin for 0.35 s, plays a "plip" (`audio.tone({freq: 900, to: 400, dur: 0.08, volume: 0.08})`), sends a ripple ring across the pot surface, and eases the swatch to the new mix over 0.4 s with a small stir swirl. The chip's swatch updates too.
+  - **Tip it out:** `{KeyT}`, or the chip's "Tip it out" button. The pot empties with a slosh (`audio.noise({type: 'lowpass', freq: 500, dur: 0.4, volume: 0.1})`) and the paint level drops.
+  - **Done:** `{KeyE}`, or the chip's "Done" button. It needs at least 2 drops, and a pot that changed since her last verdict; otherwise the chip shakes. An E pressed within 0.4 s of her lines closing is dialogue, not Done.
+  - **Capacity:** 18 drops. Past that, a drop is refused and Odile barks `mixer.full`. The paint level rises with each drop.
+  - Prompt: `mixer.hint`.
+- **The pigment model** (`crafts/mix.js`, D8, pure functions: `mixLab(counts) → [L, a, b]`, `labToHex(lab)`, `lch(lab) → {L, C, h}`, `classify(counts) → verdict`):
+
+  | Tin | Key | Colour | Strength |
+  |---|---|---|---|
+  | White | 1 | `#f2efe8` | 1.0 |
+  | Black | 2 | `#1b1a19` | 3.0 |
+  | Ochre | 3 | `#b8862c` | 1.2 |
+  | Blue | 4 | `#27467f` | 2.0 |
+  | Red oxide | 5 | `#8b3a22` | 1.5 |
+
+  - **Mix:** OKLab average weighted by `drops × strength`. Black and blue are strong, white is weak. Blue cancels ochre's warmth (their a/b roughly oppose), which is why Odile's recipe has "one drop of blue". The swatch is the OKLab result converted to sRGB and clamped.
+  - **Verdict** (on Done), first match wins, with C = chroma and h in degrees:
+    1. **target:** 0.57 ≤ L ≤ 0.68 and 0.008 ≤ C ≤ 0.026 and 65 ≤ h ≤ 105.
+    2. **Strong colour (C > 0.06), by hue whatever the lightness** (playtest fix: a pot of blue is blue, not a funeral): h in (105, 300) **blue**; h in [65, 105] **ochre** if L > 0.6, else **mud**; h in [50, 65) **mud** (orange-brown); otherwise **red**.
+    3. **mud:** ochre, blue and red oxide are all ≥ 1 drop, unless the result is a near-neutral grey (0.55 ≤ L ≤ 0.75 and C < 0.02).
+    4. **dark:** L < 0.53.
+    5. **If C ≥ 0.008:**
+       - h in [65, 105]: if C > 0.026, **ochre** when L > 0.6, else **mud**; else if L > 0.68, **light**; else **dark**.
+       - h in (105, 300): **blue**.
+       - otherwise: C < 0.015 is a grey with a blush (**light** if L > 0.68, else **waiting**); h in [50, 65) with C > 0.026 is **mud**; else **red**.
+    6. **If C < 0.008:** **light** if L > 0.68, else **waiting**.
+  - **Reference results** (from the tuning run):
+
+    | Drops | Swatch | Verdict |
+    |---|---|---|
+    | W1 K1 | `#494846` | dark |
+    | W3 K1 | `#7e7c78` | waiting |
+    | W4 K1 | `#8d8b87` | waiting |
+    | W6 K1 | `#a3a09c` | light |
+    | W4 K1 O1 | `#948b7d` | target |
+    | W5 K1 O2 B1 (Odile's recipe) | `#8d8881` | target |
+    | W5 K1 O1 B1 | `#888888` | waiting |
+    | W5 K1 B1 | `#828790` | blue |
+    | W5 K1 O1 R1 | `#9d897a` | mud |
+    | W5 K1 O3 | `#a39379` | ochre |
+- **Odile's verdicts** (blocking, `mixer.verdicts.<v>`):
+  - **waiting:** "That's not a grey. That's a waiting room."
+  - **light:** "Now it's a sad grey pretending to be fine. I know the type." The first time on a pot with black in it, follow it with the existing stage line `greyLook` (*She looks at him while she says it.*).
+  - **dark:** "That's a funeral. It's a door, not a hearse."
+  - **ochre:** "That's not grey. That's custard."
+  - **blue:** "Too cold. That grey's waiting for a bus."
+  - **red:** "That's gone pink. A pink door. The street would talk."
+  - **mud:** "That's mud. Honest mud, but mud. Tip it out."
+  - **target:** "...There. Now it's a grey that's been somewhere." The toy ends.
+  - After any verdict except target, the pot keeps its paint: the player adds drops or tips it out.
+- **Assist** (counted on rejected Dones `r`, or on idle with no drop, tip or Done):
+  - r = 2, or 12 s idle: `mixer.hints[0]`, Odile: "White first. Then black, a drop at a time. Like gossip." If the last verdict was waiting or light (he already has a plain grey), `mixer.warm` instead: "The grey's there. Now a drop of ochre. Warm, not yellow."
+  - r = 3, or 24 s idle: `mixer.hints[1]`, Odile: "Five white, one black. Two ochre. One blue, to calm it down."
+  - r = 4, or 40 s idle: `mixer.give`, Odile: "Give it here." Then the stage line *She tips it out and does it in four moves, without looking.* The pot animates the canonical recipe in four pours (white ×5 as one pour, black, ochre ×2, blue), the swatch is set to exactly `#8d877c`, then the target verdict plays.
+- **Skip:** canonical `#8d877c`, `assisted: false`.
+- **After:** release slot 0. `remember('doorGrey', hex)` with the accepted swatch (`#8d877c` if Odile finished it), and `remember('grey', {tries: r + 1, assisted})`.
+- **The paint goes on:**
+  - D8 adds `W.door.setPaintColor(hex)` (`scene4.js`, narrow edit); `L.ch4.day8.paintColor` stays as the default. The auto-paint then runs exactly as before: 6 bands, one scrape each, and the slot 0 bloom on the last band with hope 0.35.
+  - New: the door starts wet (`finish.dry(ctx, doorMaterial, {secs: 20})`), and `finish.reveal()` holds 1.2 s on the finished door before `painted`.
+  - `painted` and the notebook entry "Mix a grey that isn't sad." are unchanged.
+- **Length:** 30–60 s.
+
+### R3.4 Ch4 Week 4: truing by ear (owner W4)
+
+- **Replaces** the driving ring. `T4.week4.truing.cue` and `.shout` are removed (EN and FR). `minigames.timing()` stays exported but unused. The lines before and after are unchanged, including "You listen. It tells you where it rubs." (now literally true).
+- **The wheel.**
+  - Rear wheel, 16 spokes (`bike.userData.spokes[1]`), spoke `i` at angle `i·22.5°`. Each has a tension `T`, where 1.0 is right.
+  - **Ch4 faults:** `[[4, 0.6]]`, one slack spoke, so `week4.bike` stays true. `trueWheel` takes `faults` as an option.
+  - **Pitch:** `spokeFreq(T) = 523·√T`. In tune is |T − 1| ≤ 0.05.
+  - **Rim deviation:** `lateral(θ) = 0.07 · Σ (Tᵢ − 1) · sideᵢ · bump(θ − θᵢ)`, where `sideᵢ = ±1` alternates and `bump` is cos² over ±40°. W4 feeds it through `rig.setLateral`.
+  - **Rub:** when |lateral| at the pad exceeds 0.012 rad, `onRub` gives a tick (volume ∝ deviation, up to 0.3) and the pad flashes (existing). So turning the wheel past the slack spoke rubs exactly there.
+- **Inputs:**
+  - **Turn:** `{KeyA}` / `{KeyD}` (or the arrows) step one spoke (a 0.12 s ease), auto-repeating at 6/s while held. Or drag horizontally with the mouse (0.01 rad per px); on release it snaps to the nearest spoke. The spoke at 12 o'clock is under the pluck point and is shown by a chalk tick on the tyre above it.
+  - **Pluck:** `{Space}` or a click: `pluck(spokeFreq(T))`.
+  - **Quarter turn:** `{KeyW}` tightens and `{KeyS}` loosens (T ± 0.1). Or scroll: toward you tightens, away loosens, one notch per quarter turn, throttled to 0.12 s. Each quarter turn plays a tiny nipple click (`audio.tick({volume: 0.12})`) and then auto-plucks that spoke.
+  - T is clamped to [0.4, 1.4]. Over 1.15, the pluck is a sharp `audio.ping({freq: 1900})` and Sami barks `ping`.
+  - Prompt: `truing.hint`.
+- **Visual twins:**
+  - A plucked spoke vibrates: its rim end oscillates at a visible 22 Hz, 4 mm, decaying over 0.6 s, and it brightens briefly (vertex colours on that `LineSegments`).
+  - `ui.gauge(truing.gauge, {value: f / 523, min: 0.75, max: 1.25, band: [0.975, 1.025], text: truing.pitch.flat | .sharp | .true})` shows the last pluck against the reference band.
+  - The rub is the pad flash.
+- **Sami's barks** (non-blocking, `who: 'Sami'`, 2.4 s, at most one per 5 s; `truing.barks.*`):
+  - loosening a spoke that was in tune: `clunk`, "Was it meant to go clunk?"
+  - 3 plucks within 1.5 s: `hitting`, "Odile, he's hitting it."
+  - 5 s with no input while the wheel is still out: `notFixed`, "Is it fixed? It's not fixed."
+  - T over 1.15: `ping`, "It went ping. Is ping good?" (new)
+  - the first quarter turn that raises a flat spoke while it is still flat: `higher`, "It's getting higher." (new)
+- **Assist:**
+  - After 15 s without a spoke coming into tune, or 8 s idle: Hugo's thought `truing.flat` ("There. That one's flat."). The flattest out-of-tune spoke gets a chalk mark on the rim, and the wheel turns itself to bring it under the pluck point.
+  - After 20 s more, or 20 s idle: it finishes itself. The wheel turns to each bad spoke and corrects it a quarter turn at a time, auto-plucking every 0.45 s. Then Sami barks `truing.assisted` ("Is it fixed? ...It's fixed.").
+- **Done** when every spoke is in tune: the rim stops rubbing.
+  - One clear pluck of the true note, `bike.setSpin(0.6)`, silent.
+  - `finish.reveal(ctx, d, {hold: 1.5})`.
+  - Then, as before, `mood.focusOn(bike.group, {slot: 1, floor: 0.55, offsetY: 0.5})` and hope 0.42.
+- **Skip:** every T = 1, wobble 0.
+- **Memory:** `remember('wheel', {secs, plucks, assisted, overTight})`.
+- **Camera:** `shots.truing`. W4 may raise it slightly, so that the top of the rim (the pluck point) and the pads are both in frame.
+- **Length:** 30–45 s.
+- **`trueWheel` opts:** `{rig, faults, text = T4.week4.truing, f0 = 523, onSpokeTrue}`. Ch5 passes its own `text` (R3.8d).
+
+### R3.5 Juice, craft by craft (subtle and cheap)
+
+| Craft | Owner | What's added |
+|---|---|---|
+| Sanding (Ch4 Day 5) | W4 | `makeDust` emits 8 particles per stroke at the block, colour lerping from grey paint `#8f8a80` (progress 0) to pale wood `#cdb89a` (progress 1), thrown along the stroke direction. `scrapeAt(audio, s.rate)` replaces the flat `audio.scrape()`. Mashing (> 3.4/s) is harsher: `scrape({freq: 1800, volume: 0.26})`. Mouse scrubbing via `scrubber` + `rhythm({poll})`. At 1.0: `reveal({hold: 1.2})` on the bare wood before "You've done this before." |
+| Grey door (Ch4 Day 8) | D8 | Wet → matte over 20 s (`finish.dry`), and `reveal({hold: 1.2})` after the last band (R3.3). |
+| Truing (Ch4 Week 4) | W4 | Plucks, spoke vibration, pad flash and the reveal (R3.4). |
+| Lettering (Ch4 Week 7) | W4 | `brushHiss(audio, tipSpeed)` while painting. The board starts wet and dries over 15 s (`finish.dry` on the board material). `reveal({hold: 1.2})` on the finished OPEN before the tier line. |
+| The line (Ch5) | PANEL | The ribbon material starts at the wet colour (`#d9a441` × 0.82) and eases to `#d9a441` over 10 s after the line ends. Each mural panel goes wet (roughness 0.35) as the line passes under it and dries back to its own roughness over 10 s. |
+| Hugo's panel (Ch5) | PANEL | Wet → matte over 12 s, then `reveal({hold: 1.2})`. |
+| Street jobs (Ch5) | JOBS | Rust dust (`#8a4a2a`) and `scrapeAt` on the shutter; radio static and a found-station lamp; `brushHiss` and a drying board; plucks on Ines's wheel. Each ends with `reveal({hold: 1.0})`. |
+
+The reveal is the only new camera beat: the shot holds still, with no new framing. Particles: one pool per scene, ≤ 96 points.
+
+### R3.6 Seeds in Ch1 to Ch3 (owner SEEDS)
+
+**Ch1: the wobbly table** (optional)
+- After the **phone** beat ends, the coffee table rocks: two low "tocks" (`audio.tick({volume: 0.2})` 0.25 s apart), and the phone and the mug jiggle (a 0.6 s damped rotation).
+  - The table is merged into a static batch, so the loose objects on it jiggle. Do not unmerge the room.
+- Then an optional hotspot `table` appears (prompt "Steady it", ringed, radius 1.0, in front of the table, clear of the phone spot). One E:
+  - Hugo crouches (`player.crouch(0.5)`), a folded paper square (6 × 4 × 0.3 cm, off-white) appears under the near leg, and the table settles: one last tock (`audio.thud({volume: 0.08})`) and a mug clink (`audio.tone({freq: 2400, dur: 0.05, volume: 0.05})`). Then:
+  - `table`: *"Sunday's race number. Folded in four, it's exactly the right thickness."*
+  - `remember('seeds.table', true)`.
+- The 38 bibs on the wall stay 38: Sunday's is the one that never got pinned.
+
+**Ch2: the ghost sign, lingering** (optional)
+- Ch2 already has the "MARCHAL & FILLE — ENSEIGNES — DORURE" ghost sign and its hotspot. A second sign on No. 14 would duplicate it, and No. 14 is reached only after the arrival trigger, so the seed extends the existing hotspot.
+- **Trigger:** after the `ghost` thought, if Hugo stays inside the hotspot radius (2.3 m) with no movement key held for 2.5 s:
+  - The ghost sign's existing focus (slot 3) raises its floor from 0 to 0.25 over 1.5 s, so colour seeps into the old letters while he holds still. It decays back over 3 s once he moves.
+  - Non-blocking `ghostLinger`: *"The thin strokes have lasted best. You'd think it'd be the other way round."*
+  - Once per chapter. `remember('seeds.ghost', true)`.
+- It is visual and textual, so it needs no audio twin.
+
+**Ch3: wheels** (automatic, text only)
+- `weeks[0].thoughts[30]`: *"At fifteen I built my own wheels. I could hear a slack spoke from the kitchen."*
+- If the thoughts at 15 m and 45 m then overlap on screen, move the 45 m one to 52 m (the segment stays 60 m).
+
+### R3.7 Ch5: Hugo's own panel (owner PANEL)
+
+- **Where:** the pale rectangle where the billboard was (`BILLBOARD` z −18, y 4.7–7.7). The panel is small, 2.4 × 1.6 m, centred at z −18, y 5.0–6.6, on the primed wall.
+- **Build:** `scene5/hugoPanel.js` (new): `makeHugoPanel(ctx, {wallX, doorGrey}) → {mesh, paint(motif, k), setColor(k), material}`. `paint` reveals the motif in 6 horizontal bands like the door. The motif is a CanvasTexture with no text:
+  - `wheel`: a true wheel, 16 spokes, rim in ochre `#d9a441`, a blue-grey tyre.
+  - `door`: a panelled door in `mem.doorGrey`, with a small brass knob.
+  - `hand`: a hand holding a liner brush, perfectly still, with one fine red `#a3392b` hairline under it.
+- **When:** inside the `odile` "Ready" hotspot, before `line.setup`:
+  1. `panel.ask`:
+     - **Odile:** "One thing first. Up there, where the billboard was. Nobody wanted it."
+     - **Hugo:** "So it's mine."
+     - **Odile:** "Paint something you can do. Small, if you like."
+  2. `d.choose(panel.menu)`: prompt *"Something off the list."*, options [A wheel. True.] / [The door. That grey.] / [A hand, holding a brush still.], with `reply: null`. A skip picks `door`.
+  3. Fade, then `panel.stage`: *Odile holds the ladder. Both hands. She doesn't help.* (It mirrors Week 4. Nobody comments.)
+  4. A shot from the street (camera about `[0.5, 1.7, −12.5]`, look `[wallX, 5.6, −18]`, fov 40). The bands paint over 4 s with one `scrape` each, `finish.dry` runs, the material colour lerps from grey to full, then `mood.pulse(0.05)` and `d.hope(0.78, 2)`, then `reveal({hold: 1.2})`. Hugo is off-frame (up the ladder). There is no focus slot (Ch5's four slots are taken).
+  5. Fade back. Odile's line by motif, `panel.after.<motif>`:
+     - wheel: "A wheel. Sami's going to say it's his."
+     - door: "My door. Higher up than I'd have hung it."
+     - hand: "Steady hand. Show-off."
+  6. `line.setup` as before ("Everybody's painted what they can do..." now includes him).
+- **Visible in the line:** the line's opening shot starts on the panel and eases down to `LINE_CAM` over 1.6 s (`cam.tween`) while the brush waits at the chalk. Then steering starts. It is also in frame in the crane-up.
+- **Memory:** `remember('panel', motif)`.
+- **Length:** 20–25 s.
+- **Also PANEL in Ch5:**
+  - `teachFirst`: `const {tries} = await d.correct(T.teach.menu); remember('teachFirst', tries === 1)`.
+  - **No. 14 in the accepted grey:** `scene5/no14paint.js` (new): `paintNo14(group, hex)`. It lays a painted leaf over No. 14's street door (x 3.75, z −48, about 1.0 × 2.1 m, 2 cm proud) and painted strips over the garage door's iron jambs and lintel (the same boxes +2 mm), in `mem.doorGrey`, roughness 0.6, no shadows. It is called from `buildScene5` (one line).
+
+### R3.8 Ch5: street jobs (owner JOBS; runs after D8, W4 and PANEL)
+
+- **Where it plugs in:** `src/story/ch5jobs.js` (new): `setupJobs(ctx, d, W, api) → {close(), dispose()}`.
+  - `api = {bark, followDefault, isRoaming: () => roam}`, from `ch5.js`.
+  - It is called right after `await d.interact('meet')`, and `close()` is called in `dropOptional()`.
+  - Props come from `scene5/jobs.js` (new): `buildJobs(ctx, group, {wallX, spots, groundAt}) → {shutter, radio, board, inesBike, dispose()}`, hooked into `buildScene5` with one line. Its `dispose` also stops the radio audio.
+- **The opener:** `opening` gains a fourth line, after Hugo's "Nice..." thought:
+  - **Odile:** "Half this street's stuck, bent, faded or buzzing. Before your line, if your hands get bored."
+- **Discoverability:**
+  - Each job is an optional hotspot (`required: false`, so the objective pointer stays on the main path), ringed, `enabled: () => roam && !mem.jobs[id]`.
+  - **When they open (playtest fix):** the shutter and the board right after the opener; the radio and Ines's wheel only once Teach is done (`api.taught()`), so Sami never parks on the radio, never says "the radio's still broken" after it was fixed, and stands at the bike-shop window during the wheel. Sami's arrival call waits for a running job to end (`jobs.busy()`), and Sami stops in the road (x ≥ −1.5), clear of the radio crate.
+  - Each has one approach bark (once, within 4.5 m, through `api.bark`; Sami's wheel bark carries 9 m from the bike-shop window).
+  - 2.5 s after Teach, if Hugo is more than 8 m from the shutter and it's still stuck, Mme Benali calls from up the street (`jobs.shutter.call`).
+  - The first "Ready" at Odile while any job is still open asks once (`ch5.readyCheck`, Odile: "Nobody's timing you." [Ready.] / [Not yet.]); Not yet leaves everything open.
+  - A finished job's hotspot is removed, and Hugo is put back where he started it (work spots can be off the walkable street).
+- **Colour:** each job lerps its own materials from a luma-matched grey to their colour, `k` 0.15 → 1 over 1.5 s at completion. No focus slots, no hope change.
+- **Staging:** each job is a `d.cinematic`, with a cut to its shot, the minigame, `reveal({hold: 1.0})`, the done line, and a cut back (`followDefault`). Props never stand within 1.2 m of the line staging (Odile at `[wallX + 1.9, LINE_Z1 − 1.6]`, Ines at `[−2.2, LINE_Z1 − 3.4]`), the bench or the chair. New meshes don't cast shadows, except the bike frame. Total ≤ 16 draws.
+
+**(a) Mme Benali's shutter** (`shutter`, about 20 s)
+- **Prop:** a slatted roller shutter stuck at 45% over the bakery front (left side, z −6 … −12), with rusty runners. The shop glow behind it is dimmed until the job is done.
+- **Prompt:** "Fix the shutter".
+- **Approach bark** (Mme Benali): "It sticks halfway every morning. I open half a bakery."
+- **The craft:** `rhythm()` with:
+  - band [1.6, 2.6], mashAt 3.4, `idleAuto {after: 5, rate: 2.1}`, `gauge {label: jobs.shutter.gauge}` ("RUNNERS"), `poll: scrubber(P)`;
+  - progress +0.07 in band, +0.03 out (about 7 s of good rhythm);
+  - each stroke: `scrapeAt`, 6 rust particles at the runner, and the shutter twitches up 2 cm and settles.
+  - Mashing: Mme Benali barks `jobs.shutter.mash`, "Gently. It's older than me."
+- **Done:**
+  - The shutter rolls up over 1.6 s with a rattle (20 bursts of `audio.noise({type: 'highpass', freq: 1800, dur: 0.05, volume: 0.06})` 0.08 s apart).
+  - The bakery's window glow lerps up (emissive `#ffc98a`, 0 → 1.4) and the BOULANGERIE BENALI sign's colour returns.
+  - **Mme Benali:** "It went up. Now I'll have to be nice to people all morning."
+- **Skip:** progress 1. `remember('jobs.shutter', true)`.
+
+**(b) Odile's radio** (`radio`, 20–30 s)
+- **Prop:** `radio.glb` (`height: 0.25`) on an upturned crate by Odile's chair (about `[−3.7, −38.9]`), clear of the bench path.
+  - Its dial is a CanvasTexture: a scale 88…108 (digits only) and a needle.
+  - A round signal lamp ("magic eye") glows with the signal strength.
+  - It hisses quietly from the start (static at 0.04).
+- **Prompt:** "Tune it".
+- **Approach bark** (Odile): "It still only gets the fishing."
+- **The craft:** `tuneRadio()`.
+  - **Dial** u ∈ [0, 1]. Turn it with `{KeyA}` / `{KeyD}` (0.22/s held), or drag (0.0012 per px), or scroll (0.012 per notch). Prompt: `jobs.radio.hint`.
+  - **Stations:** fishing u 0.16, music 0.41, football 0.64, forecast 0.87.
+    - The dial starts on fishing, and fishing counts as found ("only gets the fishing").
+    - Signal per station `s = 1 − |u − uᵢ| / 0.06` (clamped). Static gain = 0.25·(1 − max s) + 0.03.
+  - **A station is found** when the needle rests within ±0.02 of it for 0.8 s. Then:
+    - a soft two-note chime (`audio.tone` 660 then 990 Hz, 0.12 s each, volume 0.06);
+    - the lamp flares;
+    - a chalk tick is drawn on the dial at that station (Odile's chalk);
+    - the caption `jobs.radio.stations.<id>` shows as a non-blocking thought with `who: 'Radio'` (2.6 s). It is also the visual twin of the audio.
+  - **Sound** (`radioVoice`, on `audio.ctx` into `audio.bus`):
+    - **Static:** white noise, bandpass 2500 Hz, q 0.6.
+    - **Talk** (fishing, football, forecast): a sawtooth "voice" (110 Hz for fishing, 140 Hz for football, 190 Hz for the forecast) through two formant bandpasses (F1 500–800 Hz, F2 1200–1800 Hz, q 6, wandering slowly). It is gated by a syllable envelope: syllables 0.12–0.28 s with gaps 0.05–0.4 s; fishing is slow, football fast. Football adds `crowd` through the radio band at 0.3.
+    - **Music:** the `contemplation` track (`audio.buffer`) through a highpass at 380 Hz and a lowpass at 3200 Hz.
+    - Everything passes a final radio band (highpass 300 Hz, lowpass 3400 Hz).
+- **Captions** (`jobs.radio.stations`):
+  - fishing: "...and the pike, you see, the pike doesn't care about your feelings..."
+  - music: "*Music. Slow, a bit scratched.*"
+  - football: "...two-nil, and nobody here can quite believe it..."
+  - forecast: "...Pas-de-Calais, westerly four or five, rain later, good..."
+- **Assist:** after 6 s idle, the needle creeps toward the nearest unfound station at 0.06/s. At 30 s, the rest are found automatically, 2 s apart.
+- **Done** (all four found), `jobs.radio.done`:
+  - **Odile:** "Four stations. I've had the fishing man since the franc."
+  - **Hugo:** "Fishing?"
+  - **Odile:** "Leave it on the music. The fish can wait."
+  - Then the needle glides to music (1.2 s) and the radio keeps playing music **for the rest of the chapter**, including the golden-hour walk:
+    - Its gain is `0.32 · clamp(1 − (dist − 2) / 22, 0.15, 1)` from Hugo's distance to the radio.
+    - The chapter's piano ducks to 0.12 while it plays (`audio.music('piano', {volume: 0.12, fade: 2})`).
+    - The lamp stays lit, so the music is visible too.
+- **Skip:** all found, music on. `remember('jobs.radio', true)`.
+
+**(c) Marco's menu board** (`board`, 25–30 s)
+- **Prop:** a sandwich A-board between the kebab door and the bench (≥ 1.2 m from Odile's line spot and from `S.bench`).
+  - Its face is a `makeLetterBoard({w: 0.56, h: 0.36, base: '#e6dcc4', paint: '#a3392b', word: 'KEBAB', ghost: 'rgba(160,120,120,0.35)'})`.
+  - The faded old KEBAB shows as the ghost. The word is the same in French (`jobs.board.word`, marked as-is signage).
+- **Prompt:** "Re-letter it".
+- **Approach bark** (Marco): "My board's so faded people think we're shut."
+- **The craft:** `letter(ctx, d, board, {speed: 0.6, lead: 0.5, gap: 0.4})`.
+  - 5 single-path strokes K E B A B from `GLYPHS`, a camera square to the board (fov 30), and `brushHiss`.
+  - The base colour lerps to cream as the strokes land, then the board dries (`finish.dry`, 12 s).
+- **Marco's tier lines** (`jobs.board.tiers`, thresholds as OPEN: good < 0.16 < middle < 0.42 < poor):
+  - good: "Now that's a great kebab sign."
+  - middle: "It's got character. Like the kebab."
+  - poor: "It's a bit drunk. So are half my customers, after midnight."
+- **Skip:** perfect letters. `remember('jobs.board', true)`.
+
+**(d) Ines's wheel** (`wheel`, 25–35 s)
+- **Prop:** `build.bicycle({frame: '#c24a6a'})` leaning on its kickstand at the bike shop window (about `[4.2, −31.9]`). The frame starts greyed (k 0.15).
+- **Prompt:** "Look at the wheel".
+- **Approach bark** (Sami): "Ines bent her wheel on a kerb. I do punctures. Bends are you."
+- **The craft:**
+  - A short fade. The bike is upside down on its saddle and bars (`rigBike`), and Hugo crouches.
+  - A low close shot on the rear wheel.
+  - `trueWheel(ctx, d, {rig, faults: [[3, 0.7], [10, 1.3]], text: L.ch5.jobs.wheel.truing})`: one flat and one sharp spoke, so this time he loosens one. The hint, gauge and pitch words are read from `L.ch4.week4.truing`.
+- **Ch5 truing text** (`jobs.wheel.truing`; `who: 'Sami'`):
+  - `flat` (Hugo's thought): "There. That one's off."
+  - `barks.clunk`: "Clunk's bad. I know clunk now."
+  - `barks.hitting`: "You're just hitting it now."
+  - `barks.notFixed`: "Not fixed. I can hear it."
+  - `barks.ping`: "That one went ping. Is ping good this time?"
+  - `barks.higher`: "It's getting higher."
+  - `assisted`: "...Fixed. I'm saying I helped."
+- **Done:** the wheel spins free and silent, and the frame colour returns. Sami's non-blocking bark `jobs.wheel.done`: "Ines! Your wheel sings now!" The bike goes back on its kickstand behind a fade.
+- **Skip:** true. `remember('jobs.wheel', true)`.
+
+### R3.9 Conditional ending cards (owner PANEL)
+
+- **Code:** `src/story/ending.js` (new): `endingLines(m = mem, E = L.ending) → string[7]`, a pure function of memory.
+- **Wiring:** `Director.start()` calls `ui.endCard({...L.ending, lines: endingLines()})`.
+- **Fallback:** `L.ending.lines` stays, as the default selection (for checks, and for a fallback when `cards` is missing).
+- **Text** (`common.js`, `ending.cards`):
+  - `street`, chosen by `mem.panel`:
+    - `plain` (panel null): "Rue des Tanneurs never got another billboard."
+    - `wheel`: "Rue des Tanneurs never got another billboard. Where it was, there's a small wheel. Sami says it's his."
+    - `door`: "Rue des Tanneurs never got another billboard. Where it was, there's a small grey door. People knock on the real one."
+    - `hand`: "Rue des Tanneurs never got another billboard. Where it was, a small hand holds a brush very still."
+  - `sami`, chosen by `mem.teachFirst`:
+    - `first`: "Sami Haddad fixes punctures. Two euros, or free if you'll learn."
+    - `second`: "Sami Haddad fixes punctures. Two euros, or free if you'll learn. He lets you get it wrong first."
+  - `job`, the first done in the order board, wheel, shutter:
+    - `board`: "Marco's board says KEBAB again, by hand. He added GREAT himself. It's a bit drunk."
+    - `wheel`: "Ines rides a wheel that doesn't rub. She signs her work now. Small, in the corner."
+    - `shutter`: "Mme Benali's shutter goes up at six without a sound. She misses the argument."
+  - `grey`, used in the `job` slot when none of those three jobs is done:
+    - `own`: "No. 14's door is a grey that's been somewhere. He never wrote the recipe down."
+    - `odile` (`mem.grey.assisted`): "No. 14's door is a grey Odile finished. He says he mixed it. She lets him."
+  - `radio`, chosen by `mem.jobs.radio`:
+    - `fixed`: "Odile's radio gets four stations now. She listens to the fishing one."
+    - `one`: "Odile's radio still gets one station. She's learned a great deal about fishing."
+  - `ask`: "Odile Marchal's list got one line longer that year. It says "Ask."" (unchanged)
+  - `runs`: "Hugo Revel runs some Sundays. Nobody knows how far, including him." (unchanged; second to last)
+  - `watch`: "His watch hangs on a nail above the workbench. It thinks he's been resting for a year." (unchanged; last)
+- **Selection** (always 7 cards, in this order):
+  ```js
+  const c = E.cards, j = m.jobs || {};
+  return [
+    c.street[m.panel] ?? c.street.plain,
+    m.teachFirst === false ? c.sami.second : c.sami.first,
+    j.board ? c.job.board : j.wheel ? c.job.wheel : j.shutter ? c.job.shutter : m.grey?.assisted ? c.grey.odile : c.grey.own,
+    j.radio ? c.radio.fixed : c.radio.one,
+    c.ask, c.runs, c.watch,
+  ];
+  ```
+- **Defaults:** a straight jump to Ch5 with no jobs gives the plain-or-panel street card, `first`, `grey.own` and `radio.one`.
+- **Also PANEL in `common.js`:**
+  - `title.controls`: the `{Space}` row becomes "Hold the tape · pluck a spoke", and "1 – 3 / Choices" becomes "1 – 5 / Choices · paint tins".
+  - Add a `Mouse` hint to the existing Mouse row: "Look around · {KeyR} re-centre · click, drag, scroll in crafts". If it breaks the 42-character limit, keep the row as it is and put the craft mouse hint in each craft's `hint` instead.
+
+### R3.10 Audio cues and their visual twins
+
+| Cue | Visual twin |
+|---|---|
+| Tape touches the jamb (tock); bow creak | The loupe: the jamb edge meets the hairline, then the ticks bunch and the hairline turns red; the blade bows in 3D |
+| Tape zips back (too short) | The blade retracts; Odile's bark |
+| Paint drop "plip"; slosh | The tin tilts, a ripple on the pot, the swatch changes; the paint level drops |
+| Spoke pluck pitch | The spoke vibrates; the PITCH gauge with FLAT / SHARP / TRUE |
+| Rim rub | The pad flash and the rim's visible swing at the pad |
+| Over-tight ping | Sami's bark; the gauge's warn colour |
+| Scrape speed and pitch | Dust volume and the gauge |
+| Radio static, voices and music | The needle, the signal lamp, the chalk ticks, the `Radio` captions; the lamp stays lit while music plays |
+| Shutter rattle | The shutter rolling up |
+| `settle()` on a reveal | The camera hold and `mood.pulse` |
+| Table tocks (Ch1) | The phone and mug jiggle |
+
+### R3.11 Hope, colour and pacing
+
+- **Hope schedule:**
+  - unchanged except Ch5: 0.75 (Teach) → **0.78 (Hugo's panel)** → 0.84 over the line → 0.9 (signed) → 0.95 → 1.0;
+  - the jobs and seeds change no hope;
+  - the Ch4 mixer borrows focus slot 0 (floor 1.0) until the door takes it back.
+- **Colour on the things he makes:** the door now carries the player's own grey, and that grey returns on No. 14 in Ch5. The jobs' colour stays local to each spot (material lerps); it is not a mood change.
+- **Pacing deltas:**
+
+  | Part | Before | After | Where it goes |
+  |---|---|---|---|
+  | Ch1 | 2:00 | 2:00 (+0:10 optional) | table |
+  | Ch2 | 2:30 | 2:30 (+0:05 optional) | ghost linger |
+  | Ch3 | 2:15 | 2:15 | one thought |
+  | Ch4 | 3:45 | about 4:55 | mixer +0:35, tape +0:15, truing +0:20, reveals +0:05 |
+  | Ch5 | 3:30 | about 4:05 (+1:45 optional) | panel +0:25, opener and pre-roll +0:05; four jobs optional |
+  | Ending | 0:30 | 0:34 | 7 cards |
+  | **Growth** | | **+1:50 required, +2:00 optional (about +3:50 worst case)** | |
+
+- **If Ch4 runs long,** cut in this order: the "Again?" / "Yes." pair (R3.2 step 4 becomes "Measure twice." alone), then the `higher` bark, then the mixer's 12 s idle hint (keep the rejection count).
+
+### R3.12 File ownership and phases
+
+**Phase 0** (the first commit-sized step of each agent; signatures exactly as in R3.1, bodies may be stubs):
+- PANEL: `src/story/memory.js`.
+- D8: `crafts/pointer.js`, `crafts/finish.js`.
+- W4: `crafts/juice.js`, `crafts/truing.js`, `crafts/letters.js`, `src/world/bikeRig.js` (moved, with `scene4.js` importing it).
+
+**Phase 1, in parallel: D8, W4, SEEDS, PANEL. Phase 2: JOBS** (after D8, W4 and PANEL report done).
+
+| Agent | New files (owned) | Shared files (narrow edits, only these sections) |
+|---|---|---|
+| **D8** (R3.2, R3.3, door drying) | `crafts/pointer.js`, `crafts/finish.js`, `crafts/mix.js`, `crafts/tape.js` (`measureTape(ctx, d, {tape, text}) → Promise<{readings, agreed, assisted, skipped}>`), `crafts/mixer.js` (`mixGrey(ctx, d, {mixer, text}) → Promise<{hex, tries, assisted, skipped}>`), `scene4/mixer.js` (`buildMixer(ctx, group, {pos}) → {pot, tins[5], setSwatch(hex), pour(i), tipOut(), setLevel(n), focus}`), `src/ui/swatch.js`, `src/ui/craft.css` | `ch4.js` Day 8 block only; `scene4.js` (door `setPaintColor`, tape `setLength` / `setBow` / `loupe`, mixer hookup, `shots.mix`); `text/ch4.js` + `fr/ch4.js` `day8` only (remove `measure` and `greyMenu`; add `tape`, `mixer`) |
+| **W4** (R3.4, R3.5 sanding and lettering, the reusable modules) | `crafts/juice.js`, `crafts/truing.js`, `crafts/letters.js`, `src/world/bikeRig.js` | `ch4.js` Day 5 `sanding()`, the Week 4 truing call and `truing()`, the Week 7 `lettering()` (now calling `letter()`); `scene4.js` (`rigBike` removed and imported, board drying, the `shots.truing` tweak); `minigames.js` (`rhythm({poll})` only); `text/ch4.js` + `fr/ch4.js` `week4.truing` only |
+| **SEEDS** (R3.6) | none | `ch1.js` + `scene1.js` (the table jiggle handle and the paper shim); `ch2.js` (the ghost linger); `text/ch1.js`, `text/ch2.js`, `text/ch3.js` + their `fr/` (`prompts.table`, `table`, `ghostLinger`, `weeks.0.thoughts.30`) |
+| **PANEL** (R3.7, R3.9, memory) | `src/story/memory.js`, `src/story/ending.js`, `scene5/hugoPanel.js`, `scene5/no14paint.js` | `Director.js` (`beginChapter`, `endCard` call); `main.js` (`restoreMem`, `debug.mem`); `ch5.js` (`teachFirst`, the panel beat inside the `odile` hotspot, the line pre-roll, the ribbon and panel drying); `scene5.js` (one line each for the panel and No. 14); `text/ch5.js` + `fr` (`panel`); `text/common.js` + `fr` (`ending.cards`, `ending.lines`, `title.controls`) |
+| **JOBS** (R3.8) | `src/story/ch5jobs.js`, `crafts/radio.js`, `scene5/jobs.js` | `ch5.js` (call `setupJobs` after `meet`; `close()` in `dropOptional`); `scene5.js` (one line for `buildJobs`); `Audio.js` (`buffer()` alias); `text/ch5.js` + `fr` (`opening[3]`, `prompts.{shutter, radio, board, inesBike}`, `jobs`) |
+
+- `ch4.js`, `scene4.js` and `text/ch4.js` are shared by D8 and W4, by section. `ch5.js`, `scene5.js` and `text/ch5.js` are shared by PANEL (first) and JOBS (later). Re-read before every edit, and never reformat outside your section.
+- `L.ch4.week4.truing.hint`, `.gauge` and `.pitch` are W4's. JOBS reads them; it does not copy them.
+
+**New text keys (EN), for the FR pass:**
+- `ch1.prompts.table`: "Steady it"; `ch1.table` (1 thought).
+- `ch2.ghostLinger` (string).
+- `ch3.weeks[0].thoughts[30]` (string).
+- `ch4.day8.tape`:
+  - `hint`: "Hold {Space} or the mouse button to pull. Let go at the jamb."
+  - `readings[5]` (Hugo): "Eighty and a half." / "Eighty-one." / "Eighty-one and a half." / "Eighty-two." / "Eighty-two and a half."
+  - `again[5]`: the same with a leading "...".
+  - `twice[3]`: "Measure twice." / "Again?" / "Yes."
+  - `differ[3]` (Odile): "Two numbers. The frame's only got one." / "One of those is lying. Possibly both." / "Again. The frame's not going anywhere."
+  - `short` (`{who: 'Odile', text: "That's not the frame, that's air."}`).
+  - `help[1]` (Odile): "Hold still. I'll hold the end."
+  - `cut[5]` (Odile):
+    - "Doors lie. Frames lie worse. So a centimetre and a half comes off the hinge side. Plane's on the wall."
+    - "Doors lie. Frames lie worse. So a centimetre comes off the hinge side. Plane's on the wall."
+    - "Doors lie. Frames lie worse. So half a centimetre comes off the hinge side. Plane's on the wall."
+    - "Doors lie. Frames lie worse. This one's telling the truth, apparently. Hang it as it is."
+    - "Doors lie. Frames lie worse. Half a centimetre of air on the hinge side. We'll call it ventilation."
+- `ch4.day8.mixer`:
+  - `intro`, `tins[5]` ("White", "Black", "Ochre", "Blue", "Red oxide");
+  - `hint`: "1–5 or click a tin: one drop · {KeyT} tip it out · {KeyE} done";
+  - `tip`: "Tip it out"; `done`: "Done"; `full`;
+  - `verdicts.{waiting, light, dark, ochre, blue, red, mud, target}`, `hints[2]`, `give[2]`. Keep `greyLook` and `paintColor`.
+- `ch4.week4.truing`:
+  - `hint`: "{KeyA} / {KeyD} turn · {Space} pluck · {KeyW} / {KeyS} quarter turn · or drag, click, scroll";
+  - `gauge`: "PITCH"; `pitch.{flat: 'FLAT', sharp: 'SHARP', true: 'TRUE'}`; `flat`;
+  - `barks.{who, clunk, hitting, notFixed, ping, higher}`; `assisted`. Remove `cue`, `shout` and `misses`.
+- `ch5.opening[3]`; `ch5.prompts.{shutter: 'Fix the shutter', radio: 'Tune it', board: 'Re-letter it', inesBike: 'Look at the wheel'}`.
+- `ch5.jobs`:
+  - `shutter.{near, gauge, mash, done}`;
+  - `radio.{near, hint: '{KeyA} / {KeyD} or drag to turn the dial', stations.{fishing, music, football, forecast}, done[3]}`;
+  - `board.{near, word: 'KEBAB', tiers.{good, middle, poor}}`;
+  - `wheel.{near, truing.{flat, barks, assisted}, done}`.
+- `ch5.panel.{ask[3], menu, stage[1], after.{wheel, door, hand}}`.
+- `common.ending.cards.*`.
+
+**FR notes** (the guide governs; these are the traps):
+- Odile and Hugo are on tu in Ch5 and from Ch4 `day5.book[3]`; Hugo still says vous to Odile on Day 8 and in Week 4.
+- Mme Benali says vous to Hugo; Marco says tu.
+- The readings use the decimal comma only in digits (the loupe draws digits). The spoken readings are words, « Quatre-vingt-un et demi. » and so on.
+- KEBAB is as-is signage.
+- "Teech." is still « Aprendre. »
+- `Radio` is the same word in both languages.
+- "Doors lie. Frames lie worse." keeps its existing French wording in all five `cut` variants.
+
+### R3.13 Verification (each agent, on its own build and port)
+
+- **For each new interaction:**
+  - (a) it completes with no input (the idle assist) in ≤ 60 s;
+  - (b) `__game.debug.skip()` completes it with the canonical result and the right `mem` value (`__game.debug.mem()`);
+  - (c) keyboard only works;
+  - (d) mouse only works (where specified);
+  - (e) muted, the visual twin shows;
+  - (f) with `&lang=fr`, there is no English and the keys show as resolved tokens.
+- **D8:**
+  - the five verdict lines play from the reference recipes in R3.3;
+  - the door shows the accepted hex;
+  - all five readings produce the matching `cut` line;
+  - Ch4 to Ch5 in one tab: No. 14's door is in that grey.
+- **W4:**
+  - Ch4 OPEN looks identical after `letter()` moves to the module;
+  - sanding still takes about 15 s;
+  - with 16 spokes in tune, nothing rubs.
+- **PANEL:**
+  - every `endingLines` combination returns 7 non-empty strings in EN and FR (a node test over the flag space);
+  - `?chapter=4` gives the default cards plus the chosen panel.
+- **JOBS:**
+  - none of the jobs is required (the objective pointer never targets them);
+  - the radio music persists into the golden-hour walk and stops at the end card;
+  - draw calls stay within budget with every prop built.
+- **All:** `node scripts/i18n-check.mjs fr` gives 0 errors, there are no console errors, and the chapter-by-chapter skip run reaches the end card.

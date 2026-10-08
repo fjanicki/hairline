@@ -13,7 +13,8 @@ export default {
     bike: 'Look',
     bibs: 'Look',
     door: 'Go out',
-    start: '[E] Start',
+    table: 'Steady it',
+    start: '[{KeyE}] Start',
   },
 
   // Non-blocking, on the first hammer burst (t = 8 s).
@@ -73,6 +74,9 @@ export default {
   bibCount: 38,
 
   door: [think('Walk, if you must, he said.'), think('I must.')],
+
+  // Optional, after the phone (the table rocks): the paper shim under its leg.
+  table: [think("Sunday's race number. Folded in four, it's exactly the right thickness.")],
   startBuzz: 'START WALK?',
   walkFace: '0.00 km',
   walkLabel: 'WALK',

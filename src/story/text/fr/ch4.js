@@ -95,6 +95,7 @@ export default {
   },
   sanding: {
     gauge: 'PONÇAGE',
+    hint: 'Régulier. Ou glisser d’un côté à l’autre, bouton de la souris enfoncé.',
     barks: {
       who: 'Odile',
       mash: [
@@ -110,38 +111,98 @@ export default {
     start: [
       odile('La porte retourne sur ses gonds. Elle fait quatre-vingt-deux de large. Mesure l’encadrement.'),
     ],
-    measure: [
-      hugo('Quatre-vingt-un et demi.'),
-      odile('Mesure deux fois.'),
-      hugo('Encore ?'),
-      odile('Oui.'),
-      hugo('…Quatre-vingt-un et demi.'),
-      odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un demi-centimètre côté charnières. Le rabot est au mur.'),
-    ],
+    tape: {
+      hint: 'Maintenir {Space} ou le bouton de la souris pour tirer. Lâcher à l’encadrement.',
+      readings: [
+        hugo('Quatre-vingts et demi.'),
+        hugo('Quatre-vingt-un.'),
+        hugo('Quatre-vingt-un et demi.'),
+        hugo('Quatre-vingt-deux.'),
+        hugo('Quatre-vingt-deux et demi.'),
+      ],
+      again: [
+        hugo('…Quatre-vingts et demi.'),
+        hugo('…Quatre-vingt-un.'),
+        hugo('…Quatre-vingt-un et demi.'),
+        hugo('…Quatre-vingt-deux.'),
+        hugo('…Quatre-vingt-deux et demi.'),
+      ],
+      twice: [
+        odile('Mesure deux fois.'),
+        hugo('Encore ?'),
+        odile('Oui.'),
+      ],
+      differ: [
+        odile('Deux mesures. L’encadrement n’en a qu’une.'),
+        odile('Il y en a une qui ment. Peut-être les deux.'),
+        odile('Encore. L’encadrement va pas s’envoler.'),
+      ],
+      short: odile('Ça, c’est pas l’encadrement, c’est de l’air.'),
+      help: [
+        odile('Bouge pas. Je tiens le bout.'),
+      ],
+      cut: [
+        odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un centimètre et demi côté charnières. Le rabot est au mur.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un centimètre côté charnières. Le rabot est au mur.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un demi-centimètre côté charnières. Le rabot est au mur.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Celui-là dit la vérité, apparemment. On la pose telle quelle.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Un demi-centimètre de jour côté charnières. On appellera ça l’aération.'),
+      ],
+    },
     grey: [
       odile('Maintenant. La couleur. Je veux un gris.'),
       hugo('Facile.'),
       odile('Un gris pas triste.'),
     ],
-    greyMenu: {
-      who: 'Odile',
-      prompt: 'Cinq pots : blanc, noir, ocre, bleu, rouge oxyde.',
-      options: [
-        {
-          text: 'Noir et blanc. Ça fait du gris.',
-          correct: false,
-          reply: 'Ça, c’est pas un gris. C’est une salle d’attente.',
-        },
-        {
-          text: 'Plus de blanc. Pour l’égayer.',
-          correct: false,
-          reply: 'Là, c’est un gris triste qui fait semblant d’aller bien. Je connais le genre.',
-        },
-        {
-          text: 'Du blanc, un peu de noir. Puis de l’ocre. Une goutte de bleu.',
-          correct: true,
-          reply: '…Voilà. Ça, c’est un gris qui a vécu.',
-        },
+    mixer: {
+      intro: [
+        stage('Cinq pots : blanc, noir, ocre, bleu, rouge oxyde. Une seule gamelle.'),
+      ],
+      tins: [
+        'Blanc',
+        'Noir',
+        'Ocre',
+        'Bleu',
+        'Rouge oxyde',
+      ],
+      hint: '1 – 5 ou cliquer sur un pot : une goutte · {KeyT} vider · {KeyE} terminer',
+      tip: 'Vider',
+      done: 'Terminer',
+      full: odile('Pleine. C’est pas une baignoire.'),
+      verdicts: {
+        waiting: [
+          odile('Ça, c’est pas un gris. C’est une salle d’attente.'),
+        ],
+        light: [
+          odile('Là, c’est un gris triste qui fait semblant d’aller bien. Je connais le genre.'),
+        ],
+        dark: [
+          odile('Un enterrement. C’est une porte, pas un corbillard.'),
+        ],
+        ochre: [
+          odile('Ça, c’est pas du gris. C’est du flan.'),
+        ],
+        blue: [
+          odile('Trop froid. Ce gris-là attend le bus.'),
+        ],
+        red: [
+          odile('Ça vire au rose. Une porte rose. Toute la rue en jaserait.'),
+        ],
+        mud: [
+          odile('De la boue. Honnête, mais de la boue. Vide-moi ça.'),
+        ],
+        target: [
+          odile('…Voilà. Ça, c’est un gris qui a vécu.'),
+        ],
+      },
+      hints: [
+        odile('Le blanc d’abord. Puis le noir, goutte à goutte. Comme les ragots.'),
+        odile('Cinq de blanc, une de noir. Deux d’ocre. Une de bleu, pour le calmer.'),
+      ],
+      warm: odile('Le gris y est. Maintenant, une goutte d’ocre. Chaud, pas jaune.'),
+      give: [
+        odile('Donne-moi ça.'),
+        stage('Elle vide la gamelle et refait tout en quatre gestes, sans regarder.'),
       ],
     },
     greyLook: stage('Elle le regarde en disant ça.'),
@@ -171,15 +232,17 @@ export default {
       hugo('Tenir, c’est toute ma carrière.'),
     ],
     truing: {
-      cue: '[Espace] quand ça frotte au patin',
-      shout: 'Quart de tour.',
-      misses: {
+      hint: '{KeyA} / {KeyD} tourner · {Space} pincer · {KeyW} / {KeyS} serrer / desserrer · ou à la souris',
+      gauge: 'NOTE',
+      pitch: { flat: 'TROP BAS', sharp: 'TROP HAUT', true: 'JUSTE' },
+      flat: 'Là. Celui-là sonne trop bas.',
+      barks: {
         who: 'Sami',
-        bag: [
-          'C’était censé faire clonk ?',
-          'Odile, il le tape !',
-          'C’est réparé ? C’est pas réparé.',
-        ],
+        clunk: 'C’était censé faire clonk ?',
+        hitting: 'Odile, il le tape !',
+        notFixed: 'C’est réparé ? C’est pas réparé.',
+        ping: 'Ça a fait ping. C’est bien, ping ?',
+        higher: 'Ça monte.',
       },
       assisted: sami('C’est réparé ? …C’est réparé.'),
     },

@@ -16,14 +16,18 @@ export default {
     odile: 'Prêt',
     sami: 'Aider',
     bench: 'S’asseoir',
-    strap: '[E] Défaire les sangles',
-    wave: '[E] Saluer',
+    strap: '[{KeyE}] Défaire les sangles',
+    wave: '[{KeyE}] Saluer',
     watch: 'Enlever la montre',
     benali: 'Parler',
     ines: 'Parler',
     marco: 'Parler',
     shopCard: 'Regarder',
     boltHoles: 'Regarder',
+    shutter: 'Réparer le rideau',
+    radio: 'Régler la radio',
+    board: 'Repeindre les lettres',
+    inesBike: 'Regarder la roue',
   },
   signs: {
     shopCard: 'CREVAISONS RÉPARÉES\nDEMANDER AU N° 14', // two lines: on one line it auto-fits under 8 px
@@ -67,6 +71,7 @@ export default {
     odile('Te voilà. T’es en retard.'),
     hugo('J’ai pris le chemin le plus long. C’était sympa.'),
     think('Sympa. J’ai dit « sympa » à propos d’une balade. À voix haute.'),
+    odile('La moitié de la rue est coincée, voilée, passée ou grésillante. Avant ton trait, si tes mains s’ennuient.'),
   ],
   benali: [
     {
@@ -90,6 +95,64 @@ export default {
   boltHoles: [
     think('La montre me disait de me reposer. Le panneau me disait de ne jamais m’arrêter. J’ai écouté le plus gros.'),
   ],
+  jobs: {
+    shutter: {
+      near: { who: 'Mme Benali', text: 'Il se bloque à mi-hauteur tous les matins. J’ouvre une demi-boulangerie.' },
+      call: { who: 'Mme Benali', text: 'Hugo ! Quand vous aurez une minute… Mon rideau est encore bloqué.' },
+      gauge: 'GLISSIÈRES',
+      mash: { who: 'Mme Benali', text: 'Doucement. Il est plus vieux que moi.' },
+      done: [{ who: 'Mme Benali', text: 'Il est monté. Me voilà obligée d’être aimable toute la matinée.' }],
+    },
+    radio: {
+      near: odile('Elle capte toujours que la pêche.'),
+      hint: '{KeyA} / {KeyD} ou glisser pour tourner le bouton',
+      stations: {
+        who: 'Radio',
+        fishing: '…et le brochet, voyez-vous, le brochet se moque bien de vos états d’âme…',
+        music: '*De la musique. Lente, un peu rayée.*',
+        football: '…deux à zéro, et personne ici n’arrive vraiment à y croire…',
+        forecast: '…Pas-de-Calais, ouest quatre à cinq, pluie ensuite, visibilité bonne…',
+      },
+      done: [
+        odile('Quatre stations. J’ai le monsieur de la pêche depuis le franc.'),
+        hugo('La pêche ?'),
+        odile('Laisse-la sur la musique. Les poissons attendront.'),
+      ],
+    },
+    board: {
+      near: marco('Mon chevalet est si passé qu’on nous croit fermés.'),
+      word: 'KEBAB',
+      tiers: {
+        good: [marco('Ça, c’est un excellent chevalet.')],
+        middle: [marco('Il a du caractère. Comme le kebab.')],
+        poor: [marco('Il est un peu pompette. Comme la moitié de mes clients, après minuit.')],
+      },
+    },
+    wheel: {
+      near: sami('Ines s’est pris un trottoir. Les crevaisons, c’est moi. Les roues tordues, c’est toi.'),
+      truing: {
+        flat: 'Là. Celui-là sonne faux.',
+        barks: {
+          who: 'Sami',
+          clunk: 'Clonk, c’est pas bon. Je connais clonk.',
+          hitting: 'Là, tu le tapes, c’est tout.',
+          notFixed: 'C’est pas réparé. Je l’entends.',
+          ping: 'Celui-là a fait ping. C’est bien, ping, cette fois ?',
+          higher: 'Ça monte.',
+        },
+        assisted: sami('…Réparé. Je dirai que j’ai aidé.'),
+      },
+      done: sami('Ines ! Ta roue chante, maintenant !'),
+    },
+  },
+  readyCheck: {
+    who: 'Odile',
+    prompt: 'Personne te chronomètre.',
+    options: [
+      { text: 'Prêt.', correct: true },
+      { text: 'Pas encore.' },
+    ],
+  },
   teach: {
     call: [
       sami('Hugo ! Elle a encore sauté !'),
@@ -122,6 +185,44 @@ export default {
       stage('Sami la lit, lèche le crayon et écrit quelque chose.'),
       sami('T’en as oublié un.'),
     ],
+  },
+  panel: {
+    ask: [
+      odile('D’abord, une chose. Là-haut, où il y avait le panneau. Personne n’en a voulu.'),
+      hugo('Alors c’est à moi.'),
+      odile('Peins ce que tu sais faire. En petit, si tu veux.'),
+    ],
+    menu: {
+      prompt: 'Quelque chose de la liste.',
+      options: [
+        {
+          text: 'Une roue. Dévoilée.',
+          reply: null,
+        },
+        {
+          text: 'La porte. Ce gris-là.',
+          reply: null,
+        },
+        {
+          text: 'Une main qui tient un pinceau, sans bouger.',
+          reply: null,
+        },
+      ],
+    },
+    stage: [
+      stage('Odile tient l’échelle. À deux mains. Elle n’aide pas.'),
+    ],
+    after: {
+      wheel: [
+        odile('Une roue. Sami va dire que c’est la sienne.'),
+      ],
+      door: [
+        odile('Ma porte. Plus haut que je l’aurais accrochée.'),
+      ],
+      hand: [
+        odile('La main sûre. Crâneur.'),
+      ],
+    },
   },
   line: {
     setup: [

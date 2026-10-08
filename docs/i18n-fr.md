@@ -234,8 +234,8 @@ Other speakers:
 | Kind | Rule | Examples |
 |---|---|---|
 | Objectives (`objectives`) | **Infinitive, final period**, as in the English. | Regarder autour de soi. · Aller marcher. · Marcher. · Tenir l’échafaudage. · Garder le rythme. · **Aller au bout.** (Ch3 "Finish.") · Prendre le papier de verre. · Poncer la porte. · Mesurer l’encadrement. · Regarder le vélo. · Voir ce que fait Odile. · Trouver Odile. · Aider Sami. · Peindre le trait. · S’asseoir sur le banc. · Rentrer à pied. · **Raccrocher la montre.** |
-| Hotspot prompts (`prompts`, shown as `[E] …`) | **Infinitive, no period, capital first letter.** Keep the `[E] ` prefix exactly where the English has it. | Regarder · Éteindre · Lire les messages · Prendre la montre · Sortir · `[E] Démarrer` · Lever les yeux · S’asseoir · Se lever · Prendre le papier de verre · Poncer · Mesurer · Écouter · Prêt · Aider · `[E] Défaire les sangles` · `[E] Saluer` · Enlever la montre · Parler |
-| Hints (`hints`) | Infinitive or nominal. No tu or vous. | Maintenir Maj pour trottiner · Alterner Q et D. Régulier, pas rapide. · Alterner Q et D. Régulier. · Le pinceau suit la craie. ZQSD : petites corrections seulement · Z / S pour stabiliser le pinceau · Ne toucher à rien · Espace |
+| Hotspot prompts (`prompts`, shown as `[E] …`) | **Infinitive, no period, capital first letter.** Keep the `[{KeyE}] ` prefix exactly where the English has it. | Regarder · Éteindre · Lire les messages · Prendre la montre · Sortir · `[{KeyE}] Démarrer` · Lever les yeux · S’asseoir · Se lever · Prendre le papier de verre · Poncer · Mesurer · Écouter · Prêt · Aider · `[{KeyE}] Défaire les sangles` · `[{KeyE}] Saluer` · Enlever la montre · Parler |
+| Hints (`hints`) | Infinitive or nominal. No tu or vous. | Maintenir {Shift} pour trottiner · Alterner {KeyA} et {KeyD}. Régulier, pas rapide. · Alterner {KeyA} et {KeyD}. Régulier. · Le pinceau suit la craie. {KeyW}{KeyA}{KeyS}{KeyD} : petites corrections seulement · {KeyW} / {KeyS} pour stabiliser le pinceau · Ne toucher à rien · {Space} |
 | Buttons and menus | Infinitive or noun, no period. | Cliquer pour commencer · Continuer quand même · Recharger · Reprendre · Recommencer le chapitre · Rejouer · Langue · Graphismes · Bas / Moyen / Élevé |
 | Correction-menu options (Hugo's speech) | **Spoken lines**, with periods as in the English. They are not infinitives. | …Rien. · En petit. Dans le coin. · Noir et blanc. Ça fait du gris. |
 | STRIDE menu options (app buttons) | Noun or infinitive, no period. | Jour de repos · 10 km tranquille · Ignorer · Repos (demain) · Courir · Courir quand même · Oui · Repos (après dimanche) · Reporter · Bouger · Repos |
@@ -243,25 +243,26 @@ Other speakers:
 | Captions (Ch3) | CAPS, French time « 5 H 12 ». | BLOC D’ENTRAÎNEMENT — SEMAINE 9 — 5 H 12 — LA BOUCLE · … — SEMAINE 20 — 5 H 04 — LA BOUCLE, DEUX FOIS · … — SEMAINE 31 — SAMEDI, 4 H 47 — LA BOUCLE, TROIS FOIS · MARATHON STRIDE — KM 29 |
 | Language selector | Language names are always written in their own language. | English · Français · label « Langue » |
 
-**Key names.** French players are on AZERTY, and the game reads physical key codes (`KeyW`, `KeyA`…). So French strings name the keys as they appear on an AZERTY keyboard:
-- WASD becomes **ZQSD**, A / D becomes **Q / D**, and W / S becomes **Z / S**.
-- E, R, D, S and 1–3 stay the same.
-- Shift becomes **Maj**, Space **Espace**, Esc **Échap**, Arrows **Flèches** and Mouse **Souris**.
-- `L.ch3.keys` becomes `{ both: '[Q / D]', a: '[Q]', d: '[D]' }`.
+**Key names.** Never write a key letter or key name: write the same token as the English. The game reads physical key codes and labels them with the player's own keyboard layout at runtime (docs/API.md, i18n), so a French player on QWERTY sees WASD and one on AZERTY sees ZQSD, in either language.
+- Letter keys: `{KeyW}{KeyA}{KeyS}{KeyD}`, `{KeyA} / {KeyD}`, `{KeyW} / {KeyS}`, `{KeyE}`, `{KeyR}`, `{KeyM}`. Copy them as they are.
+- Named keys: `{Space}`, `{Shift}`, `{Escape}`, `{Enter}`, `{Arrows}`. Their French names live once in `keyNames`: Espace, Maj, Échap, Entrée, Flèches.
+- Not keys: Mouse is **Souris**, and `1 – 3` stays as it is.
+- `L.ch3.keys` stays `{ both: '[{KeyA} / {KeyD}]', a: '[{KeyA}]', d: '[{KeyD}]' }`.
+- `node scripts/i18n-check.mjs fr` fails on a token that differs from the English or a literal key name in key text.
 
 Title controls (`title.controls`):
 
 | EN | FR |
 |---|---|
-| WASD / Arrows · Move / steady a brush | ZQSD / Flèches · Se déplacer / guider le pinceau |
-| Mouse · Look around · R re-centre | Souris · Regarder autour · R recentrer |
-| Shift · Try to jog | Maj · Essayer de trottiner |
-| E · Interact / advance | E · Interagir / continuer |
-| Space · Timing prompts | Espace · Appuyer au bon moment |
-| A / D · Keep a rhythm | Q / D · Garder le rythme |
-| 1 – 3 · Choices | 1 – 3 · Choix |
-| M · Mute | M · Couper le son (see the engineering note in section 9) |
-| Esc · Pause | Échap · Pause |
+| {KeyW}{KeyA}{KeyS}{KeyD} / {Arrows} · Move / steady a brush | {KeyW}{KeyA}{KeyS}{KeyD} / {Arrows} · Se déplacer / guider le pinceau |
+| Mouse · Look around · {KeyR} re-centre | Souris · Regarder autour · {KeyR} recentrer |
+| {Shift} · Try to jog | {Shift} · Essayer de trottiner |
+| {KeyE} · Interact / advance | {KeyE} · Interagir / continuer |
+| {Space} · Hold the tape · pluck a spoke | {Space} · Tenir le mètre · pincer un rayon |
+| {KeyA} / {KeyD} · Keep a rhythm | {KeyA} / {KeyD} · Garder le rythme |
+| 1 – 5 · Choices · paint tins | 1 – 5 · Choix · pots de peinture |
+| {KeyM} · Mute | {KeyM} · Couper le son |
+| {Escape} · Pause | {Escape} · Pause |
 
 ### 4.4 Watch HUD, gauges and STRIDE alerts
 
@@ -306,7 +307,9 @@ Title controls (`title.controls`):
 | race wheels | **roues carbone** | |
 | chain / front ring | chaîne / **plateau** | Dropped chain: « la chaîne a sauté » |
 | rear wheel / spoke / rim / brake pad | roue arrière / rayon / jante / **patin** | |
-| out of true / to true | **voilée** / **dévoiler** | |
+| out of true / to true | **voilée** / **dévoiler** | « Les voiles » (the buckles) reads as sails: Sami says « les roues tordues ». |
+| to pluck (a spoke) | **pincer** | Truing by ear (Ch4, Ch5). |
+| truing gauge: PITCH / FLAT / SHARP / TRUE | **NOTE** / **TROP BAS** / **TROP HAUT** / **JUSTE** | Gauge words, ≤ 10 characters. « Juste » only on the gauge: in a sentence it reads as "only". |
 | spoke key | clé à rayons | |
 | quarter turn | quart de tour | |
 | bars | **guidon** | |
@@ -346,6 +349,10 @@ Title controls (`title.controls`):
 | EN | FR (fixed) | Notes |
 |---|---|---|
 | sand / sanding | **poncer** / **ponçage** | |
+| mixing pot (Day 8 colour toy) | **gamelle** | « pot » is reserved for the paint tins. |
+| (Marco's) A-board | **chevalet** | « panneau » is reserved for the billboard. |
+| shutter runners (gauge) | **GLISSIÈRES** | Gauge word, 10 characters (the cap). |
+| KEBAB (the board's word) | KEBAB | As-is signage, same in every language. |
 | sandpaper / sanding block | **papier de verre** / cale à poncer | |
 | with the grain | **dans le sens du fil** | |
 | strip back (a door) | **décaper** | |
@@ -547,14 +554,14 @@ Lines not listed here have no wordplay. Translate them by the voice rules. The `
 | 46 | `day5.after` | Something like it. About fifty million times. I worked it out once. On a rest day. | « Un truc du genre. Dans les cinquante millions de fois. J’ai fait le calcul, un jour. Un jour de repos. » |
 | 47 | `sanding.barks` | You're not sanding it, you're arguing with it. / Slower. That wood's been here longer than you. / With the grain. Like stroking a cat, not starting a fight. | « Tu la ponces pas, tu te disputes avec. » / « Plus lent. Ce bois était là bien avant toi. » / **« Dans le sens du fil. Un chat, ça se caresse dans le sens du poil. »** This uses the French idiom *dans le sens du poil* (also "to flatter"). |
 | 48 | `sanding.buzz` | ROWING DETECTED. START WORKOUT? | « AVIRON DÉTECTÉ. LANCER LA SÉANCE ? » (the watch misreading the motion) |
-| 49 | `day8.measure` | Measure twice. / Doors lie. Frames lie worse. | « Mesure deux fois. » / « Encore ? » / « Oui. » / « Les portes mentent. Les encadrements, c’est pire. Donc on enlève un demi-centimètre côté charnières. Le rabot est au mur. » |
-| 50 | `day8.grey` / `greyMenu` | A grey that isn't sad. / That's a waiting room. / …a sad grey pretending to be fine. I know the type. / …a grey that's been somewhere. | « Un gris pas triste. » / « Ça, c’est pas un gris. C’est une salle d’attente. » / « Là, c’est un gris triste qui fait semblant d’aller bien. Je connais le genre. » / **« …Voilà. Ça, c’est un gris qui a vécu. »** Options: « Noir et blanc. Ça fait du gris. » / « Plus de blanc. Pour l’égayer. » / « Du blanc, un peu de noir. Puis de l’ocre. Une goutte de bleu. » Prompt: « Cinq pots : blanc, noir, ocre, bleu, rouge oxyde. » |
+| 49 | `day8.tape` | Measure twice. / Doors lie. Frames lie worse. | « Mesure deux fois. » / « Encore ? » / « Oui. » / readings spelled out (« Quatre-vingts et demi » … « Quatre-vingt-deux et demi ») / five `cut` lines, all « Les portes mentent. Les encadrements, c’est pire. » + the arithmetic (« un demi-centimètre de jour côté charnières »). `differ` stays Odile: « Il y en a une qui ment. Peut-être les deux. » |
+| 50 | `day8.grey` / `mixer` | A grey that isn't sad. / That's a waiting room. / …a sad grey pretending to be fine. I know the type. / …a grey that's been somewhere. / That's custard. | « Un gris pas triste. » / « Ça, c’est pas un gris. C’est une salle d’attente. » / « Là, c’est un gris triste qui fait semblant d’aller bien. Je connais le genre. » / **« …Voilà. Ça, c’est un gris qui a vécu. »** / « C’est du flan » (custard, and "baloney"). The pot is **« la gamelle »** (« pot » is the tins). Painters *font* a grey, they don't *mélangent* it. Intro: « Cinq pots : blanc, noir, ocre, bleu, rouge oxyde. Une seule gamelle. » |
 | 51 | `day8.painted` | I'd swear to it in court. / Stop staring at it, it'll get ideas. | « C’est gris. Je le jurerais devant un tribunal. C’est gris. » / « Évidemment que c’est gris. Arrête de la fixer, elle va se faire des idées. » (*la porte*) |
 | 52 | `week4.sami` | It's doing the noise again… He said find a wheel man. | « Odile ! Il refait le bruit. Le *zhhh, zhhh*. C’est monsieur Durand qui me l’a donné quand il a fermé. Il a dit de trouver un monsieur des roues. » This is a kid's paraphrase. Odile: « Me regarde pas. Demande-lui. Les vélos, c’était son métier. » |
 | 53 | `week4.sami` | I spent twelve years pulling other men up mountains. | « J’ai passé douze ans à tirer d’autres types en haut des cols. » / « Pourquoi ? » / « Pour qu’ils gagnent. » / « C’est débile. » / « On me payait. » / « …C’est moins débile. » |
 | 54 | `week4.bike` | …kisses the brake pad once a turn. | « La roue arrière est voilée. Un rayon s’est détendu, alors la jante se balade et vient embrasser le patin une fois par tour. » |
 | 55 | `week4.hold` | Holding's not helping? / Holding's my whole career. | « Tiens le vélo. Les deux mains. N’aide pas. » / « Tenir, c’est pas aider ? » / « Tenir, c’est toute ma carrière. » |
-| 56 | `truing` | Was it meant to go clunk? / Odile, he's hitting it. / Is it fixed? It's not fixed. | « C’était censé faire clonk ? » / « Odile, il le tape ! » / « C’est réparé ? C’est pas réparé. » / assisted: « C’est réparé ? …C’est réparé. » / cue « [Espace] quand ça frotte au patin » / « Quart de tour. » |
+| 56 | `truing` | Was it meant to go clunk? / Odile, he's hitting it. / Is it fixed? It's not fixed. | « C’était censé faire clonk ? » / « Odile, il le tape ! » / « C’est réparé ? C’est pas réparé. » / assisted: « C’est réparé ? …C’est réparé. » / hint « {KeyA} / {KeyD} tourner · {Space} pincer · {KeyW} / {KeyS} serrer / desserrer · ou à la souris » |
 | 57 | `week4.after` | Why've you got a ski boot on? / …I broke my leg running. / Running from what? | « Pourquoi t’as une chaussure de ski ? » / « C’est une botte médicale. Je me suis cassé la jambe en courant. » / **« En courant après quoi ? »** A kid's literal reading of *en courant*; *courir après* (chasing numbers) is the French subtext in place of "running from". |
 | 58 | `laughStage` / `laugh` | …rusty, like something left in a shed. / …if there was a field for it. | « Hugo rit. Ça sort rouillé, comme un truc oublié au fond d’une remise. » / « Tiens. Un rire. Je l’aurais enregistré, s’il y avait eu une case pour ça. » |
 | 59 | `week4.wrap` | Mechanics were for people who won. | « Ça, j’ai toujours su faire. Avant l’équipe, je montais mes roues moi-même. Les mécanos, c’était pour ceux qui gagnaient. » / « Alors écris-le. » |
@@ -599,7 +606,7 @@ Lines not listed here have no wordplay. Translate them by the voice rules. The `
 
 | # | Key | EN | FR solution |
 |---|---|---|---|
-| 91 | `ending.lines` | (all six) | « La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. » / « Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre. » / « La radio d’Odile capte quatre stations, maintenant. Elle écoute celle qui parle de pêche. » / « Cette année-là, la liste d’Odile Marchal s’est allongée d’une ligne. Il y est écrit : « Demander. » » / « Hugo Revel court certains dimanches. Personne ne sait jusqu’où, pas même lui. » / « Sa montre pend à un clou au-dessus de l’établi. Elle croit qu’il se repose depuis un an. » |
+| 91 | `ending.cards` / `ending.lines` | (seven cards, picked by `src/story/ending.js`) | street (`plain` / `wheel` / `door` / `hand`): « La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. » + « Là où il était… » (no-break space in « Là où », so « Là » never ends a line) / Sami (`first` / `second`) / one job (`board`: Marco's **« chevalet »**, « Les lettres sont un peu pompettes. »; `wheel`; `shutter`; else `grey.own` / `grey.odile`: « …un gris qu’Odile a rattrapé. Il dit que c’est lui qui l’a fait. ») / radio (`fixed`: « …capte quatre stations… »; `one`: « …ne capte toujours qu’une station. Elle a beaucoup appris sur la pêche. ») / « Demander. » / « …certains dimanches… » / the watch on the nail. `ending.lines` is the default selection. Each card ≤ 140 characters (a landscape phone shows all seven at once). |
 | 92 | `ending` | Thank you for playing. / Play again / credits | « Merci d’avoir joué. » / « Rejouer » / « Personnages et animations : Quaternius. Accessoires, matériaux et HDRI : Poly Haven, ambientCG. Éléments de rue et bruits de pas : Kenney. Musique et ambiances : OpenGameArt. Tout en CC0. » |
 
 ---
@@ -615,7 +622,7 @@ Lines not listed here have no wordplay. Translate them by the voice rules. The `
     - If a font lacks the glyph, the browser falls back to another font for that character only.
   - **Exceptions:**
     - times and ratios (`38:40`, `3:04:51`)
-    - key chips (`[E]`, `[Q / D]`)
+    - key chips (`[{KeyE}]`, `[{KeyA} / {KeyD}]`)
     - the doubled `!!` in Bastien's SMS: one U+202F before the pair, none between
     - `?!` is written with one U+202F before it
   - You may write the literal character or the `\u202F` escape in JS; the linter in section 8 accepts both. Prefer the literal character copied from this file.
@@ -668,7 +675,7 @@ French runs about 15–25% longer than English. The pacing budget assumes about 
   - Keep the helpers (`odile(...)`, `think(...)`).
   - Bark objects keep the names (`who: 'Odile'`, `who: 'Sami'`, `who: 'Mme Benali'`).
   - Only the phone/TV pseudo-speakers change (4.6).
-- **Keep `[E] `, `[Space]`/`[Espace]` and `[A / D]`/`[Q / D]`** as a bracketed prefix. UI.js turns `[...]` into a key chip.
+- **Keep `[{KeyE}] `, `[{Space}]` and `[{KeyA} / {KeyD}]`** as a bracketed prefix, tokens unchanged. UI.js turns `[...]` into a key chip.
 - **Watch faces** in `atChapter` and `watchHud` use the decimal comma and keep the `' km'` suffix.
 - **Lint before handing over:**
   - Save the script below anywhere outside `src/` (for example in your own `.cache/` scratch folder).
@@ -724,10 +731,10 @@ These are things the French text **depends on** that live in code. Each one is a
    - If this cannot be done, keep OPEN and use the fallback line in section 5 (#64).
 3. **Hardcoded key prefixes:**
    - `ch4.js` builds `` `[A / D] ${L.hints.sand}` ``.
-   - `minigames.js` defaults to `` `[A / D] ${L.hints.rhythm}` `` and `cue = '[Space]'`.
+   - `minigames.js` defaults to `` `[A / D] ${L.hints.rhythm}` `` (the timing cue is gone with the driving ring).
 
-   Read them from text (`L.ch3.keys.both`, `L.hints.space`) so the French shows `[Q / D]` and `[Espace]`. Ideally, label keys from `navigator.keyboard.getLayoutMap()` where available, with AZERTY as the French fallback.
-4. **Mute on AZERTY.** `main.js` checks `code === 'KeyM'`, which is the `,` key on AZERTY. Also accept `e.key.toLowerCase() === 'm'`, so the « M » the French text promises works.
+   Done: they read `L.ch3.keys.both` and `L.hints.space`, and keys are layout-labelled tokens (`src/core/KeyLabels.js`), never AZERTY by language.
+4. **Mute on AZERTY.** Done: `main.js` accepts physical `KeyM` and a typed `m`; `{KeyM}` is labelled M when the layout types an m.
 5. **Hardcoded English in code:**
    - `main.js`: `'Muted'` / `'Sound on'` become « Son coupé » / « Son activé ».
    - `UI.js` pause: `'Graphics'` and `Low/Medium/High` become « Graphismes » and « Bas / Moyen / Élevé ».

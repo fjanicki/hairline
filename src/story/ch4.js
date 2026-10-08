@@ -1,8 +1,15 @@
 import * as THREE from 'three';
 import { L } from './script.js';
-import { rhythm, timing, makeSteer, rememberOpenSign } from './minigames.js';
+import { rememberOpenSign } from './minigames.js';
+import { sandDoor, trueBike, letterSign } from './ch4crafts.js';
+import { measureTape, readingIndex } from './crafts/tape.js';
+import { mixGrey } from './crafts/mixer.js';
+import { dry, reveal } from './crafts/finish.js';
+import { remember } from './memory.js';
 import { buildScene4 } from '../world/scenes/scene4.js';
+import { IN_X, GARAGE } from '../world/scenes/scene4/layout.js';
 import { PRESETS } from '../render/Mood.js';
+import { duckUnderVoice, wheelSound } from './crafts/sound.js';
 
 // Ch4 "Measure Twice": Odile's workshop, Day 5 to Week 7 in the boot (docs/DESIGN.md).
 // Colour comes back on the things he makes and accumulates: the door (focus slot 0), the bike
@@ -20,6 +27,26 @@ const LOOK = { ...PRESETS.workshop, hemiIntensity: 0.9, fillIntensity: 1.5, envI
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
 const clamp = THREE.MathUtils.clamp;
 
+// Sound (docs/assets/sfx.md, Ch4 Integration list). Beds: the workshop room tone all four days (0.3,
+// 0.25 in Week 4, 0.2 low-passed on the dry Week 7) and the rain on the roof on Day 5 / Day 8. Point
+// sources: Odile's kettle once a day, the radio on its crate, the garage door. The crafts (ch4crafts.js,
+// crafts/*) play their own recorded cues; the tube hum and flicker live in scene4/lights.js.
+const SOUNDS = [
+  'amb_workshop', 'amb_rain_window', 'fluoro_hum', 'fluoro_flicker', 'kettle_boil', 'radio_static', 'radio_talk_fishing',
+  'tool_hook', 'tool_take', 'sand_stroke', 'sand_loop', 'tape_pull', 'tape_tock', 'table_tock', 'tape_retract', 'scaffold_creak',
+  'plane_stroke', 'paint_lid_open', 'paint_drop', 'paint_stir_loop', 'paint_slosh', 'tin_tap', 'brush_stroke', 'creak_wood', 'creak_wood_alt',
+  'garage_door_open', 'bike_bell', 'spoke_key', 'brake_rub', 'freewheel_tick', 'freewheel_coastdown', 'brush_wall_loop',
+  // the notebook (UI.js) and the stumble (Player.js): docs/assets/sfx.md, Global
+  'notebook_open', 'page_flip', 'notebook_close', 'pencil_write', 'pencil_erase', 'pencil_erase_alt', 'body_thud',
+];
+const BED = { name: 'amb_workshop', volume: 0.3 };
+const RAIN = { name: 'amb_rain_window', volume: 0.2, lowpass: 900 };
+const SND = {
+  kettle: [4.07, 0.55, 2.62],
+  radio: [4.0, 0.45, 1.98],
+  garage: [-IN_X, 1.2, (GARAGE.z0 + GARAGE.z1) / 2],
+};
+
 export default {
   id: 'workshop',
   get title() {
@@ -30,6 +57,7 @@ export default {
   objective: null,
   music: { name: 'contemplation', volume: 0.3, fade: 3 },
   ambience: [],
+  sounds: SOUNDS,
   camera: { offset: CAM.offset, look: CAM.look, fov: 55, lerp: 5 },
   player: { spawn: [3.4, -2.4], facing: 0, boot: true, limp: 0.85, painRate: 1 / 1.0, canJog: true, footsteps: 'boot' },
   build: (ctx) => buildScene4(ctx),
@@ -116,21 +144,20 @@ export default {
       if (card) await d.card(card, { big: true });
       await d.gate(ui.fade(0, inn));
     };
-    /** Correction menu with an optional stage line after a given wrong reply (Day 8 "I know the type"). */
-    const correctWith = async (menu, extra = {}) => {
-      const who = menu.who || L.names?.odile || 'Odile';
-      for (let guard = 0; guard < 12; guard++) {
-        const r = await d.choose(menu);
-        const correctIdx = Math.max(0, menu.options.findIndex((x) => x.correct));
-        const i = typeof r === 'number' && menu.options[r] ? r : correctIdx;
-        const o = menu.options[i];
-        if (o.reply) await d.say([{ who, text: o.reply }]);
-        if (extra[i]) await d.say([extra[i]]);
-        if (o.correct) return;
-        o._used = true; // greyed next time, as in d.correct
-      }
-    };
     const pick = (bag, i) => bag[i % bag.length];
+
+    // ---- sound helpers
+    /** Odile's kettle, once a day (a quiet 40 s point source; dips under the voices, stops at a cut). */
+    let kettle = null;
+    const kettleOn = () => {
+      kettle?.stop(0.5);
+      kettle = audio.sfx('kettle_boil', { volume: 0.25, bus: 'bus', pos: SND.kettle, ref: 1.5, jitter: 0, fallback: false });
+      if (kettle) duckUnderVoice(ctx, kettle, { db: 6 });
+    };
+    const kettleOff = () => {
+      kettle?.stop(0.6);
+      kettle = null;
+    };
 
     // Optional hotspots: only while the player is free to walk toward a required one.
     let roam = false;
@@ -158,18 +185,38 @@ export default {
       prompt: T4.prompts.radio,
       enabled: () => roam,
       onInteract: async () => {
-        audio.noise({ type: 'bandpass', freq: 1600, q: 1.4, dur: 0.6, volume: 0.05 });
-        await d.say(T4.radio);
+        // A burst of static through the radio band, then the one station (the fishing man, babble)
+        // low under her line.
+        const st = audio.sfx('radio_static', { volume: 0.3, band: 'radio', pos: SND.radio, ref: 2, offset: Math.random() * 7, jitter: 0, fallback: (a) => a.noise({ type: 'bandpass', freq: 1600, q: 1.4, dur: 0.6, volume: 0.05 }) });
+        if (st) {
+          // 0.6 s of it, the last 0.2 s fading.
+          st.gain.gain.setValueAtTime(0.3, audio.t + 0.4);
+          st.gain.gain.linearRampToValueAtTime(0, audio.t + 0.6);
+          try {
+            st.src.stop(audio.t + 0.62);
+          } catch {
+            /* noop */
+          }
+        }
+        const talk = audio.loopSfx('radio_talk_fishing', { volume: 0.1, bus: 'beds', band: 'radio', pos: SND.radio, ref: 2, fade: 0.4 });
+        try {
+          await d.wait(0.45);
+          await d.say(T4.radio);
+        } finally {
+          talk.stop(0.6);
+        }
       },
     });
 
     // The rim kisses the pad once a turn (from Sami's arrival until it's true).
-    W.bike.onRub = () => audio.tick({ volume: 0.22 });
+    W.bike.onRub = (dev) => audio.sfx('brake_rub', { volume: Math.min(0.45, 0.15 + (dev || 0) * 10), pos: W.bike.pads, fallback: (a) => a.tick({ volume: 0.22 }) });
 
     // ============================================================ DAY 5
     W.fluoro('flicker');
     W.rain(1);
-    audio.ambience('rain', true, { volume: 0.1, lowpass: 600, fade: 3 });
+    audio.ambience(BED.name, true, { volume: BED.volume, lowpass: 20000, fade: 3 });
+    audio.ambience(RAIN.name, true, { volume: RAIN.volume, lowpass: RAIN.lowpass, fade: 3 });
+    kettleOn();
     put(O, S.odileTrestle, S.spawn);
     act(O, 'arms_crossed', 0.2);
     follow(true);
@@ -208,7 +255,7 @@ export default {
       player.face(-2.62, -3);
       await d.say(T4.day5.pegboard);
       W.takeSandpaper();
-      audio.scrape({ volume: 0.12 });
+      audio.sfx('tool_hook', { volume: 0.55 }); // fallback: scrape(0.12)
     });
     ui.objective(T4.objectives.sand);
     await required('door', S.door, T4.prompts.door);
@@ -231,57 +278,16 @@ export default {
     );
     await back();
 
+    /** Day 5 sanding (ch4crafts.js): A/D or a mouse scrub, dust, a reveal on the bare wood. */
     async function sanding() {
-      const SD = T4.sanding;
-      const door = W.door;
-      let progress = door.sand;
-      let blockX = 0;
-      let blockTarget = 0;
-      let crossAt = -1e9;
-      let mashI = 0;
-      let buzzed = false;
-      door.setBlock(true, 0, 0);
-      const r = await rhythm(ctx, d, {
-        band: [1.5, 2.5],
-        mashAt: 3.4,
-        idleAuto: { after: 6, rate: 2 },
-        cooldown: 6,
-        prompt: `${L.ch3.keys.both} ${L.hints.sand}`,
-        gauge: { label: SD.gauge },
-        onStroke: (s, inBand) => {
-          audio.scrape();
-          progress = Math.min(1, progress + (inBand ? 0.035 : 0.012));
-          blockTarget = s.lastKey === 'KeyA' ? -0.35 : 0.35;
-          door.setSand(progress);
-          if (!buzzed && progress >= 0.5) {
-            buzzed = true;
-            ui.watchBuzz(SD.buzz);
-            d.after(2.6, () => d.thought(SD.buzzReply, 2));
-          }
-        },
-        onMash: () => ui.thought(pick(SD.barks.mash, mashI++), 2.4, { who: SD.barks.who }),
-        onFrame: (dt) => {
-          // Across the grain (W/S): she notices.
-          const across = ['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown'].some((k) => input.pressed.has(k));
-          if (across && engine.now - crossAt > 6) {
-            crossAt = engine.now;
-            ui.thought(SD.barks.cross, 2.6, { who: SD.barks.who });
-          }
-          blockX = damp(blockX, blockTarget, 12, dt);
-          const centre = 0.5 * Math.sin(progress * 9.0); // the block works its way along the door
-          door.setBlock(true, (centre + blockX) / 0.9, clamp(progress * 1.12, 0, 1));
-        },
-        done: () => progress >= 1,
-      });
-      if (r.skipped) progress = 1;
-      door.setSand(1);
-      door.setBlock(false);
+      await sandDoor(ctx, d, W);
     }
 
     // ============================================================ DAY 8
     await cut(
       () => {
         player.limp = 0.82;
+        kettleOn(); // Day 8: she has the kettle on again
         putHugo([1.9, 0.95], [W.doorX, -2.9]);
         put(O, S.odileBench, [W.door.group.position.x, W.door.group.position.z]);
         act(O, 'arms_crossed', 0.1);
@@ -294,23 +300,20 @@ export default {
     await required('frame', S.frame, T4.prompts.frame);
     ui.objective(null);
 
+    // Measure twice, with the tape (crafts/tape.js).
     await d.cinematic(
       async () => {
-        const M = T4.day8.measure;
-        putHugo(S.hugoFrame, [W.doorX, -3.2]);
+        putHugo([S.hugoFrame[0] - 0.38, S.hugoFrame[1] - 0.04], [W.doorX - 0.3, -3.2]); // at the near jamb, so the far one shows
         await shot(W.shots.frame, 1.0);
         await d.gate(player.crouch(0.6));
-        W.tape.visible = true;
-        audio.tick({ volume: 0.2 });
-        await d.say(M.slice(0, 2)); // Eighty-one and a half. / Measure twice.
-        W.tape.visible = false;
-        await d.say(M.slice(2, 4)); // Again? / Yes.
-        W.tape.visible = true;
-        audio.tick({ volume: 0.2 });
-        await d.say(M.slice(4, 5)); // ...Eighty-one and a half.
-        W.tape.visible = false;
+        audio.sfx('tape_tock', { volume: 0.4, jitter: 0.05, fallback: (a) => a.tick({ volume: 0.2 }) }); // the case hooks on the near jamb
+        const m = await measureTape(ctx, d, { tape: W.tape, text: T4.day8.tape });
+        remember('measure', { readings: m.readings, agreed: m.agreed, assisted: m.assisted });
         await d.gate(player.stand(0.6));
-        await d.say(M.slice(5)); // Doors lie. Frames lie worse...
+        await d.say([T4.day8.tape.cut[readingIndex(m.agreed)]]); // Doors lie. Frames lie worse...
+        // Half a centimetre off the hinge side: three plane strokes, 0.9 s apart.
+        for (let i = 0; i < 3; i++) audio.sfx('plane_stroke', { volume: 0.45, delay: 0.25 + i * 0.9, fallback: false });
+        await d.wait(3.0);
         await nb(ui.notebook.add(N.measure));
       },
       { letterbox: false },
@@ -320,21 +323,43 @@ export default {
     faceTo(O, ...hugoXZ());
     act(O, 'talk');
     await d.say(T4.day8.grey);
-    await correctWith(T4.day8.greyMenu, { 1: T4.day8.greyLook });
 
-    // Auto-paint (no minigame): the warm grey goes on in six bands; the door holds colour.
+    // The grey: the colour toy at Odile's crate (crafts/mixer.js); the door takes the accepted mix.
+    await d.cinematic(
+      async () => {
+        const pot = W.mixer.group.position;
+        await cut(() => {
+          W.mixer.visible = true;
+          putHugo(W.mixSpots.hugo, [pot.x, pot.z]);
+          player.root.visible = false; // his eyes on the pot (as at the easel in Week 7)
+          put(O, W.mixSpots.odile, [pot.x, pot.z]); // at his shoulder, out of frame
+          act(O, 'arms_crossed', 0.1);
+          cam.set(W.shots.mix);
+        });
+        const g = await mixGrey(ctx, d, { mixer: W.mixer, text: T4.day8.mixer, look: T4.day8.greyLook });
+        player.root.visible = true;
+        remember('doorGrey', g.hex);
+        remember('grey', { tries: g.tries, assisted: g.assisted });
+        W.door.setPaintColor(g.hex);
+      },
+      { letterbox: false },
+    );
+
+    // Auto-paint (no minigame): the grey goes on in six bands, wet, and dries matte; the door holds colour.
     await d.cinematic(
       async () => {
         await cut(() => {
+          W.mixer.visible = false; // Odile clears the crate away
           putHugo(S.hugoSand, [W.door.group.position.x, W.door.group.position.z - 1]);
           faceTo(O, W.door.group.position.x, W.door.group.position.z);
           act(O, 'arms_crossed', 0.1);
           cam.set(W.shots.paint);
         });
         pose('lean');
+        dry(ctx, W.door.material, { secs: 20 });
         await autoPaint();
+        await reveal(ctx, d, { hold: 1.2 });
         pose(null);
-        await d.wait(0.8);
         await d.say(T4.day8.painted);
         await nb(ui.notebook.add(N.grey));
       },
@@ -348,6 +373,7 @@ export default {
       act(O, 'arms_crossed', 0.1);
       cam.set(W.shots.hungDoor);
     });
+    audio.sfx('creak_wood', { volume: 0.3, alt: 'creak_wood_alt', fallback: false }); // the door swings in its frame
     await d.wait(1.6);
     await back(1.0);
 
@@ -371,7 +397,7 @@ export default {
         door.setBrush(true, k, Math.min(1, p * 6 - k));
         if (k !== band) {
           band = k;
-          audio.scrape({ volume: 0.18 });
+          audio.sfx('brush_stroke', { volume: 0.4, fallback: (a) => a.scrape({ volume: 0.18 }) });
           if (k === 5) bloom();
         }
         return p >= 1;
@@ -386,7 +412,9 @@ export default {
     await cut(
       () => {
         player.limp = 0.78;
-        audio.ambience('rain', false, { fade: 2 });
+        audio.ambience(RAIN.name, false, { fade: 2 });
+        audio.ambience(BED.name, true, { volume: 0.25, fade: 2 });
+        kettleOff();
         W.rain(0.25);
         putHugo([0.2, 1.1], [-3.5, 0.4]);
         // At the bench on her stool, back to us, working.
@@ -404,8 +432,16 @@ export default {
       { card: T4.cards.week4 },
     );
 
+    // Sami rings at the garage door and ducks under it with the bike: the freewheel ticks as it rolls
+    // (wheelSound follows the rear wheel all through Week 4: the walk in, the stand, the truing, his spin).
+    const wheel = wheelSound(ctx, W.bike);
     await d.cinematic(
       async () => {
+        audio.sfx('bike_bell', { volume: 0.35, pos: SND.garage, ref: 2, fallback: false });
+        d.after(0.9, () => {
+          const g = audio.sfx('garage_door_open', { volume: 0.4, pos: SND.garage, ref: 2, fallback: false });
+          d.after(1.4, () => g?.stop(0.5)); // a part of it: the door knocked as he ducks under
+        });
         await walk(K, S.samiParked, { speed: 1.15 });
         W.bike.follow(null);
         faceTo(K, ...hugoXZ());
@@ -430,6 +466,7 @@ export default {
       async () => {
         await d.gate(ui.fade(1, 0.35));
         W.bikeOnStand(); // it flips onto the stand
+        audio.sfx('tool_take', { volume: 0.3, fallback: false });
         put(K, S.samiHold, [W.stand.x, W.stand.z]);
         act(K, 'push', 0.1); // both hands on the bike
         putHugo(S.hugoBikeStand, [S.hugoBikeStand[0], S.hugoBikeStand[1] + 2]);
@@ -438,9 +475,10 @@ export default {
         await d.gate(ui.fade(0, 0.45));
         await d.say(T4.week4.bike);
         pose('crouch_idle'); // down at the wheel, an eye on the rim
+        W.bike.setSpin(0); // he stops it with a hand; it runs down while Sami takes hold
         await d.say(T4.week4.hold);
         await truing();
-        await d.wait(0.9);
+        await d.wait(0.3); // the reveal has held on it already
         pose(null);
         act(K, 'talk');
         await shot(W.shots.bikeTalk, 1.0);
@@ -475,39 +513,16 @@ export default {
     await d.until(() => left || K.root.position.x < -4.9);
     leaving.stop();
     mood.focusOn(null, { slot: 1 });
+    wheel.dispose();
     K.root.visible = false;
     W.bike.follow(null);
     W.bike.group.visible = false;
     O.root.rotation.y = Math.PI;
 
+    /** Week 4 truing by ear (ch4crafts.js / crafts/truing.js), then the colour comes to the bike. */
     async function truing() {
-      const TR = T4.week4.truing;
-      const bike = W.bike;
-      let amp = 0.07;
-      let barkI = 0;
-      bike.setWobble(amp);
-      const res = await timing(ctx, d, {
-        hits: 4,
-        rings: 8,
-        duration: 2.4,
-        cue: TR.cue,
-        shout: TR.shout,
-        missText: null,
-        onRing: () => {
-          bike.setSpin(1 / 2.4, { snap: true });
-          bike.syncRub(2.4 * 0.75); // the rub lands on the ring's perfect moment (tick via onRub)
-        },
-        onHit: () => {
-          amp *= 0.6;
-          bike.setWobble(amp);
-          audio.ping();
-        },
-        onMiss: () => ui.thought(pick(TR.misses.bag, barkI++), 2.2, { who: TR.misses.who }),
-      });
-      if (!res.skipped && res.assisted > 0) ui.thought(TR.assisted.text, 2.6, { who: TR.assisted.who });
-      bike.setWobble(0); // true and silent
-      bike.setSpin(0.6);
-      mood.focusOn(bike.group, { slot: 1, floor: 0.55, offsetY: 0.5 });
+      await trueBike(ctx, d, W);
+      mood.focusOn(W.bike.group, { slot: 1, floor: 0.55, offsetY: 0.5 });
       d.hope(0.42);
     }
 
@@ -517,6 +532,8 @@ export default {
         player.limp = 0.75;
         W.fluoro('on'); // fixed, at last
         W.rain(0);
+        audio.ambience(BED.name, true, { volume: 0.2, lowpass: 2500, fade: 2 }); // dry: the rain in the bed low-passed away
+        kettleOn();
         putHugo([1.2, 1.1], [-1.5, -2.5]);
         W.setStool?.(null);
         put(O, S.odileBench);
@@ -603,72 +620,16 @@ export default {
     W.board.setBrush(false);
 
     // Advance: Week 12.
+    kettleOff();
+    audio.ambience(BED.name, false, { fade: 1.5 });
     await d.gate(ui.fade(1, 1.0));
     ui.notebook.dock();
     await d.card(T4.cards.week12, { big: true });
 
-    // ------------------------------------------------------------ lettering (local minigame)
-    /**
-     * LETTERING: six strokes over chalk guides. The path point advances on its own (0.45 board
-     * widths/s); the tip = path point + an offset that drifts (smooth noise, growing over a stroke)
-     * and that WASD corrects in screen space, with no momentum. Score = mean |offset| over the word.
-     * Idle is fine (bounded drift, scores "middle"); steadying it scores "good"; a skip paints the guides perfectly.
-     */
+    // ------------------------------------------------------------ lettering (crafts/letters.js)
+    /** LETTERING: letter() over the chalk guides (WASD or a mouse drag), the board dries, a reveal. */
     async function lettering() {
-      const Bd = W.board;
-      const [CW] = Bd.size;
-      const speed = 0.45 * CW; // px/s along the path
-      const KPX = 34; // px of tip offset per unit
-      let i = 0;
-      let s = 0;
-      let phase = 'lead';
-      let wait = 1.1;
-      let sum = 0;
-      let n = 0;
-      let steer = null;
-      ui.prompt(L.hints.steer);
-      const lead = () => {
-        const [u, v] = Bd.paths[i].pts[0];
-        Bd.setBrush(true, u, v, 0.025);
-      };
-      lead();
-      const r = await d.until((dt) => {
-        if (!(dt > 0)) return false;
-        if (phase === 'lead') {
-          wait -= dt;
-          lead();
-          if (wait <= 0) {
-            phase = 'draw';
-            s = 0;
-            steer = makeSteer({ dims: 2, drift: 0.7, driftGrow: 0.2, gain: 0.9, recenter: 0.35, seed: 101 + i * 37 }); // idle lands in the middle tier
-            Bd.lift();
-          }
-          return false;
-        }
-        const path = Bd.paths[i];
-        const off = steer.step(dt, input);
-        s += speed * dt;
-        const [u, v] = Bd.pointAt(path, s);
-        const tu = u + off.x * KPX;
-        const tv = v - off.y * KPX; // W = up on screen = -v on the canvas
-        Bd.paintTo(tu, tv);
-        Bd.setBrush(true, tu, tv, 0);
-        sum += off.length();
-        n++;
-        if (s >= path.length) {
-          Bd.lift();
-          i++;
-          if (i >= Bd.paths.length) return true;
-          phase = 'lead';
-          wait = 0.7;
-        }
-        return false;
-      });
-      ui.prompt(null);
-      if (r === 'skipped') for (let k = i; k < Bd.paths.length; k++) Bd.perfect(k);
-      Bd.lift();
-      Bd.setBrush(false);
-      return n > 0 && r !== 'skipped' ? sum / n : 0;
+      return letterSign(ctx, d, W);
     }
 
     /** Hugo letters a tiny "H.R." in the corner (one auto stroke). */
@@ -676,6 +637,7 @@ export default {
       const Bd = W.board;
       const [CW, CH] = Bd.size;
       let t = 0;
+      audio.sfx('brush_stroke', { volume: 0.3, rate: 1.1, fallback: false });
       await d.until((dt) => {
         t += dt;
         const k = Math.min(1, t / 1.0);

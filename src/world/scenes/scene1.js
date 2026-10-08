@@ -14,6 +14,7 @@ import {
   TV_POS,
   TV_TOP,
   FLUORO_Z,
+  FRIDGE,
   FRIDGE_FRONT,
   KITCHEN,
   BIKE_POS,
@@ -539,14 +540,29 @@ export async function buildScene1(ctx) {
     [1.58, 0.92, 0.9, 0, 1.4],
     [-0.38, 1.2, 0.2, 0, 1.5],
   ]);
-  const mug = (x, y, z, r = 0) => {
-    batch.add(mats.plastic, place(new THREE.CylinderGeometry(0.042, 0.038, 0.095, 14, 1, true), [x, y + 0.0475, z], [0, r, 0]));
-    batch.add(mats.dark2, new THREE.CylinderGeometry(0.039, 0.039, 0.003, 14).translate(x, y + 0.06, z), { castShadow: false });
-    batch.add(mats.plastic, place(new THREE.TorusGeometry(0.025, 0.006, 6, 10), [x + 0.045 * Math.cos(r), y + 0.05, z - 0.045 * Math.sin(r)], [0, r, 0]), {
+  const mug = (x, y, z, r = 0, into = batch) => {
+    into.add(mats.plastic, place(new THREE.CylinderGeometry(0.042, 0.038, 0.095, 14, 1, true), [x, y + 0.0475, z], [0, r, 0]));
+    into.add(mats.dark2, new THREE.CylinderGeometry(0.039, 0.039, 0.003, 14).translate(x, y + 0.06, z), { castShadow: false });
+    into.add(mats.plastic, place(new THREE.TorusGeometry(0.025, 0.006, 6, 10), [x + 0.045 * Math.cos(r), y + 0.05, z - 0.045 * Math.sin(r)], [0, r, 0]), {
       castShadow: false,
     });
   };
-  mug(0.78, tableTop, -1.12, 0.6);
+  // The coffee-table mug is loose (its own little group, pivot at its base) so it can rattle when
+  // the table rocks; the table itself stays in the batch.
+  const tableMug = new THREE.Group();
+  tableMug.name = 'table-mug';
+  tableMug.position.set(0.78, tableTop, -1.12);
+  const loose = new Batch();
+  mug(0, 0, 0, 0.6, { add: (m, g) => loose.add(m, g) }); // one set per material (no shadow pass in Ch1)
+  loose.flush(tableMug, 'table-mug'); // two draw calls (plastic, coffee)
+  group.add(tableMug);
+  // Sunday's bib, folded in four, under the near leg once he steadies the table (hidden till then).
+  const shim = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.003, 0.04), new THREE.MeshStandardMaterial({ color: '#d9d3c4', roughness: 0.95 }));
+  shim.name = 'table-shim';
+  shim.position.set(1.04, 0.0095, -0.77); // on the rug (its top is ~8 mm up)
+  shim.rotation.y = 0.3;
+  shim.visible = false;
+  group.add(shim);
   mug(KITCHEN.depth > 0 ? IN_X - 0.25 : 0, KITCHEN.top, 1.45, 1.2);
   mug(-1.2, WIN.y0 + 0.012, BACK_Z + 0.06, 2.2);
   // ibuprofen: a box and a popped blister strip
@@ -699,12 +715,32 @@ export async function buildScene1(ctx) {
   const dripState = { t: 1.2, y: H, falling: false, ring: 1 };
   const tvTint = new THREE.Color().copy(SHOT_TINT[0]);
   let knock = 0; // decays after each hammer blow from downstairs
+  const jig = { t: 9, amp: 0 }; // the table rocking: the phone and the mug rattle (0.6 s, damped)
   let t = 0;
   let rainAcc = 0;
   const audio = ctx.audio;
 
+  // ---- sound sources (docs/assets/sfx.md, Ch1): point sources placed in the room, started on the first
+  // frame (not during the build), stopped by soundsOff() at the door or by main.js at the next chapter.
+  const SND = {
+    fridge: [FRIDGE.x, 0.45, FRIDGE.z], // the compressor, low at the back
+    tube: [IN_X - 0.13, kitchen.shelfY - 0.03, FLUORO_Z],
+    tv: screenWorld.toArray(),
+  };
+  const snd = { started: false, off: false, fridge: null, hum: null, tv: null, wakes: 0, wasAwake: false };
+  const startSounds = () => {
+    snd.started = true;
+    if (!audio?.loopSfx) return;
+    // On 'beds' (the bus, through the beds gain): room tone ducks under the voices with the rain.
+    snd.fridge = audio.loopSfx('amb_fridge_hum', { volume: 0.15, bus: 'beds', pos: SND.fridge, ref: 1.5, fade: 1.5 });
+    snd.hum = audio.loopSfx('fluoro_hum', { volume: 0.1, bus: 'beds', pos: SND.tube, ref: 1.5, fade: 1.5 });
+    if (tvState.on) snd.tv = audio.loopSfx('tv_race_bed', { volume: 0.3, bus: 'beds', band: 'tv', pos: SND.tv, ref: 2, fade: 1.5 });
+  };
+  const phoneBuzz = (volume = 0.45) => audio?.sfx?.('phone_vibrate_table', { volume, jitter: 0.03, pos: phone.group, ref: 1.5 });
+
   function update(_dt, raw) {
     t += raw;
+    if (!snd.started) startSounds();
 
     // TV: broadcast shots cut every few seconds; light follows the picture, plus CRT flicker.
     if (tvState.on) {
@@ -745,10 +781,12 @@ export async function buildScene1(ctx) {
 
     // Fluorescent: steady, then a stutter (with a buzz as it strikes back) every 6-9 s.
     if (!fl.seq && t > fl.next) {
-      fl.seq = FLICKER;
+      // Never the same stutter twice: each step's length x0.6-1.5, and one in three ends early.
+      const steps = Math.random() < 0.33 ? FLICKER.slice(0, 5) : FLICKER;
+      fl.seq = steps.map(([on, s]) => [on, s * (0.6 + Math.random() * 0.9)]);
       fl.i = 0;
       fl.tt = 0;
-      audio?.noise?.({ type: 'bandpass', freq: 120, q: 9, dur: 0.75, volume: 0.05, tail: 0.1 });
+      if (!snd.off) audio?.sfx?.('fluoro_flicker', { volume: 0.2, bus: 'bus', pos: SND.tube, ref: 1.5 }); // fallback: 120 Hz band noise
     }
     if (fl.seq) {
       fl.tt += raw;
@@ -762,8 +800,9 @@ export async function buildScene1(ctx) {
       }
       fl.on = fl.seq ? fl.seq[fl.i][0] : 1;
     } else fl.on = 1;
-    if (fl.on > fl.prev + 0.4) audio?.tick?.({ volume: 0.05 });
+    if (fl.on > fl.prev + 0.4 && !snd.off) audio?.tick?.({ volume: 0.05 });
     fl.prev = fl.on;
+    snd.hum?.set(fl.on > 0.3 ? 0.1 * fl.on : 0, null, 0.03); // the hum cuts out with the tube
     knock = Math.max(0, knock - raw * 5);
     const fk = fl.on * (1 - 0.35 * knock);
     fluoroLight.intensity = FLUORO_INTENSITY * fk;
@@ -777,9 +816,26 @@ export async function buildScene1(ctx) {
     if (phoneState.mode === 'idle') pTarget = t % 7 < 1.8 ? 0.9 : 0.06;
     else if (phoneState.mode === 'awake') pTarget = 1.2;
     else pTarget = 0;
+    // Every other wake buzzes on the table (from 14 s, clear of the first hammer burst at 8 s).
+    const awake = phoneState.mode === 'idle' && t % 7 < 1.8;
+    if (awake && !snd.wasAwake && ++snd.wakes % 2 === 1 && t > 12 && !snd.off) phoneBuzz(0.45);
+    snd.wasAwake = awake;
     phoneState.glow = damp(phoneState.glow, pTarget, 6, raw);
     phone.screenMat.color.setScalar(0.02 + phoneState.glow);
     phoneLight.intensity = phoneState.mode === 'awake' ? 1.4 * phoneState.glow : 0;
+
+    // Table rock: a damped tilt on the loose things on top (the table is batched and stays put).
+    if (jig.t < 0.6) {
+      jig.t += raw;
+      const e = jig.t < 0.6 ? Math.exp(-6 * jig.t) * Math.sin(jig.t * 40) : 0;
+      const k = jig.amp * e;
+      const hop = Math.max(0, e) * jig.amp * 0.16; // 1-2 cm at the first knock
+      tableMug.rotation.set(k, 0, k * 0.6);
+      tableMug.position.y = tableTop + hop;
+      phone.group.rotation.x = k * 0.6;
+      phone.group.rotation.z = -k * 0.4;
+      phone.group.position.y = tableTop + 0.001 + hop * 0.6;
+    }
 
     // Charger LED: slow green pulse while the watch sits on it.
     if (watch.watch.visible) watch.led.material.color.setRGB(0.2, 0.55 + 0.35 * Math.sin(t * 2), 0.25);
@@ -849,6 +905,7 @@ export async function buildScene1(ctx) {
       bike: [-2.4, 0.4],
       bibs: [-1.4, -1.3],
       door: [DOOR_X, -1.85],
+      table: [1.78, -0.38], // after the phone: the table rocks (Ch1 seed)
     },
     // Where Hugo stands for each close-up ([x, z]), and what he looks at (Vector3).
     stand: {
@@ -859,6 +916,7 @@ export async function buildScene1(ctx) {
       bike: [-2.1, 0.0],
       bibs: [-1.35, -1.25],
       door: [DOOR_X, -1.78],
+      table: [1.82, -0.9],
     },
     focus: {
       tv: new THREE.Vector3(TV_POS[0], 0.85, -1.92),
@@ -868,6 +926,7 @@ export async function buildScene1(ctx) {
       bike: new THREE.Vector3(BIKE_POS[0], 1.45, BIKE_POS[2]),
       bibs: new THREE.Vector3(-IN_X, 1.45, -1.5),
       door: new THREE.Vector3(DOOR_X, 1.2, -D / 2),
+      table: new THREE.Vector3(1.03, 0.1, -0.78),
     },
     // Close-up camera shots in world coordinates, composed for the stand points above.
     shots: {
@@ -878,6 +937,7 @@ export async function buildScene1(ctx) {
       bike: { pos: [-0.7, 1.55, 1.75], look: [BIKE_POS[0] - 0.04, 1.45, BIKE_POS[2] - 0.05], fov: 42 },
       bibs: { pos: [-0.6, 1.7, -0.25], look: [-2.75, 1.5, -1.6], fov: 46 },
       door: { pos: [DOOR_X - 0.95, 1.6, -0.35], look: [DOOR_X, 1.15, -2.5], fov: 46 },
+      table: { pos: [0.7, 1.55, 0.75], look: [1.35, 0.35, -0.85], fov: 46 },
     },
     update,
     /** Switch the TV off: the picture collapses and the key light dies. */
@@ -885,6 +945,23 @@ export async function buildScene1(ctx) {
       if (!tvState.on) return;
       tvState.on = false;
       tvState.offT = 0;
+      // Same frame: the broadcast dies under the CRT thunk and whine (fallback: a tick).
+      snd.tv?.stop(0.08);
+      snd.tv = null;
+      audio?.sfx?.('tv_crt_off', { volume: 0.45, pos: SND.tv, ref: 2 });
+    },
+    /** The phone buzzes on the table (a notification). */
+    phoneBuzz() {
+      if (phoneState.mode === 'idle') phoneBuzz(0.45);
+    },
+    /** Stop the room's point sources (the door shut behind him). */
+    soundsOff(fade = 0.4) {
+      snd.started = true;
+      snd.off = true; // he is out on the landing: no more flicker or phone either
+      for (const k of ['fridge', 'hum', 'tv']) {
+        snd[k]?.stop(fade);
+        snd[k] = null;
+      }
     },
     get tvIsOn() {
       return tvState.on;
@@ -903,6 +980,15 @@ export async function buildScene1(ctx) {
     },
     openDoor() {
       doorState.openTarget = 1;
+    },
+    /** The coffee table rocks on its short leg: the phone and the mug rattle (amp in radians). */
+    tableRock(amp = 0.12) {
+      jig.t = 0;
+      jig.amp = amp;
+    },
+    /** The folded bib goes under the near leg. */
+    tableShim() {
+      shim.visible = true;
     },
     /** A blow from the workshop downstairs: dust jumps, the tube and the lamp dip. */
     knock() {

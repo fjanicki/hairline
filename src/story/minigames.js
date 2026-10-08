@@ -68,6 +68,8 @@ const now = (ctx) => ctx.engine.now;
  *   onFrame(dt, s)                 every frame (move the runner, reveal the wood...)
  *   onStroke(s, inBand)            every stroke (s.auto is true for assisted strokes)
  *   onMash(s), onLow(s), onSteady(s) feedback hooks (throttled by cooldown)
+ *   poll() => code | null          read first every frame; a code that differs from s.lastKey is a
+ *                                  stroke (crafts/juice.js scrubber(): mouse scrubbing)
  *
  * State s: { rate, spread (coefficient of variation of the recent intervals, 0 = metronome),
  *            inBand, strokes, t (seconds running), idle (seconds since the last real stroke),
@@ -90,6 +92,7 @@ export async function rhythm(ctx, d, opts = {}) {
     onMash,
     onLow,
     onSteady,
+    poll,
   } = opts;
   const mashAt = opts.mashAt ?? band[1] * 1.1;
   const idle = opts.idleAuto === null ? null : { after: 5, rate: (band[0] + band[1]) / 2, ...(opts.idleAuto || {}) };
@@ -136,7 +139,7 @@ export async function rhythm(ctx, d, opts = {}) {
       s.spread = sd / Math.max(1e-3, mean);
     } else s.rate = 0;
     s.inBand = s.rate >= band[0] && s.rate <= band[1];
-    s.mashing = s.rate > mashAt;
+    s.mashing = s.rate > mashAt && times.length >= 3; // one quick pair isn't mashing
   };
 
   const call = (fn, key) => {
@@ -153,8 +156,10 @@ export async function rhythm(ctx, d, opts = {}) {
     const raw = ctx.engine.rawDt;
     s.t += raw;
     s.idle += raw;
-    // Real strokes.
+    // Real strokes (keys, or opts.poll: a mouse scrub / any source of key codes).
     let pressedKey = null;
+    const polled = poll ? poll() : null;
+    if (polled && polled !== s.lastKey) pressedKey = polled;
     for (const k of keys) if (input.pressed.has(k) && k !== s.lastKey) pressedKey = k;
     if (pressedKey) {
       s.idle = 0;

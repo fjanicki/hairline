@@ -36,7 +36,7 @@ const NAME_SET = new Set(Object.values(NAMES));
 export function isData(path, v) {
   if (typeof v !== 'string') return true; // numbers, booleans, null
   const key = path.split('.').pop();
-  if (DATA_KEYS.has(key)) return true;
+  if (DATA_KEYS.has(key) && !/\s/.test(v)) return true; // a sentence under one of these names is text (ending.cards.street.hand)
   if (/^#[0-9a-f]{3,8}$/i.test(v)) return true;
   if (/^[\d\s.,:]*\s*(km|m)?$/.test(v)) return true; // '0.32 km', '38:40', '3:04:51', '' (a decimal comma is allowed)
   return false;
@@ -60,19 +60,16 @@ export const AS_IS = [
   'ch4.signs.initials',
   'ch5.signs.open',
   'ch5.signs.initials',
+  'ch5.jobs.board.word', // KEBAB, Marco's A-board (fixed stroke paths)
+  'ch5.jobs.radio.stations.who', // Radio: the same word in both languages
 ];
 export const isAsIs = (path) => AS_IS.some((p) => path === p || path.startsWith(p + '.'));
 
 /** Same game data, either decimal mark ('0,32 km' for '0.32 km', docs/i18n-fr.md section 6). */
 export const sameData = (en, tr) => tr === en || tr.replace(/(\d),(\d)/g, '$1.$2') === en;
 
-/**
- * Key names a translation writes instead of the English ones: the game reads physical key codes,
- * so French names the AZERTY keys (WASD -> ZQSD, A -> Q, Space -> Espace; docs/i18n-fr.md 4.3).
- */
-export const KEY_NAMES = {
-  fr: { WASD: 'ZQSD', Arrows: 'Flèches', Shift: 'Maj', Space: 'Espace', SPACE: 'ESPACE', Esc: 'Échap', ESC: 'Échap', A: 'Q', W: 'Z' },
-};
+/** Key tokens ('{KeyA}', '{Space}'): resolved at runtime for the player's layout (src/core/KeyLabels.js). */
+export { KEY_TOKEN, keyText } from '../src/core/KeyLabels.js';
 
 /** Character names: shared labels, identical in every language. */
 export function isName(path, v) {

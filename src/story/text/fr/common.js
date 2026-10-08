@@ -18,42 +18,49 @@ export default {
     begin: 'Cliquer pour commencer',
     controls: [
       [
-        'ZQSD / Flèches',
+        '{KeyW}{KeyA}{KeyS}{KeyD} / {Arrows}',
         'Se déplacer / guider le pinceau',
       ],
       [
         'Souris',
-        'Regarder autour · R recentrer',
+        'Regarder autour · {KeyR} recentrer',
       ],
       [
-        'Maj',
+        '{Shift}',
         'Essayer de trottiner',
       ],
       [
-        'E',
+        '{KeyE}',
         'Interagir / continuer',
       ],
       [
-        'Espace',
-        'Appuyer au bon moment',
+        '{Space}',
+        'Tenir le mètre · pincer un rayon',
       ],
       [
-        'Q / D',
+        '{KeyA} / {KeyD}',
         'Garder le rythme',
       ],
       [
-        '1 – 3',
-        'Choix',
+        '1 – 5',
+        'Choix · pots de peinture',
       ],
       [
-        'M',
+        '{KeyM}',
         'Couper le son',
       ],
       [
-        'Échap',
+        '{Escape}',
         'Pause',
       ],
     ],
+  },
+  keyNames: {
+    Space: 'Espace',
+    Shift: 'Maj',
+    Escape: 'Échap',
+    Enter: 'Entrée',
+    Arrows: 'Flèches',
   },
   loading: 'Chargement',
   noWebGL: 'Cette démo nécessite WebGL.',
@@ -68,8 +75,8 @@ export default {
     resume: 'Reprendre',
     restart: 'Recommencer le chapitre',
     options: 'Options',
-    escKey: 'Échap',
-    muteHint: 'M pour couper le son',
+    escKey: '{Escape}',
+    muteHint: '{KeyM} pour couper le son',
     quality: 'Graphismes',
     tiers: {
       low: 'Bas',
@@ -80,6 +87,10 @@ export default {
   options: {
     title: 'Options',
     language: 'Langue',
+    voices: 'Voix',
+    voicesOn: 'Activées',
+    voicesOff: 'Désactivées',
+    voicesNote: 'En français uniquement',
     back: 'Retour',
   },
   ui: {
@@ -89,6 +100,7 @@ export default {
     space: 'ESPACE',
     distance: '{n} m',
     interact: 'Interagir',
+    next: '{KeyE} ▸',
     muted: 'Son coupé',
     soundOn: 'Son activé',
   },
@@ -112,13 +124,13 @@ export default {
     ],
   },
   hints: {
-    jog: 'Maintenir Maj pour trottiner',
-    rhythm: 'Alterner Q et D. Régulier, pas rapide.',
-    sand: 'Alterner Q et D. Régulier.',
-    steer: 'Le pinceau suit la craie. ZQSD : petites corrections seulement',
-    steerLine: 'Z / S pour stabiliser le pinceau',
+    jog: 'Maintenir {Shift} pour trottiner',
+    rhythm: 'Alterner {KeyA} et {KeyD}. Régulier, pas rapide.',
+    sand: 'Alterner {KeyA} et {KeyD}. Régulier.',
+    steer: 'Le pinceau suit la craie. {KeyW}{KeyA}{KeyS}{KeyD} : petites corrections seulement',
+    steerLine: '{KeyW} / {KeyS} pour stabiliser le pinceau',
     still: 'Ne toucher à rien',
-    space: 'Espace',
+    space: '{Space}',
   },
   watch: {
     unit: 'km',
@@ -239,10 +251,39 @@ export default {
     ],
   },
   ending: {
+    cards: {
+      street: {
+        plain: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire.',
+        wheel: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. Là où il était, il y a une petite roue. Sami dit que c’est la sienne.',
+        door: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. Là où il était, il y a une petite porte grise. Les gens frappent à la vraie.',
+        hand: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. Là où il était, une petite main tient un pinceau, parfaitement immobile.',
+      },
+      sami: {
+        first: 'Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre.',
+        second: 'Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre. Il laisse d’abord les gens se tromper.',
+      },
+      job: {
+        board: 'Le chevalet de Marco affiche de nouveau KEBAB, à la main. Il a ajouté EXCELLENT lui-même. Les lettres sont un peu pompettes.',
+        wheel: 'Ines roule sur une roue qui ne frotte plus. Elle signe son travail, maintenant. En petit, dans le coin.',
+        shutter: 'Le rideau de fer de Mme Benali se lève à six heures sans un bruit. La dispute lui manque.',
+      },
+      grey: {
+        own: 'La porte du N° 14 est d’un gris qui a vécu. Il n’a jamais noté la recette.',
+        odile: 'La porte du N° 14 est d’un gris qu’Odile a rattrapé. Il dit que c’est lui qui l’a fait. Elle le laisse dire.',
+      },
+      radio: {
+        fixed: 'La radio d’Odile capte quatre stations, maintenant. Elle écoute celle qui parle de pêche.',
+        one: 'La radio d’Odile ne capte toujours qu’une station. Elle a beaucoup appris sur la pêche.',
+      },
+      ask: 'Cette année-là, la liste d’Odile Marchal s’est allongée d’une ligne. Il y est écrit : « Demander. »',
+      runs: 'Hugo Revel court certains dimanches. Personne ne sait jusqu’où, pas même lui.',
+      watch: 'Sa montre pend à un clou au-dessus de l’établi. Elle croit qu’il se repose depuis un an.',
+    },
     lines: [
       'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire.',
       'Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre.',
-      'La radio d’Odile capte quatre stations, maintenant. Elle écoute celle qui parle de pêche.',
+      'La porte du N° 14 est d’un gris qui a vécu. Il n’a jamais noté la recette.',
+      'La radio d’Odile ne capte toujours qu’une station. Elle a beaucoup appris sur la pêche.',
       'Cette année-là, la liste d’Odile Marchal s’est allongée d’une ligne. Il y est écrit : « Demander. »',
       'Hugo Revel court certains dimanches. Personne ne sait jusqu’où, pas même lui.',
       'Sa montre pend à un clou au-dessus de l’établi. Elle croit qu’il se repose depuis un an.',
@@ -254,6 +295,6 @@ export default {
     hairlineColor: '#d9a441',
     thanks: 'Merci d’avoir joué.',
     playAgain: 'Rejouer',
-    credits: 'Personnages et animations : Quaternius. Accessoires, matériaux et HDRI : Poly Haven, ambientCG. Éléments de rue et bruits de pas : Kenney. Musique et ambiances : OpenGameArt. Tout en CC0.',
+    credits: 'Personnages et animations : Quaternius. Accessoires, matériaux et HDRI : Poly Haven, ambientCG. Éléments de rue et bruits de pas : Kenney. Musique et ambiances : OpenGameArt. Tous en CC0. Voix françaises : Kyutai TTS (kyutai/tts-1.6b-en_fr, CC BY 4.0), avec des voix de CML-TTS (CC BY 4.0) et d’un don de voix (CC0).',
   },
 };

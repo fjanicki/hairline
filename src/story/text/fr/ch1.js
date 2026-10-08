@@ -17,7 +17,8 @@ export default {
     bike: 'Regarder',
     bibs: 'Regarder',
     door: 'Sortir',
-    start: '[E] Démarrer',
+    table: 'Caler la table',
+    start: '[{KeyE}] Démarrer',
   },
   hammer: 'Quelqu’un tape au marteau, en bas. Neuf heures du soir. Le même rythme depuis une heure. Pas pressé du tout. Je le déteste un peu.',
   tvTicker: 'ÉTAPE 17 — COL DU GRAND FERRAND',
@@ -92,6 +93,9 @@ export default {
   door: [
     think('Marchez, si vous y tenez, il a dit.'),
     think('J’y tiens.'),
+  ],
+  table: [
+    think('Le dossard de dimanche. Plié en quatre, il fait exactement la bonne épaisseur.'),
   ],
   startBuzz: 'DÉMARRER UNE MARCHE ?',
   walkFace: '0,00 km',

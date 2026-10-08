@@ -1,6 +1,6 @@
 // Ch5 "The Wall": Rue des Tanneurs, day, then golden hour (Week 12). Owned by the Ch5 agent.
 // Source: docs/DESIGN.md. Street signs shared with Ch2 live in L.ch2.signs.
-import { think, hugo, odile, sami, bastien, ines, marco } from './common.js';
+import { think, hugo, odile, sami, bastien, ines, marco, stage } from './common.js';
 
 export default {
   title: 'The Wall',
@@ -16,14 +16,19 @@ export default {
     odile: 'Ready',
     sami: 'Help',
     bench: 'Sit',
-    strap: '[E] Strap',
-    wave: '[E] Wave',
+    strap: '[{KeyE}] Strap',
+    wave: '[{KeyE}] Wave',
     watch: 'Take the watch off',
     benali: 'Talk',
     ines: 'Talk',
     marco: 'Talk',
     shopCard: 'Look',
     boltHoles: 'Look',
+    // Street jobs (optional).
+    shutter: 'Fix the shutter',
+    radio: 'Tune it',
+    board: 'Re-letter it',
+    inesBike: 'Look at the wheel',
   },
 
   signs: {
@@ -47,6 +52,7 @@ export default {
     odile("There you are. You're late."),
     hugo('I walked the long way. It was nice.'),
     think("Nice. I said 'nice' about a walk. Out loud."),
+    odile("Half this street's stuck, bent, faded or buzzing. Before your line, if your hands get bored."),
   ],
 
   // Optional (SHOULD).
@@ -63,6 +69,67 @@ export default {
   ],
   shopCard: [think("Sami's handwriting. My spelling.")],
   boltHoles: [think('The watch told me to rest. The billboard told me never stop. I listened to the bigger one.')],
+
+  // ------------------------------------------------------------ Street jobs (optional, before the line)
+  jobs: {
+    shutter: {
+      near: { who: 'Mme Benali', text: 'It sticks halfway every morning. I open half a bakery.' },
+      // Called from up the street after Teach, if he's far off and it's still stuck.
+      call: { who: 'Mme Benali', text: "Hugo! When you've a minute. My shutter's stuck again." },
+      gauge: 'RUNNERS',
+      mash: { who: 'Mme Benali', text: "Gently. It's older than me." },
+      done: [{ who: 'Mme Benali', text: "It went up. Now I'll have to be nice to people all morning." }],
+    },
+    radio: {
+      near: odile('It still only gets the fishing.'),
+      hint: '{KeyA} / {KeyD} or drag to turn the dial',
+      stations: {
+        who: 'Radio',
+        fishing: "...and the pike, you see, the pike doesn't care about your feelings...",
+        music: '*Music. Slow, a bit scratched.*',
+        football: '...two-nil, and nobody here can quite believe it...',
+        forecast: '...Pas-de-Calais, westerly four or five, rain later, good...',
+      },
+      done: [
+        odile("Four stations. I've had the fishing man since the franc."),
+        hugo('Fishing?'),
+        odile('Leave it on the music. The fish can wait.'),
+      ],
+    },
+    board: {
+      near: marco("My board's so faded people think we're shut."),
+      word: 'KEBAB', // as-is signage, same in every language
+      tiers: {
+        good: [marco("Now that's a great kebab sign.")],
+        middle: [marco("It's got character. Like the kebab.")],
+        poor: [marco("It's a bit drunk. So are half my customers, after midnight.")],
+      },
+    },
+    wheel: {
+      near: sami('Ines bent her wheel on a kerb. I do punctures. Bends are you.'),
+      // trueWheel's text (hint, gauge and pitch words come from L.ch4.week4.truing).
+      truing: {
+        flat: "There. That one's off.",
+        barks: {
+          who: 'Sami',
+          clunk: "Clunk's bad. I know clunk now.",
+          hitting: "You're just hitting it now.",
+          notFixed: 'Not fixed. I can hear it.',
+          ping: 'That one went ping. Is ping good this time?',
+          higher: "It's getting higher.",
+        },
+        assisted: sami("...Fixed. I'm saying I helped."),
+      },
+      done: sami('Ines! Your wheel sings now!'),
+    },
+  },
+
+  // Odile, once, at the first "Ready" while a street job is still open (Ready closes them).
+  readyCheck: {
+    who: 'Odile',
+    prompt: "Nobody's timing you.",
+    options: [{ text: 'Ready.', correct: true }, { text: 'Not yet.' }],
+  },
 
   // ------------------------------------------------------------ Teach
   teach: {
@@ -88,6 +155,30 @@ export default {
       sami('You forgot one.'),
     ],
     // Notebook: add L.notebook.items.teach with { hand: 'sami' }.
+  },
+
+  // ------------------------------------------------------------ Hugo's panel (inside 'Ready', before the line)
+  panel: {
+    ask: [
+      odile('One thing first. Up there, where the billboard was. Nobody wanted it.'),
+      hugo("So it's mine."),
+      odile('Paint something you can do. Small, if you like.'),
+    ],
+    // Options in motif order: wheel, door, hand (a skip picks the door).
+    menu: {
+      prompt: 'Something off the list.',
+      options: [
+        { text: 'A wheel. True.', reply: null },
+        { text: 'The door. That grey.', reply: null },
+        { text: 'A hand, holding a brush still.', reply: null },
+      ],
+    },
+    stage: [stage("Odile holds the ladder. Both hands. She doesn't help.")],
+    after: {
+      wheel: [odile("A wheel. Sami's going to say it's his.")],
+      door: [odile("My door. Higher up than I'd have hung it.")],
+      hand: [odile('Steady hand. Show-off.')],
+    },
   },
 
   // ------------------------------------------------------------ The line

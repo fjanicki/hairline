@@ -1,0 +1,262 @@
+{
+ "version": 1,
+ "model": {
+  "id": "kyutai/tts-1.6b-en_fr",
+  "licence": "CC-BY-4.0 (weights); moshi-mlx 0.3.0 code MIT/Apache-2.0",
+  "runtime": "moshi-mlx 0.3.0 on Apple Silicon (bf16), batched; optional remote PyTorch-ROCm worker (auriga)",
+  "voiceRepo": "kyutai/tts-voices",
+  "voiceRepoLicence": "per-dataset: CML-TTS (LibriVox-derived) CC BY 4.0; voice-donations CC0",
+  "defaults": {
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "batch": 12,
+   "initialPadding": 6
+  },
+  "textPrep": "tts field of lines.fr.json; '’'->\"'\", '…'->'... ', ALL-CAPS words -> Capitalised (scripts/voice/generate.py prep())",
+  "initialPaddingNote": "Padding tokens before the first word. 2 (moshi default) until 2026-10-07: ~10% of takes then started mid-phoneme (clipped 'J'', stray 'et'/'cent'/'eu' before the line). 6 from the QA pass on; not part of the generation hash, so passing takes made with 2 stay."
+ },
+ "qa": {
+  "asr": "mlx-community/whisper-large-v3-mlx (MIT), language fr, greedy",
+  "maxCer": 0.12,
+  "maxTailDb": -12,
+  "retakes": 3,
+  "retakeSeeds": [
+   1,
+   101,
+   202,
+   303
+  ],
+  "cps": [
+   5.0,
+   24.0
+  ],
+  "paceNote": "letters/s over the voiced span, checked on lines with >= 12 letters; plus voiced span <= 1.5 s + 0.15 s per letter",
+  "noAsr": {
+   "ab6bcdd8134d": {
+    "span": [
+     0.15,
+     1.2
+    ],
+    "why": "interjection: Whisper cannot transcribe a hum; judged on voiced span only"
+   }
+  },
+  "asrNote": "ASR input padded with 0.4 s / 0.3 s of silence (Whisper drops a word starting at t=0); homophone spellings of cast names mapped (scripts/voice/qa.py ASR_EQUIV)",
+  "hotOnsetDb": -12,
+  "edgeNote": "A take also fails on: a stray word before the line or a dropped first word (ASR first words), the last word missing, a hot onset (first 10 ms within hotOnsetDb of the loudest frame) together with any ASR difference, or within hotOnsetHardDb in any case (speech already running at sample 0: the attack is missing), or the ECAPA nearest-centroid check naming another character (voiced span >= 0.8 s). See generate.py edge_words() / speaker_check(). A take whose median pitch (Praat, range around the character's median) is more than maxF0DevSt semitones off the character's median also fails (covers short clips the ECAPA check skips).",
+  "hotOnsetHardDb": -20,
+  "maxF0DevSt": 7,
+  "maxF0DevStRemote": 4,
+  "remoteNote": "Takes from a remote worker (auriga, PyTorch/ROCm) get the tighter maxF0DevStRemote: the 2026-10-07 audit found auriga's Marco +5.9 st above his Mac median and its Benali clearly brighter, though ECAPA still matched. All kept clips are from the Mac since that audit."
+ },
+ "speakers": {
+  "hugo": {
+   "voice": "cml-tts/fr/1406_1028_000009-0003_enhanced.wav",
+   "source": "CML-TTS fr speaker 1406 (LibriVox reader), via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Low-mid baritone (F0 ~95 Hz), tired and flat; best Hugo of 6 tested in the bake-off.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "odile": {
+   "voice": "cml-tts/fr/7762_8734_000048-0002.wav",
+   "source": "CML-TTS fr speaker 7762 (LibriVox reader), via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Oldest French female voice in the repo (estimated ~66); terse, slightly gravelly. Reads ~55, not 74 (model limit).",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "sami": {
+   "voice": "cml-tts/fr/577_394_000070-0001_enhanced.wav",
+   "source": "CML-TTS fr speaker 577 (young female reader), via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "No child voice exists in the repo; youngest high French voice + Praat 'Change gender' (PSOLA, formant-aware): median F0 -> 320 Hz, formants x1.2. Child-probability 0.68-0.97 (audeering), no chipmunk ratio (>1.25).",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": [
+    {
+     "op": "childify",
+     "targetF0": 320,
+     "formantRatio": 1.2,
+     "pitchRange": 1.15
+    }
+   ]
+  },
+  "bastien": {
+   "voice": "cml-tts/fr/7142_2432_000124-0003_enhanced.wav",
+   "source": "CML-TTS fr speaker 7142, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Bright, energetic male (F0 ~130 Hz); the most upbeat male read.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "ines": {
+   "voice": "cml-tts/fr/5476_3103_000072-0001_enhanced.wav",
+   "source": "CML-TTS fr speaker 5476, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Young flat female read (estimated age ~17); deadpan.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "marco": {
+   "voice": "cml-tts/fr/4724_3731_000031-0001_enhanced.wav",
+   "source": "CML-TTS fr speaker 4724 (older male reader, estimated ~64), via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Warm, rounded older male (F0 ~127 Hz). Replaced the bake-off pick 4482_3103, whose centroid sat at ECAPA 0.50 from Hugo (same F0 range); 4724 is at -0.07 (line-pair mean) from Hugo and <= 0.20 from everyone else.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "benali": {
+   "voice": "cml-tts/fr/5207_3078_000031-0002_enhanced.wav",
+   "source": "CML-TTS fr speaker 5207, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Warm, lively 50s female (F0 ~180 Hz). Chosen over 7400_2928 and 2154_2576 (cast test: CER 0.005 mean, least similar to the other women).",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "okafor": {
+   "voice": "voice-donations/Erick_enhanced.wav",
+   "source": "Kyutai voice donation 'Erick'",
+   "licence": "CC0",
+   "why": "Calm, measured adult male (F0 ~105 Hz). Male per DESIGN.md / Ch1 text.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "receptionist": {
+   "voice": "cml-tts/fr/12205_11650_000004-0002_enhanced.wav",
+   "source": "CML-TTS fr speaker 12205, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Polite, even adult female reading voice; CER 0.004 on the voicemail. Chosen over 3267_1902 (too close to Mme Benali, ECAPA 0.44).",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "tv": {
+   "voice": "cml-tts/fr/5790_4893_000052-0001_enhanced.wav",
+   "source": "CML-TTS fr speaker 5790, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Clear male broadcast-style read.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "radio_fishing": {
+   "voice": "cml-tts/fr/7601_7727_000062-0001_enhanced.wav",
+   "source": "CML-TTS fr speaker 7601 (older male, estimated ~75), via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Old, slow, earnest male (F0 ~90 Hz) for the fishing talk show.",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "radio_football": {
+   "voice": "cml-tts/fr/8128_7016_000047-0002_enhanced.wav",
+   "source": "CML-TTS fr speaker 8128, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Mid male (F0 ~127 Hz); CER 0 (2114_1656 misread 'deux a zero').",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "radio_forecast": {
+   "voice": "cml-tts/fr/10087_11650_000028-0002_enhanced.wav",
+   "source": "CML-TTS fr speaker 10087, via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "Even female announcer read for the shipping forecast; chosen over 579_2548 (ECAPA 0.44 to the receptionist).",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": []
+  },
+  "maman": {
+   "voice": null,
+   "source": "not cast: Maman has no spoken line (her only line is an SMS). Suggested if she ever speaks: cml-tts/fr/7400_2928_000100-0001_enhanced.wav (CC BY 4.0)",
+   "licence": null,
+   "post": []
+  }
+ },
+ "deliveries": {
+  "spoken": {
+   "lufs": -19,
+   "ffmpeg": "highpass=f=70,acompressor=threshold=-22dB:ratio=1.8:attack=8:release=120:makeup=1,aecho=1.0:1.0:7|13:0.035|0.02",
+   "noiseDb": -66,
+   "desc": "Dry and close; gentle compression, two very low early reflections and a faint room-tone bed (-66 dBFS)."
+  },
+  "bark": {
+   "lufs": -19,
+   "ffmpeg": "highpass=f=90,equalizer=f=2600:t=q:w=1.0:g=2.5,acompressor=threshold=-20dB:ratio=2.5:attack=5:release=100:makeup=1,aecho=1.0:1.0:11|23|37:0.07|0.05|0.03",
+   "noiseDb": -64,
+   "desc": "Spoken but projected: presence lift, a bit more compression and a slightly bigger room."
+  },
+  "inner": {
+   "lufs": -23,
+   "ffmpeg": "highpass=f=90,lowshelf=f=180:g=2,lowpass=f=6200,acompressor=threshold=-26dB:ratio=2:attack=10:release=150:makeup=1,aecho=1.0:1.0:5|9|15:0.10|0.07|0.04",
+   "noiseDb": null,
+   "desc": "Hugo's thoughts: proximity warmth, softened top (low-pass 6.2 kHz), a very short tight room, quieter (-23 LUFS)."
+  },
+  "voicemail": {
+   "lufs": -21,
+   "ffmpeg": "highpass=f=300,highpass=f=300,lowpass=f=3400,lowpass=f=3400,acompressor=threshold=-24dB:ratio=4:attack=3:release=80:makeup=2,aresample=8000,acrusher=bits=12:mode=log:aa=1:mix=0.6,aresample=48000",
+   "noiseDb": -58,
+   "desc": "Telephone band 300-3400 Hz (4th order), firm compression, 8 kHz resample with light bit-crush for codec grit, line hiss."
+  },
+  "tv": {
+   "lufs": -19,
+   "ffmpeg": "highpass=f=110,equalizer=f=250:t=q:w=1.2:g=-2,equalizer=f=3200:t=q:w=1.0:g=3,lowpass=f=9500,acompressor=threshold=-20dB:ratio=3:attack=5:release=90:makeup=1.5",
+   "noiseDb": null,
+   "desc": "Broadcast EQ (thin lows, presence lift, 9.5 kHz top) with slight compression."
+  },
+  "radio": {
+   "lufs": -21,
+   "ffmpeg": "highpass=f=320,highpass=f=320,lowpass=f=3300,lowpass=f=3300,equalizer=f=1500:t=q:w=1.0:g=3,acompressor=threshold=-22dB:ratio=3.5:attack=4:release=80:makeup=2",
+   "noiseDb": -54,
+   "desc": "Old valve-radio speaker: narrow 320-3300 Hz band, mid honk, compression and hiss."
+  },
+  "flashback": {
+   "lufs": -19,
+   "ffmpeg": "highpass=f=100,lowpass=f=8500,aecho=0.9:0.8:29|53|83|131:0.28|0.22|0.16|0.10,acompressor=threshold=-22dB:ratio=2:attack=10:release=150:makeup=1",
+   "noiseDb": null,
+   "desc": "Memory: slightly distant and roomy (pre-delays 29-131 ms, darker top)."
+  }
+ },
+ "output": {
+  "dir": "public/assets/voice/fr",
+  "codec": "libopus",
+  "bitrate": "48k",
+  "sampleRate": 48000,
+  "channels": 1,
+  "truePeak": -1.5,
+  "limiterCeiling": -2.0,
+  "maxEdgeSilenceMs": 120,
+  "edgeThresholdDb": -45,
+  "trimThresholdDb": -45,
+  "trimNote": "Head/tail trim on the processed clean signal: preRollMs before / postRollMs after the first / last run of 3 x 10 ms frames within trimThresholdDb of the loudest frame. Run-based so a click in the first decoded frame does not hold ~1 s of model noise in front of the line; -45 dB + 80 ms keeps soft onsets ('Vous...', 'Te...': with 50 ms Whisper lost those words). postRollMs 80 (was 100) keeps every tail <= 120 ms.",
+  "preRollMs": 80,
+  "postRollMs": 80
+ },
+ "ttsOverride": {
+  "ab6bcdd8134d": {
+   "tts": "Hmm.",
+   "why": "Odile's 'Hum.': Kyutai reads the spelling 'Hum' as a word or garbage; 'Hmm.' gives a closed-mouth hum."
+  }
+ }
+}

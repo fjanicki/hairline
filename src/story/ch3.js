@@ -3,6 +3,7 @@ import { L } from './script.js';
 import { rhythm } from './minigames.js';
 import { PRESETS } from '../render/Mood.js';
 import { buildScene3, LAYOUT } from '../world/scenes/scene3.js';
+import { runSound, CH3_SOUNDS } from './ch3sound.js';
 
 // Ch3 "The Long Run" (flashback): three training blocks on the same dawn ring-road straight,
 // each a steady A/D cadence run with the weekly km climbing on the watch and a STRIDE "Rest"
@@ -42,7 +43,10 @@ const BLOCK_MOOD = [
   { skyTop: '#121d32', skyBottom: '#3c5574', fogColor: '#3d5573', fogDensity: 0.027, heightFog: 0.035, sunIntensity: 1.1, hemiIntensity: 0.82, envIntensity: 0.12, fillIntensity: 2.2, exposure: 0.97 },
   { skyTop: '#0a1120', skyBottom: '#243349', fogColor: '#243349', fogDensity: 0.03, heightFog: 0.03, sunColor: '#9db4d6', sunIntensity: 0.4, hemiSky: '#7f93b0', hemiIntensity: 0.6, envIntensity: 0.08, fillIntensity: 2.0, exposure: 0.95 },
 ];
-const BLOCK_RAIN = [0.35, 0.5, 0.4];
+// rain.ogg is ~12 dB hotter than the normalised recorded beds (Ch2 runs it at 0.22): x0.6 of the
+// first mix (0.35 / 0.5 / 0.4) keeps Week 20 the heaviest while the voice stays clear of it.
+const BLOCK_RAIN = [0.22, 0.3, 0.25];
+const RAIN_AFTER = 0.2; // after the crack, and the present (was 0.3)
 // Sunday: the haze has burnt off, a low sun straight down the course; vivid, a little too bright.
 const RACE_MOOD = {
   skyTop: '#2f5f9a', skyBottom: '#a6bfd4', fogColor: '#a3b8ca', fogDensity: 0.009, heightFog: 0.012,
@@ -71,6 +75,9 @@ async function run(ctx, d) {
   player.scripted = true;
   player.showPain = false;
   cam.follow(player.root, CAM_RUN);
+  // Recorded sound (ch3sound.js): steps, breath to the cadence, the weeks' beds, the race crowd, the crack.
+  const snd = runSound(ctx);
+  snd.week(0, 2.5);
 
   // ------------------------------------------------------------ the motor (one per-frame loop)
   // Moves Hugo and the race pack every frame; the minigame only sets the target speed and rate.
@@ -123,6 +130,7 @@ async function run(ctx, d) {
       M.raceT += dt;
       S.stepRunners?.(dt, p.z, M.v, M.raceT);
     }
+    snd.update(dt, { rate: M.rate, running: M.v > 0.35 });
   });
 
   // ------------------------------------------------------------ shared minigame plumbing
@@ -151,13 +159,7 @@ async function run(ctx, d) {
       warn: warn || s.mashing,
     });
   };
-  const step = (s, { limp = false } = {}) => {
-    if (limp) {
-      const bad = s.lastKey === 'KeyA';
-      quiet(audio.footstep('concrete', { volume: bad ? 0.4 : 0.3, rate: bad ? 0.8 : 1 }));
-      if (bad) audio.thud?.({ volume: 0.08 });
-    } else quiet(audio.footstep('concrete', { volume: s.auto ? 0.24 : 0.32, rate: 0.95 + Math.random() * 0.12 }));
-  };
+  const step = (s, { limp = false } = {}) => snd.step(s, { bad: limp && s.lastKey === 'KeyA' });
   /** The steady run. extra.onFrame(dt, s) runs after the shared work; extra.done(s) ends it. */
   const cadenceRun = (extra) =>
     rhythm(ctx, d, {
@@ -190,6 +192,7 @@ async function run(ctx, d) {
     painExtra = 0;
     mood.painOverride = painVis(basePain);
     quiet(audio.ambience('rain', true, { volume: BLOCK_RAIN[i], fade: 1.2 }));
+    snd.week(i);
   };
 
   const block = async (i) => {
@@ -225,12 +228,17 @@ async function run(ctx, d) {
     M.target = V_FLOOR;
     ui.watchBuzz(notif(wk.stride.prompt), 2.0);
     await d.wait(1.0);
+    // French voices: the week's last thought is said to the end before the menu (its reply is a
+    // dialogue, which would cut it), at most 5 s more. Never waits in English or with voices off.
+    let held = 0;
+    await d.until((dt) => !ui.thoughtSpeaking?.() || (held += dt) >= 5);
     const pick = await d.choose(wk.stride);
     const opt = wk.stride.options[typeof pick === 'number' ? pick : 0] || wk.stride.options[0];
     if (opt?.reply) await d.think(opt.reply);
   };
 
   const cutTo = async (setup, { card } = {}) => {
+    snd.hush(true); // the breath goes under with the picture
     await d.gate(ui.fade(1, 0.7, '#000'));
     ui.caption(null);
     ui.gauge(null);
@@ -241,6 +249,7 @@ async function run(ctx, d) {
       await d.card(card.lines, card.opts);
       M.on = true;
     } else await d.wait(0.35);
+    snd.hush(false);
     await d.gate(ui.fade(0, 0.9));
   };
 
@@ -254,6 +263,7 @@ async function run(ctx, d) {
   // Week 9 (the chapter preset and hope are already Week 9's).
   S.setBlock?.(0);
   mood.painOverride = painVis(basePain);
+  quiet(audio.ambience('rain', true, { volume: BLOCK_RAIN[0], fade: 1.2 })); // the Director started it at 0.35
   await block(0);
   // Week 20, Week 31.
   for (let i = 1; i < 3; i++) {
@@ -288,7 +298,7 @@ async function run(ctx, d) {
       S.crowd?.(0.6);
       ui.watch(fmtKm(29), { label: T.race.label, lap: fmtLap(29 * RACE_PACE), tick: false });
       quiet(audio.ambience('rain', true, { volume: 0.22, fade: 1.5 }));
-      quiet(audio.ambience('crowd', true, { volume: 0.55, fade: 1.5, lowpass: 1400 }));
+      snd.race(); // amb_marathon_crowd (0.55, lowpass 1400) in place of crowd.ogg
     },
     { card: { lines: T.sunday, opts: { big: true } } },
   );
@@ -296,11 +306,21 @@ async function run(ctx, d) {
   gaugeFrom = engine.now + CAPTION_SECS;
   let said30 = false;
   let said30b = false;
+  let pastB31 = 0; // seconds since the KM 31 board (the crack waits on a thought being said)
+  // Clapping at the boards: KM 29 is just ahead at the start; KM 30 and 31 swell from 6 m out.
+  snd.cheer();
+  const cheerAt = [B30 + 6, B31 + 6];
   await cadenceRun({
     onFrame: () => {
+      while (cheerAt.length && p.z <= cheerAt[0]) {
+        cheerAt.shift();
+        snd.cheer();
+      }
       const km = kmAt(p.z);
       ui.watch(fmtKm(km), { lap: fmtLap(km * RACE_PACE), tick: false });
-      if (!said30 && p.z <= B30) {
+      // "Thirty." as the board comes up (6 m out, with the clapping), so both KM 30 thoughts can be said
+      // before KM 31 when they are voiced.
+      if (!said30 && p.z <= B30 + 6) {
         said30 = true;
         story(T.race.thoughts.km30);
       }
@@ -308,8 +328,11 @@ async function run(ctx, d) {
         said30b = true;
         story(T.race.thoughts.km30plus);
       }
+      if (p.z <= B31) pastB31 += engine.rawDt || 0.016;
     },
-    done: () => p.z <= B31,
+    // KM 31. French voices: "...I was very proud of that." is said to the end first (at most 4 s, a few
+    // metres, past the board; mashing at full cadence can still clip its last word). English: at the board.
+    done: () => p.z <= B31 && (!ui.thoughtSpeaking?.() || pastB31 >= 4),
   });
   if (p.z > B31) p.z = B31; // skipped: the crack happens at KM 31 regardless
   ui.caption(null);
@@ -320,8 +343,11 @@ async function run(ctx, d) {
   const crackDist = M.dist;
   const kmLimp = () => 31 + (M.dist - crackDist) / LAYOUT.boardEvery;
   audio.cut();
+  // The cut takes the voice with it too: a thought still being said ("...not once") breaks off, so the
+  // snap is heard alone (the card's voiced lines follow).
+  ctx.voice?.stop('thought', 0.08);
   audio.tone({ freq: 6200, to: 5600, dur: 3.4, volume: 0.03, attack: 0.4 }); // a faint high whine (fx bus)
-  audio.snap({ volume: 0.3 }); // a pencil lead, inside a drawer
+  snd.crack(); // crack_pencil_lead: a pencil lead, inside a drawer (fallback: snap 0.3)
   M.hitch = 1;
   cam.dip(0.18);
   engine.timeScale = 0.6;
@@ -343,8 +369,8 @@ async function run(ctx, d) {
 
   // ------------------------------------------------------------ he keeps going
   audio.restore();
-  quiet(audio.ambience('crowd', true, { volume: 0.14, fade: 2.5, lowpass: 900 }));
-  quiet(audio.ambience('rain', true, { volume: 0.3, fade: 2.5 }));
+  snd.afterCrack(); // the crowd thin (0.14, lowpass 900), the breathing ragged
+  quiet(audio.ambience('rain', true, { volume: RAIN_AFTER, fade: 2.5 }));
   ui.objective(T.objectives.finish);
   M.target = V_LIMP;
   const limp0 = M.dist;
@@ -369,7 +395,7 @@ async function run(ctx, d) {
   });
   limping = false;
   ui.gauge(null);
-  quiet(audio.ambience('crowd', false, { fade: 1.4 }));
+  snd.finish(1.4); // crowd out, breath_tired over the black
   quiet(audio.ambience('rain', false, { fade: 1.4 }));
   await d.gate(ui.fade(1, 1.3, '#000'));
 
@@ -395,10 +421,11 @@ async function run(ctx, d) {
   });
   await d.wait(1.5);
   await d.say(T.doctor);
-  quiet(audio.ambience('rain', true, { volume: 0.3, fade: 3 })); // the present fades in under it
+  quiet(audio.ambience('rain', true, { volume: RAIN_AFTER, fade: 3 })); // the present fades in under it
   await d.wait(0.8);
   await d.say(T.present);
   await d.wait(0.8);
+  snd.stop(0.5);
   // The chapter ends on black; Ch4 fades in from it.
 }
 
@@ -414,7 +441,7 @@ export default {
   },
   music: null,
   ambience: ['rain'],
-  sounds: ['crowd'], // the race (preloaded with the chapter)
+  sounds: CH3_SOUNDS, // recorded sets (ch3sound.js; the marathon crowd replaces crowd.ogg)
   camera: { offset: CAM_RUN.offset, look: CAM_RUN.look, fov: 55, lerp: CAM_RUN.lerp },
   player: {
     spawn: [LAYOUT.trainX, LAYOUT.trainZ],

@@ -471,6 +471,8 @@ export class Player {
     this.jogging = false;
     this._lurch = 1;
     this.cam?.dip();
+    // The body takes the jolt (docs/assets/sfx.md, Ch1 "Stumble, pain"); the heartbeat stays procedural.
+    this.audio?.sfx?.('body_thud', { volume: 0.2, bus: 'bus', lowpass: 900, jitter: 0.04 });
     this.audio?.heartbeat();
     const line = this._nextStumbleLine();
     if (line) this.ui?.thought(line, 3.2);

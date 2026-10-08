@@ -1,0 +1,24 @@
+{
+ "about": "Pronunciation override map for the French voice bake. 'words': whole-word rewrites applied to the TTS text of every line by scripts/voice/extract-lines.mjs frTTS() (regex source + flags, in order). 'lines': a full TTS text for one clip key, applied by scripts/voice/generate.py tts_of() (wins over cast.json ttsOverride). Displayed text and clip keys never change; a changed TTS text changes the line's generation hash, so the next incremental run regenerates exactly the affected clips. 'heard' records what Whisper large-v3 transcribed from the clip when the entry was checked.",
+ "words": [
+  {"re": "\\bSTRIDE\\b", "flags": "g", "tts": "Straïde", "why": "brand, English /straɪd/; the spelling 'STRIDE' is read 'stride' or spelled out", "heard": "Straïde / Stride (8d5fdf76ffdb)"},
+  {"re": "\\bO, P, E, N\\b", "flags": "g", "tts": "O, pé, eu, enne", "why": "letters spelled the French way"},
+  {"re": "\\bOPEN\\b", "flags": "g", "tts": "opène", "why": "the English sign word as a French speaker says it", "heard": "open (e507b58b720e)"},
+  {"re": "\\bH\\.R\\.", "flags": "g", "tts": "H. R.", "why": "initials: separate the letters so they are read 'ache, erre' (no voiced line uses them today: only the sign and notebook)"},
+  {"re": "\\bInes\\b", "flags": "g", "tts": "Inès", "why": "the name is /i.nɛs/; 'Ines' without accent is read /in/"},
+  {"re": "\\bzhhh\\b", "flags": "g", "tts": "zzzh", "why": "Sami's imitation of the rubbing wheel"}
+ ],
+ "lines": {},
+ "checkedOk": {
+  "Revel": "'monsieur Revel' heard as 'révèle' (d84525bbed03, 94744b140f5f): the /ʁəvɛl/ reading; no override",
+  "Odile": "heard 'Odile' in all 4 lines",
+  "Marchal": "heard 'Marshall' = /maʁʃal/ (2594ff269563); takes that said 'marcha les' were rejected",
+  "Okafor": "heard 'Okafor' in all 3 lines",
+  "Sami": "heard 'Samy' (same sound) in both lines",
+  "Bastien": "heard 'Bastien' (afedbc2aa958)",
+  "Benali": "no voiced line says the name (only the 'who' label)",
+  "Tanneurs": "only in ending cards and signs (not voiced)",
+  "H. R.": "only on signs / notebook (not voiced)",
+  "numbers": "all spelled out in the TTS text by frTTS(); Whisper hears the right values ('quatre-vingt-un et demi', 'deux cent douze virgule quatre', 'trente-sept')"
+ }
+}

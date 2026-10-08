@@ -8,6 +8,7 @@ import { addLamp, addBench, addDumpster, addCables, addAwning, buildTowerFrame }
 import { streetMaterials } from './scene2/materials.js';
 import { splashes, stream, steam } from './scene2/fx.js';
 import { bakeryWindow } from './scene2/bakery.js';
+import { streetHums } from './scene2/sound.js';
 
 // Rue des Tanneurs. Built for Ch2 ("Never Stop": late evening, rain) and Ch5 ("The Wall": day,
 // then golden hour) from one STREET CONTRACT (docs/DESIGN.md):
@@ -1620,6 +1621,16 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
   let flickCone = undefined; // core light cone under the flickering lamp (found after the build)
   let flickConeBase = 0;
   const _hp = new THREE.Vector3();
+  // Recorded hums at the lights (evening only; scene2/sound.js): each follows its light's flicker.
+  const hum = evening
+    ? streetHums(ctx, {
+        tube: [FRONT_X - 0.4, 2.6, -22.8],
+        neon: [-FRONT_X + 0.72, 3.48, -32.5],
+        lamp: flickerLight ? flickerLight.position.toArray() : null,
+        drips: awning.gap,
+      })
+    : null;
+  const humGain = { tube: 1, neon: 1, lamp: 1 };
   /** 1 - FogExp2 factor at world point p (1 = clear, 0 = fully fogged). */
   const fogVis = (p) => {
     const dens = ctx.scene.fog?.density || 0;
@@ -1676,6 +1687,7 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     if (flickerLight) {
       const f = flick('lampFlick', 'lampNext', 2.5, 6.5, 0.4, 1.2, raw) ? (Math.sin(state.t * 31) > -0.1 ? 0.85 : 0.15) : 1;
       flickerLight.intensity = flickerLight.userData.base * f;
+      humGain.lamp = f;
       flickGlass.color.setScalar(0.12 + 0.88 * f);
       if (flickCone === undefined && result.lightCones) {
         flickCone = result.lightCones.find((c) => c.userData.light === flickerLight) || null;
@@ -1687,6 +1699,7 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
     if (neonMat) {
       const off = evening && flick('neonFlick', 'neonNext', 3, 7, 0.05, 0.22, raw) && Math.sin(state.t * 60) > 0;
       neonMat.color.setScalar(off ? state.neonBase * 0.15 : state.neonBase);
+      humGain.neon = off ? 0.15 : 1;
       if (neonLight) neonLight.intensity = off ? 0.6 : state.neonLightBase;
     }
     // The doorway tube: stutters, and buzzes when you're near.
@@ -1695,6 +1708,7 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       const k = on ? (Math.sin(state.t * 53) > 0.3 ? 1 : 0.08) : 1;
       tubeMat.color.copy(tubeBase).multiplyScalar(k);
       if (tubeLight) tubeLight.intensity = 5 * k;
+      humGain.tube = k > 0.5 ? 1 : 0.1; // the hum drops out with the stutter (the ticks below are the strike)
       if (on && state.t > state.buzzAt) {
         state.buzzAt = state.t + 0.45;
         const p = ctx.player?.root?.position;
@@ -1702,6 +1716,7 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
         if (d < 9) ctx.audio?.tone({ freq: 120, to: 118, dur: 0.3, type: 'sawtooth', volume: 0.028 * (1 - d / 9) });
       }
     }
+    hum?.update(humGain);
     // The tower wobbles when Hugo fidgets (and creaks a hair on its own).
     if (tower) {
       wob.t += raw;
@@ -1760,7 +1775,12 @@ export async function buildScene2(ctx, { variant = 'evening' } = {}) {
       state.rainUser = clamp01(v);
     },
     update,
+    /** Stop the scene's recorded hums (the chapter's last cut; releaseChapter stops them anyway). */
+    stopSound(fade = 0.3) {
+      hum?.stop(fade);
+    },
     dispose() {
+      hum?.stop(0.1);
       env.dispose();
     },
   };

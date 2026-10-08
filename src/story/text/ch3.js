@@ -6,7 +6,7 @@ export default {
   title: 'The Long Run',
   signs: { bakery: 'BOULANGERIE' },
   objectives: { run: 'Keep it steady.', finish: 'Finish.' },
-  keys: { both: '[A / D]', a: '[A]', d: '[D]' },
+  keys: { both: '[{KeyA} / {KeyD}]', a: '[{KeyA}]', d: '[{KeyD}]' }, // layout-aware tokens
   gauge: { label: 'CADENCE', unit: 'spm', scale: 60 },
 
   // Non-blocking feedback from minigames.rhythm.
@@ -26,7 +26,8 @@ export default {
       total: 104.2,
       thoughts: {
         15: "Cycling was other people's races. This one's mine. Every metre of it.",
-        45: 'Only other light on at this hour is the bakery. I beat it every morning.',
+        33: "At fifteen I built my own wheels. I could hear a slack spoke from the kitchen.",
+        55: 'Only other light on at this hour is the bakery. I beat it every morning.',
       },
       stride: {
         prompt: 'STRIDE: Six days in a row! Recovery is part of training. Take a rest day?',

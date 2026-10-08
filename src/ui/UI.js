@@ -1,5 +1,6 @@
 import './style.css';
 import { LANGS, getLang, setLang, onLangChange, retext, english, num } from '../story/i18n.js';
+import { label } from '../core/KeyLabels.js';
 
 // All DOM is created here. Every blocking element (dialogue, choices, card, driveRing)
 // returns a Promise and has a matching skip*/cancel* method used by Director.skip().
@@ -89,6 +90,12 @@ export class UI {
     this._chapterPrompt = null;
     this._spotText = null;
     this.audio = null; // set by main (watch buzz, pencil scratch)
+    // French voice-over (core/Voice.js, set by main): dialogue / card lines and thoughts call voice.play().
+    // A thought that arrives while a voiced thought is still being said waits in _voiceQueue (max 2).
+    this.voice = null;
+    this.autoAdvance = false; // debug/tests: advance dialogue lines by themselves (never before the clip ends)
+    this._thoughtClip = null;
+    this._voiceQueue = [];
     this._watch = { face: null, label: null, lap: null, over: false, shown: false, count: null, buzzUntil: 0 };
     this._nb = { entries: [], shown: false, open: false };
     this._gauge = null;
@@ -161,11 +168,12 @@ export class UI {
     this.watchEl.querySelector('.ntitle').textContent = this.L.names.stride;
     this.thoughtEl = el('div', 'thought', r);
     this.chapterEl = el('div', 'chapter-title', r, '<div class="num"></div><div class="name"></div>');
-    this.dialogueEl = el('div', 'dialogue', r, '<div class="who"></div><div class="text"></div><div class="next">E ▸</div>');
+    this.dialogueEl = el('div', 'dialogue', r, '<div class="who"></div><div class="text"></div><div class="next"></div>');
     this.dialogueEl.id = 'dialogue';
     this.whoEl = this.dialogueEl.querySelector('.who');
     this.textEl = this.dialogueEl.querySelector('.text');
     this.nextEl = this.dialogueEl.querySelector('.next');
+    this.nextEl.textContent = this.L.ui.next;
     this.choicesEl = el('div', 'choices', r);
     this.choicesEl.id = 'choices';
     this.cardEl = el('div', 'ui-layer card', r);
@@ -255,13 +263,14 @@ export class UI {
     return btns;
   }
 
-  /** The Options rows: language, then graphics quality (when given). */
+  /** The Options rows: language, voices, then graphics quality (when given). */
   _optionsRows(parent, quality) {
     const O = this.L.options;
     const P = this.L.pause;
     const lang = el('div', 'quality', parent);
     el('span', 'quality-label', lang, esc(O.language));
     this._langButtons(lang);
+    if (this.voice) this._voiceRow(parent);
     if (quality?.tiers?.length) {
       const row = el('div', 'quality', parent);
       el('span', 'quality-label', row, esc(P.quality));
@@ -275,6 +284,34 @@ export class UI {
         return b;
       });
       for (const x of btns) x.classList.toggle('on', x.dataset.tier === quality.get());
+    }
+  }
+
+  /**
+   * Voices on/off (saved by Voice). Voices are French only: in another language the row is greyed,
+   * its buttons disabled, with a short note. Re-rendered by _relang with the rest of the panel.
+   */
+  _voiceRow(parent) {
+    const O = this.L.options;
+    const V = this.voice;
+    const ok = V.supported;
+    const row = el('div', 'quality voices', parent);
+    el('span', 'quality-label', row, esc(O.voices));
+    const btns = [true, false].map((on) => {
+      const b = el('button', 'quality-opt', row, esc(on ? O.voicesOn : O.voicesOff));
+      b.dataset.voices = on ? 'on' : 'off';
+      b.disabled = !ok;
+      b.classList.toggle('on', V.enabled === on); // greyed in English, but the saved choice still shows
+      b.addEventListener('click', () => {
+        V.setEnabled(on);
+        for (const x of btns) x.classList.toggle('on', (x.dataset.voices === 'on') === V.enabled);
+      });
+      return b;
+    });
+    if (!ok) {
+      for (const b of btns) Object.assign(b.style, { opacity: '0.4', cursor: 'default', pointerEvents: 'none' });
+      const note = el('span', 'quality-note', row, esc(O.voicesNote));
+      Object.assign(note.style, { fontSize: '12px', fontStyle: 'italic', color: 'var(--ink-faint)', marginLeft: '6px' });
     }
   }
 
@@ -357,7 +394,7 @@ export class UI {
     lines.forEach((l) => this._log(l));
     if (color) c.style.color = color;
     else c.style.color = '';
-    if (skippable && !this.skipCards) el('div', 'skip', c, 'E ▸');
+    if (skippable && !this.skipCards) el('div', 'skip', c, esc(this.L.ui.next));
     c.classList.remove('hidden');
     requestAnimationFrame(() => c.classList.add('show'));
     const lineEls = [...c.querySelectorAll('.line')];
@@ -373,6 +410,9 @@ export class UI {
         opened: performance.now(),
         skippable,
         resolve,
+        lines, // voiced card lines (Ch3 crack): each says its clip before the next appears
+        clip: null,
+        quietAt: 0,
       };
     });
   }
@@ -381,6 +421,7 @@ export class UI {
     const k = this._card;
     if (!k || !k.skippable || performance.now() - k.opened < 250) return;
     if (k.shown < k.lineEls.length) {
+      k.clip?.stop();
       k.lineEls.forEach((e) => e.classList.add('show'));
       k.shown = k.lineEls.length;
       k.doneAt = k.t + Math.min(k.hold, 1.2);
@@ -392,6 +433,7 @@ export class UI {
     const k = this._card;
     if (!k) return;
     this._card = null;
+    k.clip?.stop();
     this.cardEl.classList.remove('show');
     if (immediate) this.cardEl.classList.add('hidden');
     else setTimeout(() => !this._card && this.cardEl.classList.add('hidden'), 650);
@@ -412,13 +454,20 @@ export class UI {
       this._advanceCard();
       if (!this._card) return;
     }
-    while (k.shown < k.lineEls.length && k.t >= k.nextAt) {
-      k.lineEls[k.shown++].classList.add('show');
+    if (k.clip?.busy) k.quietAt = k.t + 0.25; // a line being said holds the next one (and the close)
+    while (k.shown < k.lineEls.length && k.t >= k.nextAt && k.t >= k.quietAt) {
+      const i = k.shown++;
+      k.lineEls[i].classList.add('show');
       k.nextAt = k.t + k.lineDelay;
+      k.clip = this.voice?.play(k.lines[i], this.L.names?.hugo, { kind: 'dialogue' }) || null;
+      if (k.clip) {
+        k.quietAt = k.t + k.clip.remaining() + 0.25;
+        break;
+      }
     }
     if (k.shown >= k.lineEls.length) {
       if (k.doneAt === null) k.doneAt = k.t + k.hold;
-      if (k.t >= k.doneAt) this._closeCard();
+      if (k.t >= k.doneAt && k.t >= k.quietAt) this._closeCard();
     }
   }
 
@@ -450,6 +499,8 @@ export class UI {
         if (!lines.length || token.cancelled) return resolve();
         this._dialogue = { lines, i: -1, n: 0, len: 0, segs: null, typing: false, guardUntil: 0, resolve, token };
         this.thoughtEl.classList.remove('show'); // a dialogue replaces any thought in the lower third
+        this._thoughtClip?.stop(0.06); // ... and interrupts its voice
+        this.voice?.hold(true); // the beds stay ducked between its lines
         this.dialogueEl.classList.add('show');
         this._nextLine();
       });
@@ -485,6 +536,20 @@ export class UI {
     d.guardUntil = performance.now() + (d.i === 0 ? 150 : 120);
     this.textEl.innerHTML = '';
     this.nextEl.classList.remove('show');
+    // Voice: the previous line's clip stops (E moved on), this one starts; the next two decode ahead.
+    d.clip?.stop();
+    d.clip = null;
+    d.typedAt = 0;
+    d.clipEndAt = 0;
+    const V = this.voice;
+    if (V?.active) {
+      const vw = (l) => (l.inner && !l.who ? this.L.names?.hugo : l.who);
+      const clip = (d.clip = V.play(line.text, vw(line), { kind: 'dialogue' }));
+      clip?.ended.then(() => {
+        if (d.clip === clip) d.clipEndAt = performance.now();
+      });
+      V.ahead(d.lines.slice(d.i + 1, d.i + 3).map((l) => ({ text: l.text, who: vw(l) })));
+    }
   }
 
   _advanceDialogue() {
@@ -503,6 +568,8 @@ export class UI {
     const d = this._dialogue;
     if (!d) return;
     this._dialogue = null;
+    d.clip?.stop();
+    this.voice?.hold(false);
     this.dialogueEl.classList.remove('show', 'inner', 'voicemail');
     d.resolve();
     const pt = this._pendingThought;
@@ -530,6 +597,14 @@ export class UI {
         d.typing = false;
         this.nextEl.classList.add('show');
       }
+    }
+    // Debug/tests only (autoAdvance): a line moves on by itself once typed, read, and, if voiced, said
+    // to the end + 250 ms. In play only E / click advance; they stop the clip at once.
+    if (this.autoAdvance && !d.typing) {
+      const now = performance.now();
+      d.typedAt ||= now;
+      const said = !d.clip || (!d.clip.busy && now >= d.clipEndAt + 250);
+      if (said && now >= d.typedAt + (d.clip ? 0 : 900)) this._nextLine();
     }
   }
 
@@ -619,7 +694,7 @@ export class UI {
   }
 
   _spotPrompt(text) {
-    const t = text ? `[E] ${text}` : null;
+    const t = text ? `[${label('KeyE')}] ${text}` : null; // follows the keyboard layout
     if (t === this._spotText) return;
     this._spotText = t;
     this._renderPrompt();
@@ -649,13 +724,28 @@ export class UI {
   /**
    * Non-blocking line in the lower third. Without `who` it is an italic inner thought; with `who`
    * ('Odile', 'Sami', ...) it is a spoken bark with a speaker label in that speaker's colour.
-   * opts: { who }
+   * opts: { who, replace } - replace: a newer line from the same `who` (a radio station as the dial
+   * moves) cuts the one being said and drops its waiting lines instead of queueing behind them.
+   * Returns the voice clip (French, voices on) or null.
    */
-  thought(text, secs = 3.5, { who } = {}) {
+  thought(text, secs = 3.5, { who, replace = false } = {}) {
     // Never on top of an open dialogue (same lower third): hold it until the dialogue closes.
     if (this._dialogue) {
-      this._pendingThought = [text, secs, { who }];
-      return;
+      this._pendingThought = [text, secs, { who, replace }];
+      return null;
+    }
+    if (replace && (this._thought?.who ?? null) === (who ?? null)) {
+      this._voiceQueue = this._voiceQueue.filter((x) => (x.who ?? null) !== (who ?? null));
+      if (this._thoughtClip?.busy) this._thoughtClip.stop(0.12);
+    }
+    // Never over a voiced thought still being said: wait for it (the newest two wait; older ones drop).
+    if (this._thoughtClip?.busy) {
+      const q = this._voiceQueue;
+      if (!q.some((x) => x.text === text) && this._thought?.text !== text) {
+        q.push({ text, secs, who, at: performance.now() });
+        if (q.length > 2) q.shift();
+      }
+      return null;
     }
     const e = this.thoughtEl;
     this._thought = { text, who };
@@ -663,7 +753,48 @@ export class UI {
     this._log(text);
     this._renderThought();
     e.classList.add('show');
-    this._later(secs, () => e.classList.remove('show'), 'thought');
+    // Voice: stays up at least the clip's length + 0.4 s (a dialogue clip playing means no clip here).
+    this._thoughtClip?.stop();
+    const clip = (this._thoughtClip = this.voice?.play(text, who || this.L.names?.hugo, { kind: 'thought' }) || null);
+    if (clip) {
+      secs = Math.max(secs, clip.dur + 0.4);
+      clip.ended.then(() => clip === this._thoughtClip && (this._thoughtSaidAt = performance.now()));
+    }
+    let holds = 0;
+    const hide = () => {
+      // Still loading or saying it (a late decode): hold on until it has been said (a few times at most).
+      if (clip && clip === this._thoughtClip && clip.busy && holds++ < 4) {
+        return this._later(Math.max(0.1, clip.remaining()) + 0.4, hide, 'thought');
+      }
+      e.classList.remove('show');
+    };
+    this._later(secs, hide, 'thought');
+    return clip;
+  }
+
+  /** A voiced thought is being said or waits to be (never true in English or with voices off). */
+  thoughtSpeaking() {
+    return !!this._thoughtClip?.busy || this._voiceQueue.length > 0;
+  }
+
+  /** Per frame: show the next waiting thought once the voiced one before it has been said. */
+  _updateVoiceQueue() {
+    const q = this._voiceQueue;
+    const now = performance.now();
+    const dt = now - (this._vqT || now);
+    this._vqT = now;
+    if (!q.length) return;
+    // A waiting line ages only while it waits on another voiced thought: time under a dialogue or a
+    // card does not count (it is shown once they close, as in English where it was up before them).
+    if (this._dialogue || this._card) {
+      for (const x of q) x.at += dt;
+      return;
+    }
+    if (this._thoughtClip?.busy) return;
+    if (this._thoughtClip && now < (this._thoughtSaidAt || 0) + 400) return; // the said line stays up 0.4 s
+    while (q.length && now - q[0].at > 6000) q.shift(); // stale
+    const n = q.shift();
+    if (n) this.thought(n.text, n.secs, { who: n.who });
   }
 
   _renderThought() {
@@ -898,7 +1029,7 @@ export class UI {
     n.entries = entries.map((x) => (typeof x === 'string' ? { text: x } : { ...x }));
     this._nbRender();
     this._nbShow();
-    this._nbDock();
+    this._nbDock(true);
   }
 
   /** Rebuild the rows from the entries (no write-on animation). */
@@ -936,6 +1067,17 @@ export class UI {
     for (let t = 0; t < secs; t += 0.11) a.noise({ type: 'highpass', freq: 3800, q: 0.6, dur: 0.05, volume: 0.035, tail: 0.03, delay: t });
   }
 
+  /**
+   * Notebook foley (docs/assets/sfx.md, Global): the recorded pencil, eraser and exercise book on fx
+   * (loaded with Ch4 / Ch5's `sounds`). `scratch` (secs): the procedural pencil ticks when the file is
+   * missing or not decoded yet; 0 = silent then. Returns the sfx handle or null.
+   */
+  _nbSound(name, opts = {}, scratch = 0) {
+    const a = this.audio;
+    if (!a?.sfx) return scratch ? this._nbScratch(scratch) : null;
+    return a.sfx(name, { bus: 'fx', jitter: 0.05, ...opts, fallback: scratch ? () => this._nbScratch(scratch) : false });
+  }
+
   /** Write a new line (animated). Opens the notebook for 3 s. Returns a Promise (~0.8 s). */
   _nbAdd(text, { hand = 'hugo' } = {}) {
     const it = { text, hand };
@@ -945,7 +1087,8 @@ export class UI {
     this.nbList.appendChild(li);
     this._nbShow();
     this._nbOpen(3.2);
-    this._nbScratch(0.7);
+    // Sami's "Teech." is slower and heavier (rate 0.85); Hugo's entries 0.9-1.1.
+    this._nbSound('pencil_write', hand === 'sami' ? { volume: 0.35, rate: 0.85, jitter: 0.02 } : { volume: 0.35, jitter: 0.1 }, 0.7);
     return new Promise((r) => this._later(0.9, r));
   }
 
@@ -962,7 +1105,11 @@ export class UI {
     }
     this._nbShow();
     this._nbOpen(3);
-    this._nbScratch(on ? 0.4 : 0.25);
+    if (on) {
+      // A quick pencil line through it: the start of the writing take, faster, cut short.
+      const h = this._nbSound('pencil_write', { volume: 0.3, rate: 1.25, jitter: 0.05 }, 0.4);
+      if (h?.stop) this._later(0.45, () => h.stop(0.12));
+    } else this._nbSound('pencil_erase', { volume: 0.35, alt: 'pencil_erase_alt' }, 0.25); // the eraser lifts it
     return new Promise((r) => this._later(0.7, r));
   }
 
@@ -981,7 +1128,7 @@ export class UI {
     }
     this._nbShow();
     this._nbOpen(3);
-    this._nbScratch(0.5);
+    if (note) this._nbSound('pencil_write', { volume: 0.32, rate: 1.05, jitter: 0.05 }, 0.5);
     return new Promise((r) => this._later(0.8, r));
   }
 
@@ -993,13 +1140,19 @@ export class UI {
   /** Open the notebook full size for `secs` (0 = until dock()), then dock it top-right. */
   _nbOpen(secs = 3) {
     this._nbShow();
+    if (!this._nb.open) {
+      // Docked -> full size: the book opens, a page turns.
+      this._nbSound('notebook_open', { volume: 0.35 });
+      this._nbSound('page_flip', { volume: 0.3, delay: 0.08 });
+    }
     this._nb.open = true;
     this.notebookEl.classList.add('open');
     if (secs > 0 && Number.isFinite(secs)) this._later(secs, () => this._nbDock(), 'nb-dock');
     else this._timers = this._timers.filter((t) => t.key !== 'nb-dock');
   }
 
-  _nbDock() {
+  _nbDock(quiet = false) {
+    if (this._nb.open && !quiet) this._nbSound('notebook_close', { volume: 0.3 }); // full size -> docked
     this._nb.open = false;
     this._timers = this._timers.filter((t) => t.key !== 'nb-dock');
     this.notebookEl.classList.remove('open');
@@ -1008,7 +1161,7 @@ export class UI {
   /** Hide the notebook (entries are kept; set(null) clears them). */
   _nbHide() {
     this._nb.shown = false;
-    this._nbDock();
+    this._nbDock(true);
     this.notebookEl.classList.remove('show');
   }
 
@@ -1272,6 +1425,8 @@ export class UI {
     this.hintEl.classList.remove('show');
     this.thoughtEl.classList.remove('show');
     this._pendingThought = null;
+    this._thoughtClip?.stop();
+    this._voiceQueue.length = 0;
   }
 
   // ------------------------------------------------------------- language
@@ -1289,6 +1444,9 @@ export class UI {
     const L = this.L;
     const $ = (sel, root = this.root) => root.querySelector(sel);
     $('.label', this.painEl).textContent = L.ui.pain;
+    this.nextEl.textContent = L.ui.next;
+    const skip = $('.skip', this.cardEl);
+    if (skip) skip.textContent = L.ui.next;
     $('.nb-head', this.notebookEl).textContent = L.notebook?.heading || '';
     $('.mark', this.loadingEl).textContent = L.title?.name || '';
     if (this._title) this._renderTitle();
@@ -1315,6 +1473,7 @@ export class UI {
     }
     const pt = this._pendingThought;
     if (pt) this._pendingThought = [retext(pt[0]), pt[1], { who: retext(pt[2]?.who) }];
+    for (const q of this._voiceQueue) Object.assign(q, { text: retext(q.text), who: retext(q.who) });
     const cap = $('.text', this.captionEl);
     cap.textContent = retext(cap.textContent);
     if (this._banner) {
@@ -1396,6 +1555,7 @@ export class UI {
     this._updateCard(raw);
     this._updateChoices();
     this._updateDialogue(raw);
+    this._updateVoiceQueue();
     this._updateDrive(raw);
     this._updateWatch(raw);
   }

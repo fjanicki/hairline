@@ -1,0 +1,592 @@
+{
+ "_doc": "Sounds for HAIRLINE that no CC0 / BBC archive source covered well, generated locally by scripts/sfx/generate.py (TangoFlux; see docs/assets/sfx.md, 'Generated'). Per item: prompt (+ optional negative_prompt, else negative_prompt_default), duration, loop, variants, cat (the loudness category in recipes.json), cue, and recipe (the catalogue fields what/ch/replaces/bus and any build.py overrides). generate.py makes the takes, scores and picks them, writes .cache/sfx/dl/gen/<name>_NN.wav and scripts/sfx/recipes-gen.json, and build.py builds them like the recorded set. extra_takes adds seeds for low-yield items; exclude ({take: reason}) vetoes takes that QA (scripts/sfx/qa.py, listening) rejected. Items whose first prompt gave few usable takes were rephrased as short AudioCaps-style captions (the style TangoFlux was trained on); the first wording is kept as prompt_v1 and its takes in .cache/sfx/gen/takes-v1/.",
+ "negative_prompt_default": "music, melody, speech, voices, singing, low quality, distorted, clipping, reverb tail too long, background noise, hiss",
+ "items": [
+  {
+   "name": "phone_vibrate_table",
+   "prompt": "close-up mobile phone vibrating on a wooden coffee table, two short buzzes, the phone rattles against the wood, quiet room, dry",
+   "duration": 1.6,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch1 phone hotspot (12 unread) and the notification buzz before it; new",
+   "recipe": {
+    "what": "Phone vibrating on the wooden coffee table: two buzzes, rattling against the wood",
+    "ch": "Ch1 phone hotspot (12 unread) and the notification before it",
+    "replaces": "new",
+    "bus": "fx, volume 0.45"
+   },
+   "exclude": {
+    "s79103.wav": "QA: steady hiss with one blip at 2.3 s, no vibration (the shipped _02 was the hiss raised 26 dB)",
+    "s79108.wav": "QA: a single blip after 1.3 s of hiss, no vibration"
+   },
+   "extra_takes": 8
+  },
+  {
+   "name": "watch_buzz_wrist",
+   "prompt": "A cell phone vibrates twice with a short low buzzing hum, muffled",
+   "duration": 0.8,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "every ui.watchBuzz (Ch1 TIME TO MOVE, Ch2 PAUSE?, Ch4 ROWING DETECTED, Ch4 3 hr 12 min, Ch5 last menu); replaces audio.buzz() (keep the HUD shake as the twin)",
+   "recipe": {
+    "what": "Smartwatch haptic buzz on the wrist, close and muffled",
+    "ch": "Every ui.watchBuzz (Ch1 TIME TO MOVE, Ch2 PAUSE?, Ch4 ROWING DETECTED / 3 hr 12 min, Ch5 last menu)",
+    "replaces": "audio.buzz() (keep the HUD shake as the twin)",
+    "bus": "not used: one weak take; keep the procedural buzz()"
+   },
+   "prompt_v1": "smartwatch haptic vibration on a wrist, two short low buzzes, very close, muffled by skin, dry, no beep",
+   "extra_takes": 6
+  },
+  {
+   "name": "tv_crt_off",
+   "prompt": "old CRT television switched off: a power button click, a short electrical thump and a fading high-pitched whine, small living room, close",
+   "duration": 1.6,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch1 TV hotspot: E turns it off and the key light dies; new",
+   "recipe": {
+    "what": "CRT television switched off: button click, thump, fading whine",
+    "ch": "Ch1 TV hotspot: E turns it off and the key light dies",
+    "replaces": "new (cut tv_race_bed at the same moment)",
+    "bus": "fx, volume 0.45"
+   }
+  },
+  {
+   "name": "boot_step_wood",
+   "prompt": "A single heavy clumping footstep of a plastic boot on a creaky wooden floor",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 6,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch1 flat and Ch4 workshop: the boot (bad leg) step; replaces footstep('concrete', rate 0.72) + thud in Player._steps when footsteps==='boot' indoors",
+   "recipe": {
+    "what": "Walking-boot step on old floorboards: flat plastic clump, slight creak",
+    "ch": "Ch1 flat and Ch4 workshop: the bad-leg step",
+    "replaces": "footstep('concrete', rate 0.72) + thud in Player._steps when footsteps==='boot' indoors",
+    "bus": "bus, volume 0.35, +-4% rate; alternate with step_wood for the good foot"
+   },
+   "prompt_v1": "heavy plastic medical walking boot stepping on old wooden floorboards, one flat clumping step, a slight creak, indoors, close, dry",
+   "extra_takes": 6,
+   "exclude": {
+    "s11987.wav": "QA: 0.14 s click, peak-limited 7.5 dB under target, CLAP 0.01 to its catalogue description"
+   }
+  },
+  {
+   "name": "boot_step_wet",
+   "prompt": "A single heavy clumping footstep of a plastic boot splashing on wet pavement",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 6,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch2 and Ch5 street: the boot step outdoors; same replacement as above",
+   "recipe": {
+    "what": "Walking-boot step on wet asphalt: flat clump with a small splash",
+    "ch": "Ch2 and Ch5 street: the bad-leg step outdoors",
+    "replaces": "footstep('concrete', rate 0.72) + thud outdoors",
+    "bus": "bus, volume 0.35, +-4% rate"
+   },
+   "prompt_v1": "heavy plastic medical walking boot stepping on wet asphalt pavement at night, one flat clumping step with a small splash, outdoors, close",
+   "extra_takes": 6
+  },
+  {
+   "name": "run_step_wet",
+   "prompt": "single running shoe footstep on wet asphalt road, light splash, early morning, outdoors, close, dry, one step",
+   "duration": 0.4,
+   "loop": false,
+   "variants": 8,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch3 rhythm: one per A/D press in the rain weeks (Week 20 heavier); run_step (dry pavement) stays for Week 9",
+   "recipe": {
+    "what": "Running-shoe step on a wet road, light splash",
+    "ch": "Ch3 rhythm, rain weeks (Week 20 heavier: volume up, rate 0.92)",
+    "replaces": "footstep('concrete') in the Ch3 rhythm (run_step stays for Week 9)",
+    "bus": "bus, volume 0.3, +-6% rate"
+   },
+   "extra_takes": 4,
+   "exclude": {
+    "s63047.wav": "QA: 0.14 s fragment, CLAP -0.06 to its catalogue description (ranked 58 of 85)"
+   }
+  },
+  {
+   "name": "breath_run_loop",
+   "prompt": "A man breathes heavily and rhythmically while jogging",
+   "duration": 12,
+   "loop": true,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch3 run: under the steps, gain follows cadence (louder and rougher when mashing, ragged after the crack); new",
+   "negative_prompt": "music, melody, speech, singing, footsteps, low quality, distorted, clipping, background noise, hiss",
+   "recipe": {
+    "what": "Runner's steady mouth breathing at cadence (loop)",
+    "ch": "Ch3 run: under the steps, gain follows cadence; ragged after the crack (rate 1.1, more gain)",
+    "replaces": "new",
+    "bus": "bus, volume 0.15-0.35 from cadence; playbackRate 0.95-1.1"
+   },
+   "prompt_v1": "male long-distance runner breathing steadily while running, rhythmic in-out through the mouth at about 170 steps per minute, controlled, close microphone, no footsteps, outdoors at dawn",
+   "extra_takes": 4
+  },
+  {
+   "name": "crack_pencil_lead",
+   "prompt": "tiny dry snap of a pencil lead breaking inside a closed wooden drawer, very small, muffled, intimate, no reverb",
+   "duration": 0.5,
+   "loop": false,
+   "variants": 4,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch3 KM 31 [crack]: replaces audio.snap() ('like a pencil lead going, somewhere inside a drawer'); keep the tone() whine; plays on fx through cut()",
+   "recipe": {
+    "what": "Tiny dry snap, like a pencil lead breaking inside a drawer",
+    "ch": "Ch3 KM 31 [crack]",
+    "replaces": "audio.snap() (keep the tone() whine); plays on fx through cut()",
+    "bus": "fx, volume 0.5, lowpass 3 kHz for the 'inside a drawer' distance"
+   }
+  },
+  {
+   "name": "fluoro_flicker",
+   "prompt": "failing fluorescent tube light flickering: ballast buzz stuttering on and off, a starter click and a glassy tink as it strikes back, kitchen at night",
+   "duration": 1.5,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch1 tube stutter every 6-9 s, Ch4 Day 5 flicker; replaces the bandpass 120 Hz noise burst + tick in scene1.js / scene4/lights.js (fluoro_hum is the steady part)",
+   "recipe": {
+    "what": "Failing fluorescent tube: ballast buzz stuttering, starter click, glassy tink as it strikes",
+    "ch": "Ch1 tube stutter every 6-9 s; Ch4 Day 5 flicker",
+    "replaces": "the bandpass 120 Hz noise burst + tick in scene1.js / scene4/lights.js (fluoro_hum stays the steady part)",
+    "bus": "bus, volume 0.2, distance gain with the tube"
+   }
+  },
+  {
+   "name": "club_pass_wet",
+   "prompt": "group of five joggers running past on a wet street at night, splashing footsteps approaching from behind and fading away, one says nothing, light breathing, rain, outdoors",
+   "duration": 9,
+   "loop": false,
+   "variants": 2,
+   "cat": "event_peaky",
+   "ch": 2,
+   "cue": "Ch2 run club in the rain (club_pass from BBC is dry country road); Ch5 keeps club_pass",
+   "recipe": {
+    "what": "Group of runners splashing past on a wet street at night, approach and fade",
+    "ch": "Ch2 run club in the rain (Ch5 keeps club_pass)",
+    "replaces": "the per-runner footstep() loop in ch2.js",
+    "bus": "bus, volume 0.5; StereoPanner swept +Z to -Z over the pass"
+   }
+  },
+  {
+   "name": "paint_lid_open",
+   "prompt": "prying the metal lid off a paint tin with a screwdriver, a pop and a light metallic scrape, workshop, close",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch4 Day 8 mixer start (five tins opened) and Ch5 Hugo's panel; new",
+   "recipe": {
+    "what": "Paint-tin lid prised off with a screwdriver: pop and light scrape",
+    "ch": "Ch4 Day 8 mixer start (five tins), Ch5 Hugo's panel",
+    "replaces": "new",
+    "bus": "fx, volume 0.5 (peaky: up to 9 dB under target)"
+   }
+  },
+  {
+   "name": "paint_stir_loop",
+   "prompt": "wooden stirring stick stirring thick emulsion paint in an enamel pot, slow circular viscous squelching, close, workshop, continuous",
+   "duration": 6,
+   "loop": true,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch4 Day 8 mixer: 0.4 s 'stir swirl' after each drop (play a slice) and while the swatch eases; new",
+   "recipe": {
+    "what": "Stick stirring thick paint in an enamel pot (loop)",
+    "ch": "Ch4 Day 8 mixer: a 0.4 s swirl after each drop and while the swatch eases",
+    "replaces": "new",
+    "bus": "fx, volume 0.3; play slices for the swirl"
+   }
+  },
+  {
+   "name": "paint_drop",
+   "prompt": "a single thick drop of paint falling into a pot of paint, soft viscous plop, very close, dry",
+   "duration": 0.4,
+   "loop": false,
+   "variants": 5,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch4 Day 8 mixer drop; replaces the plip tone(900->400 Hz) in crafts/mixer.js (keep it as fallback)",
+   "recipe": {
+    "what": "One thick drop of paint into paint: soft viscous plop",
+    "ch": "Ch4 Day 8 mixer drop",
+    "replaces": "the plip tone(900->400 Hz) in crafts/mixer.js (keep it as fallback)",
+    "bus": "fx, volume 0.4, +-5% rate"
+   }
+  },
+  {
+   "name": "paint_slosh",
+   "prompt": "Thick liquid is poured out of a pot into a bucket with a gloopy glug",
+   "duration": 1.4,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch4 Day 8 mixer: Tip it out; replaces the lowpass 500 Hz noise in crafts/mixer.js",
+   "recipe": {
+    "what": "Thick paint tipped out of an enamel pot: slow slosh and glug",
+    "ch": "Ch4 Day 8 mixer: Tip it out",
+    "replaces": "the lowpass 500 Hz noise in crafts/mixer.js",
+    "bus": "fx, volume 0.45"
+   },
+   "prompt_v1": "tipping thick paint out of an enamel pot into a bucket, a slow viscous slosh and glug, workshop, close",
+   "extra_takes": 6
+  },
+  {
+   "name": "tape_pull",
+   "prompt": "pulling the steel blade out of a retractable tape measure, smooth metallic whirr and ratchet of the spring, close, workshop",
+   "duration": 1.6,
+   "loop": true,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch4 Day 8 Measure twice: loop while Space/mouse is held (rate follows blade speed 60 -> 4 cm/s); new",
+   "recipe": {
+    "what": "Steel tape-measure blade pulled out: metallic whirr and spring ratchet (loop)",
+    "ch": "Ch4 Day 8 Measure twice: while Space/mouse is held",
+    "replaces": "new",
+    "bus": "fx, volume 0.3; playbackRate 0.7-1.2 from blade speed (60 -> 4 cm/s)"
+   },
+   "exclude": {
+    "s58323.wav": "QA: hiss with two clicks, came in 21 dB under target"
+   }
+  },
+  {
+   "name": "tape_retract",
+   "prompt": "steel tape measure blade zipping back into its case fast and snapping shut with a plastic clack, close",
+   "duration": 0.9,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch4 tape: too short, blade zips back; replaces the highpass 2400 Hz noise in crafts/tape.js",
+   "recipe": {
+    "what": "Tape-measure blade zipping back and clacking shut",
+    "ch": "Ch4 tape: too short, the blade zips back",
+    "replaces": "the highpass 2400 Hz noise in crafts/tape.js",
+    "bus": "fx, volume 0.45"
+   }
+  },
+  {
+   "name": "tape_tock",
+   "prompt": "the plastic case of a tape measure touching a wooden door frame, one small hollow wooden tock, close, dry",
+   "duration": 0.4,
+   "loop": false,
+   "variants": 3,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch4 tape: the case meets the jamb at 81.5 cm (info cue; the loupe is its twin); replaces audio.tick({volume:0.22}) in crafts/tape.js and ch4.js",
+   "recipe": {
+    "what": "Tape-measure case touching a wooden door frame: one small hollow tock",
+    "ch": "Ch4 tape: the case meets the jamb at 81.5 cm (info cue; the loupe is its twin)",
+    "replaces": "audio.tick({volume:0.22}) in crafts/tape.js and ch4.js",
+    "bus": "fx, volume 0.4, +-5% rate; one take, so alternate with table_tock at rate 1.3, volume 0.3"
+   },
+   "exclude": {
+    "s68090.wav": "QA: CLAP 0.13 to its prompt, 0.01 to its catalogue description",
+    "s68091.wav": "QA: CLAP 0.11 to its prompt, 0.01 to its catalogue description"
+   }
+  },
+  {
+   "name": "freewheel_tick",
+   "prompt": "bicycle rear hub freewheel ticking while the wheel coasts on a work stand, steady fast metallic clicking, close, workshop, no pedalling",
+   "duration": 4,
+   "loop": true,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch4 Week 4 and Ch5 Ines's wheel: while the wheel turns (rate follows spin); Ch5 Sami coasting; new",
+   "recipe": {
+    "what": "Rear-hub freewheel ticking while the wheel coasts (loop)",
+    "ch": "Ch4 Week 4 and Ch5 Ines's wheel while it turns; Ch5 Sami coasting",
+    "replaces": "new",
+    "bus": "fx, volume 0.25; playbackRate follows spin (0.5-1.5)"
+   }
+  },
+  {
+   "name": "freewheel_coastdown",
+   "prompt": "bicycle wheel spun by hand on a stand, freewheel ticking slowing down to a stop over five seconds, close, quiet workshop",
+   "duration": 5.5,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch4 Week 4 done: bike.setSpin(0.6), 'spins true and silent'; Sami spinning it in [after]",
+   "recipe": {
+    "what": "Wheel spun by hand, freewheel ticking slowing to a stop",
+    "ch": "Ch4 Week 4 done ('spins true and silent'); Sami spinning it in [after]",
+    "replaces": "new",
+    "bus": "fx, volume 0.3"
+   }
+  },
+  {
+   "name": "brake_rub",
+   "prompt": "A short soft rubbing swish of rubber against a spinning bicycle wheel",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 4,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch4 Week 4 / Ch5 truing rub (Sami's 'zhhh, zhhh'); replaces audio.tick() in W.bike.onRub / rig.onRub (volume from deviation; pad flash is the twin)",
+   "recipe": {
+    "what": "Rim brushing a brake pad once: short soft 'zhhh'",
+    "ch": "Ch4 Week 4 / Ch5 truing rub (Sami's 'zhhh, zhhh')",
+    "replaces": "audio.tick() in W.bike.onRub / rig.onRub (volume from deviation; the pad flash is the twin)",
+    "bus": "fx, volume 0.15-0.45 from deviation"
+   },
+   "prompt_v1": "a bicycle rim brushing against a rubber brake pad once as the wheel turns, a short soft zhhh rub, close, workshop",
+   "extra_takes": 6
+  },
+  {
+   "name": "chain_drop",
+   "prompt": "bicycle chain falling off the front chainring with a metallic rattle and slap against the frame, outdoors, close",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch5 [teach]: Sami's chain drops; replaces the highpass noise + tick in ch5.js",
+   "recipe": {
+    "what": "Bicycle chain falling off the chainring: rattle and slap",
+    "ch": "Ch5 [teach]: Sami's chain drops",
+    "replaces": "the highpass noise + tick in ch5.js",
+    "bus": "fx, volume 0.45"
+   }
+  },
+  {
+   "name": "chain_on",
+   "prompt": "bicycle chain hooked back onto the chainring while the pedal is turned slowly backwards, a few metallic clicks and a final clunk as it seats, close",
+   "duration": 1.8,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch5 [teach]: correct answer, 'It went on'; replaces audio.tick({volume:0.3})",
+   "recipe": {
+    "what": "Chain hooked back on while the pedal turns backwards: clicks and a seating clunk",
+    "ch": "Ch5 [teach]: correct answer, 'It went on'",
+    "replaces": "audio.tick({volume:0.3})",
+    "bus": "fx, volume 0.45"
+   }
+  },
+  {
+   "name": "shutter_runner_scrape",
+   "prompt": "Metal scraping and rattling as a rusty metal shutter is pushed",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 6,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch5 job (a) shutter: one per stroke; replaces scrapeAt() there (sand_stroke at rate 1.3 is the stand-in)",
+   "recipe": {
+    "what": "One push on a stuck rusty roller shutter: slats grinding in the runners",
+    "ch": "Ch5 job (a) shutter: one per stroke",
+    "replaces": "scrapeAt() there (sand_stroke at rate 1.3 was the stand-in)",
+    "bus": "fx, volume 0.35-0.5 by stroke strength, +-5% rate"
+   },
+   "prompt_v1": "one hard push on a stuck rusty steel roller shutter, slats grinding in rusty side runners, short metallic scrape and rattle, street, close",
+   "extra_takes": 12,
+   "exclude": {
+    "s76728.wav": "QA: weakest pick (CLAP 0.13 to its prompt, -0.02 to its catalogue description)",
+    "s76726.wav": "QA: weakest pick (CLAP 0.12 to its prompt, -0.01 to its catalogue description)"
+   }
+  },
+  {
+   "name": "shutter_roll_up",
+   "prompt": "corrugated steel shop roller shutter rolling up freely, loud rattling slats winding onto the drum, ending with a clunk at the top, street, daytime",
+   "duration": 2.2,
+   "loop": false,
+   "variants": 2,
+   "cat": "heavy",
+   "ch": 1,
+   "cue": "Ch5 job (a) done: rolls up over 1.6 s; replaces the 20 highpass noise bursts",
+   "recipe": {
+    "what": "Corrugated roller shutter rolling up freely, clunk at the top",
+    "ch": "Ch5 job (a) done: rolls up over 1.6 s",
+    "replaces": "the 20 highpass noise bursts",
+    "bus": "fx, volume 0.5"
+   },
+   "extra_takes": 4
+  },
+  {
+   "name": "watch_hang_nail",
+   "prompt": "a wristwatch with a metal buckle hung on a nail on a wooden pegboard, a small metallic clink and a soft tap of the strap, close, quiet",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 2,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Ch5 [walk.watch]: the watch on the nail; replaces audio.tick({volume:0.3})",
+   "recipe": {
+    "what": "Watch hung on a nail: small metallic clink, soft strap tap",
+    "ch": "Ch5 [walk.watch]: the watch on the nail",
+    "replaces": "audio.tick({volume:0.3}) (spoke_key_02 was the stand-in)",
+    "bus": "fx, volume 0.4; weak match, listen first (keep tick() or spoke_key_02 otherwise)"
+   }
+  },
+  {
+   "name": "tool_hook",
+   "prompt": "a hand tool lifted off a metal hook on a pegboard, a short scrape and metallic clink, workshop, close",
+   "duration": 0.7,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Ch4 pegboard (sandpaper, plane, spoke key); tool_take (BBC, bench) is the stand-in",
+   "recipe": {
+    "what": "Hand tool lifted off a pegboard hook: short scrape and clink",
+    "ch": "Ch4 pegboard (sandpaper, plane, spoke key)",
+    "replaces": "audio.scrape({volume:0.12}) on taking a tool (tool_take, a bench pick-up, was the stand-in)",
+    "bus": "fx, volume 0.55 (the files are peak-limited 6-7.5 dB under target)"
+   }
+  },
+  {
+   "name": "amb_workshop",
+   "prompt": "quiet cluttered workshop room tone on a ground floor, faint electrical hum, distant street outside a half-open garage door, a little rain on the roof, no machines, no voices",
+   "duration": 40,
+   "loop": true,
+   "variants": 1,
+   "cat": "amb_int",
+   "ch": 2,
+   "cue": "Ch4 bed for all four days (rain part only on Day 5, the rest with ambience rain off); new (Ch4 has music only)",
+   "recipe": {
+    "what": "Quiet workshop room tone: faint hum, street through a half-open garage door, light rain on the roof (loop)",
+    "ch": "Ch4 bed for all four days (Day 5 with rain; other days low-pass it or keep it very low)",
+    "replaces": "new (Ch4 had music only)",
+    "bus": "bus, volume 0.3"
+   }
+  },
+  {
+   "name": "amb_stairwell",
+   "prompt": "old apartment building stairwell at night, reverberant concrete stairs, a timer light buzzing, a distant television behind a door, very quiet",
+   "duration": 20,
+   "loop": true,
+   "variants": 1,
+   "cat": "amb_int",
+   "ch": 2,
+   "cue": "Ch1 door beat: under the fade to black as he leaves (optional); new",
+   "negative_prompt": "music, melody, speech, singing, low quality, distorted, clipping",
+   "recipe": {
+    "what": "Old stairwell at night: concrete reverb, timer light, distant TV (loop)",
+    "ch": "Ch1 door beat: under the fade to black as he leaves (optional)",
+    "replaces": "new",
+    "bus": "bus, volume 0.3, fade in with the door"
+   }
+  },
+  {
+   "name": "radio_talk_fishing",
+   "prompt": "old AM radio talk show, a calm middle-aged man talking slowly about fishing, through a small transistor radio speaker, band-limited, slightly distorted, indistinct words",
+   "duration": 20,
+   "loop": true,
+   "variants": 1,
+   "cat": "radio",
+   "ch": 1,
+   "cue": "Ch4 radio hotspot and Ch5 radio fishing station; optional upgrade of radioVoice's formant voice (crafts/radio.js). If the voice pipeline can do it, prefer TTS through the radio band",
+   "negative_prompt": "music, melody, singing, low quality, clipping",
+   "recipe": {
+    "what": "Small-speaker AM talk radio, a calm man talking, indistinct (loop)",
+    "ch": "Ch4 radio hotspot and Ch5 radio fishing station (optional)",
+    "replaces": "optional upgrade of radioVoice's formant voice (crafts/radio.js); TTS through the radio band is preferred",
+    "bus": "radio band (hp 300 / lp 3400), gain as radioVoice"
+   }
+  },
+  {
+   "name": "chalk_line",
+   "prompt": "a stick of chalk drawn along a rough painted brick wall, short dry scratchy stroke, outdoors, close",
+   "duration": 0.8,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Ch5 Odile's chalk guide (the chalk shows only ahead of the brush); new, optional",
+   "recipe": {
+    "what": "Chalk drawn along a rough painted brick wall: short dry scratch",
+    "ch": "Ch5 Odile's chalk guide (optional)",
+    "replaces": "new",
+    "bus": "fx, volume 0.3"
+   },
+   "extra_takes": 6
+  },
+  {
+   "name": "step_wood_alt",
+   "prompt": "single footstep of a shoe on old creaky wooden floorboards in a quiet flat, one step, close, dry",
+   "duration": 0.5,
+   "loop": false,
+   "variants": 5,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "Alternative to step_wood (Kenney footstep_wood, CLAP -0.06 against its description): Ch1 flat / Ch4 workshop good-foot step",
+   "recipe": {
+    "what": "Shoe step on old wooden floorboards",
+    "ch": "Ch1 flat and Ch4 workshop floor (the good foot)",
+    "replaces": "footstep('concrete') indoors (alternative to step_wood)",
+    "bus": "bus, volume 0.3"
+   }
+  },
+  {
+   "name": "creak_wood_alt",
+   "prompt": "an old wooden bench creaking once as a person sits down on it, slow single creak, close, dry",
+   "duration": 1.0,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "Alternative to creak_wood (Kenney creak, CLAP -0.10): Ch2/Ch5 bench sit, ladder, door in the frame",
+   "recipe": {
+    "what": "Wooden bench creak under weight",
+    "ch": "Ch2/Ch5 bench sit; Ch5 panel ladder; Ch4 door hung in the frame",
+    "replaces": "new (alternative to creak_wood)",
+    "bus": "fx, volume 0.3"
+   }
+  },
+  {
+   "name": "mug_clink_alt",
+   "prompt": "a ceramic coffee mug set down on a wooden table, small light clink, close, dry, quiet room",
+   "duration": 0.5,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Alternative to mug_clink (Kenney plate, CLAP -0.05): Ch1 seed, the mug settles",
+   "recipe": {
+    "what": "Ceramic mug set down on a wooden table: light clink",
+    "ch": "Ch1 seed: the mug on the table settles",
+    "replaces": "audio.tone({freq:2400}) mug clink (alternative to mug_clink)",
+    "bus": "fx, volume 0.3"
+   }
+  },
+  {
+   "name": "pencil_erase_alt",
+   "prompt": "a rubber eraser rubbing out a pencil line on paper in a notebook, a few short strokes, close, quiet",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "Alternative to pencil_erase (OGA, CLAP -0.02): Ch5 walk.notebook strikes lifted",
+   "recipe": {
+    "what": "Eraser rubbing out a pencil line",
+    "ch": "Ch5 walk.notebook: the strike lifted off 'Ride.' and 'Run.'",
+    "replaces": "new (alternative to pencil_erase)",
+    "bus": "fx, volume 0.35"
+   }
+  }
+ ]
+}

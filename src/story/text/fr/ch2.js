@@ -33,6 +33,7 @@ export default {
   ghost: [
     think('Quelqu’un a peint ça à la main, avant ma naissance. La boutique a disparu depuis longtemps. Les lettres, personne ne les a prévenues.'),
   ],
+  ghostLinger: 'Ce sont les déliés qui ont le mieux tenu. On aurait cru l’inverse.',
   billboard: [
     think('Ne t’arrête jamais. Je l’ai pris comme un conseil. C’était un slogan pour des baskets.'),
   ],

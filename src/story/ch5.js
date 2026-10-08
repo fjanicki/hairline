@@ -3,6 +3,10 @@ import { L } from './script.js';
 import { makeSteer } from './minigames.js';
 import { PRESETS } from '../render/Mood.js';
 import { buildScene5, aimBone, clampToBounds, LINE_Z0, LINE_Z1, LINE_Y } from '../world/scenes/scene5.js';
+import { remember } from './memory.js';
+import { hugoPanelBeat, linePreroll, wetRibbon, wetPanels } from './ch5panel.js';
+import { setupJobs } from './ch5jobs.js';
+import { duckUnderVoice, speaking } from './crafts/sound.js';
 
 // Ch5 "The Wall": Rue des Tanneurs, Week 12. Day, then golden hour. See docs/DESIGN.md (Ch5).
 //
@@ -28,6 +32,22 @@ const TIERS = { good: 0.25, middle: 0.45 };
 const DEFAULT_CAM = { offset: [0, 2.6, 4.2], look: [0, 1.1, 0], lerp: 6 };
 const LINE_CAM = { offset: [5.35, 1.8, 1.6], look: [-0.65, 1.5, -1.2], lerp: 5 };
 const PROMPT_AUTO = 8; // seconds before [E] Wave / [E] Strap happen on their own
+
+// Sound (docs/assets/sfx.md, Ch5 Integration list). Beds: the street by day with the neighbours (0.3)
+// and the drying puddles (0.1) until the line; golden-hour birds for the walk home. Sami's freewheel
+// follows his bike's speed; the line's brush is a loop that follows the tip; the jobs (ch5jobs.js,
+// crafts/*) and the panel (ch5panel.js) play their own recorded cues.
+const SOUNDS = [
+  'amb_street_day', 'amb_drips', 'amb_golden_birds', 'chain_drop', 'chain_on', 'brush_stroke', 'creak_wood', 'creak_wood_alt', 'brush_wall_loop',
+  'boot_step_wet', 'body_thud', 'camera_shutter', 'club_pass', 'run_step', 'velcro_rip', 'bike_bell', 'freewheel_tick',
+  'freewheel_coastdown', 'breath_tired', 'spoke_key', 'brake_rub', 'radio_static', 'radio_tune_sweep',
+  'shutter_runner_scrape', 'shutter_roll_up',
+  // the notebook (UI.js): docs/assets/sfx.md, Global
+  'notebook_open', 'page_flip', 'notebook_close', 'pencil_write', 'pencil_erase', 'pencil_erase_alt',
+];
+const STREET = { name: 'amb_street_day', volume: 0.3 };
+const DRIPS = { name: 'amb_drips', volume: 0.1 };
+const BIRDS = { name: 'amb_golden_birds', volume: 0.3 };
 
 // Light. The day part is late afternoon after the rain: the sky clearing, a warm sun low over the
 // right-hand roofs (behind the camera), long shadows across the street and the mural wall in
@@ -110,12 +130,15 @@ export default {
   },
   music: { name: 'piano', volume: 0.36, fade: 3 },
   ambience: [],
+  sounds: SOUNDS,
   camera: { offset: DEFAULT_CAM.offset, look: DEFAULT_CAM.look, fov: 55, lerp: 6 },
   player: { spawn: [0, -16], facing: Math.PI, boot: true, limp: 0.7, painRate: 1 / 1.5, footsteps: 'boot' },
   build: (ctx) => buildScene5(ctx),
 
   async run(ctx, d) {
     ctx.player.firstStumbleDone = true;
+    // The boot's clump on the street is boot_step_wet + body_thud (docs/assets/sfx.md, Global), as in Ch2.
+    ctx.audio.surface = 'street';
     const W = ctx.world.current;
     if (!W?.cast || !W?.line) {
       console.warn('[hairline] ch5: scene extras missing (build fallback); running the short version');
@@ -164,6 +187,8 @@ async function fullRun(ctx, d, W) {
   };
   // Kerbs: everyone on foot follows the sidewalk height (scene5/street; 0 when scene2 has its own).
   const groundAt = W.groundAt || (() => 0);
+  audio.ambience(STREET.name, true, { volume: STREET.volume, fade: 3 });
+  audio.ambience(DRIPS.name, true, { volume: DRIPS.volume, fade: 3 });
   const walkers = [player.root, ...club.map((c) => c.root)];
   world.onUpdate((_dt, raw) => {
     const k = Math.min(1, raw * 14);
@@ -276,6 +301,8 @@ async function fullRun(ctx, d, W) {
   const wheels = bike.userData?.wheels || [];
   const R = bike.userData?.wheelRadius || 0.34;
   const sc = { v: 0, speed: 0, path: [], loop: null, resolve: null, riding: false };
+  let freewheel = null;
+  let fwHeard = false;
   // The 'ride' seat sits a full-size saddle at model y 0.43; Sami's frame is scaled down to a kid's.
   const bikeK = bike.userData?.kidScale ?? 1;
   const mount = (on) => {
@@ -343,6 +370,14 @@ async function fullRun(ctx, d, W) {
     if (sc.v > 0.01) for (const wh of wheels) wh.rotation.x += (sc.v * dt) / (R * bikeK);
     // Hands on the bars, feet on the pedals (after the mixers).
     if (sc.riding) W.rider?.update(dt, sc.v / bikeK, 1);
+    // His freewheel, a point source on the bike: gain and rate from his speed.
+    if (!freewheel && sc.v > 0.2 && audio.loopSfx) freewheel = audio.loopSfx('freewheel_tick', { volume: 0, bus: 'fx', pos: rig, ref: 1.5, fade: 0.1 });
+    const fv = 0.2 * THREE.MathUtils.clamp(sc.v / 3, 0, 1) * (speaking(ctx) ? 0.6 : 1);
+    freewheel?.set(fv, THREE.MathUtils.clamp(0.5 + sc.v * 0.25, 0.5, 1.5), 0.15);
+    if (freewheel && !fwHeard && fv > 0.1) {
+      fwHeard = true; // debug log: each time his ticking comes up
+      audio.logEvent?.('loopOn', 'freewheel_tick', { gain: +fv.toFixed(3), speed: +sc.v.toFixed(2), who: 'sami' });
+    } else if (fwHeard && fv < 0.03) fwHeard = false;
   });
 
   // ------------------------------------------------------------------ the run club (moved by hand)
@@ -435,9 +470,11 @@ async function fullRun(ctx, d, W) {
     prompt: T.prompts.boltHoles,
     onInteract: () => d.say(T.boltHoles),
   });
+  let jobs = null; // R3.8: the street jobs, open from 'meet' to the line
   const dropOptional = () => {
     roam = false;
     for (const id of optional) hotspots.remove(id);
+    jobs?.close();
   };
 
   // ==================================================================== opening: Find Odile
@@ -456,11 +493,14 @@ async function fullRun(ctx, d, W) {
     },
   });
   await d.interact('meet');
+  let taught = false;
+  jobs = setupJobs(ctx, d, W, { bark, followDefault, isRoaming: () => roam, taught: () => taught });
 
   // ==================================================================== Teach
   {
     const p = player.root.position;
-    const stop = [THREE.MathUtils.clamp(p.x + 2.1, -3.6, 3.6), THREE.MathUtils.clamp(p.z - 3.4, -45, -12)];
+    // In the road, clear of Odile's radio crate (x -3.45): their rings must not overlap.
+    const stop = [THREE.MathUtils.clamp(p.x + 2.1, -1.5, 3.6), THREE.MathUtils.clamp(p.z - 3.4, -45, -12)];
     sc.loop = null;
     const ride = rideTo(
       [
@@ -474,8 +514,18 @@ async function fullRun(ctx, d, W) {
       return false;
     });
     parkAt(rig.position.x, rig.position.z, rig.rotation.y);
-    audio.noise({ type: 'highpass', freq: 2600, q: 0.7, dur: 0.08, volume: 0.22 });
-    audio.tick({ volume: 0.35 });
+    while (jobs.busy()) await engine.frame(); // his call waits for a job to finish (not gated: skip is the job's)
+    // The chain drops, then he calls (the clatter clears before his line).
+    audio.sfx('chain_drop', {
+      volume: 0.45,
+      pos: rig,
+      ref: 2,
+      fallback: (a) => {
+        a.noise({ type: 'highpass', freq: 2600, q: 0.7, dur: 0.08, volume: 0.22 });
+        a.tick({ volume: 0.35 });
+      },
+    });
+    await d.wait(0.6);
     bark(T.teach.call[0].text, T.teach.call[0].who, 2.6);
     ui.objective(T.objectives.sami);
     const samiPos = sami.root.getWorldPosition(new THREE.Vector3());
@@ -491,9 +541,11 @@ async function fullRun(ctx, d, W) {
         const pp = player.root.position;
         // Sami turns to Hugo (his root is inside the rig, so turn in rig space).
         sami.root.rotation.y = Math.atan2(pp.x - sp.x, pp.z - sp.z) - rig.rotation.y;
-        await d.correct(T.teach.menu);
-        audio.tick({ volume: 0.3 });
+        const { tries } = await d.correct(T.teach.menu);
+        remember('teachFirst', tries === 1);
+        audio.sfx('chain_on', { volume: 0.45, pos: rig, ref: 2, fallback: (a) => a.tick({ volume: 0.3 }) });
         bike.rotation.z = 0;
+        await d.wait(0.9); // the clicks and the clunk as it seats, before "I saw."
         const after = T.teach.after;
         await d.say(after.slice(0, 2)); // "I saw." / "What's this?"
         ui.notebook.open(5);
@@ -503,6 +555,8 @@ async function fullRun(ctx, d, W) {
       },
     });
     await d.interact('sami');
+    taught = true; // the radio and Ines's wheel open now
+    d.after(2.5, () => jobs.callShutter());
     // Back on the bike, off to the bike shop window.
     rideTo([[3.4, Math.max(-44, rig.position.z - 1.5)], [3.4, -33.2]], 2.6).then((r) => {
       if (r === 'arrived') parkAt(3.4, -33.2, Math.PI / 2);
@@ -511,23 +565,36 @@ async function fullRun(ctx, d, W) {
 
   // ==================================================================== The line
   ui.objective(T.objectives.line);
+  let ready = false;
+  let askedReady = false;
   hotspots.add({
     id: 'odile',
     pos: [chX, chZ],
     radius: 1.9,
     prompt: T.prompts.odile,
     required: true,
+    once: false, // "Not yet" leaves it up
     onInteract: async () => {
+      player.face(chX, chZ);
+      // Once, if a street job is still open: Ready closes them all.
+      if (!askedReady && jobs.pending()) {
+        askedReady = true;
+        if ((await d.choose(T.readyCheck)) === 1) return;
+      }
+      ready = true;
+      await hugoPanelBeat(ctx, d, W, { fade, followDefault }); // R3.7: his own panel first
       player.face(chX, chZ);
       await d.say(T.line.setup);
     },
   });
-  await d.interact('odile');
+  while (!ready) await d.interact('odile');
+  hotspots.remove('odile');
   dropOptional();
 
   const line = W.line;
   const steer = makeSteer({ dims: 1, momentum: 0.4, drift: 0.7, driftGrow: 0.03, gain: 1.1, recenter: 0.06 });
   const ines = homes.find((n) => n.id === 'ines')?.char || neighbours[1];
+  let preroll = null;
   await fade(1, 0.5);
   {
     // Staging behind the cut: Odile waits at the kebab end, Ines a little further on, the other
@@ -552,18 +619,31 @@ async function fullRun(ctx, d, W) {
     cam.follow(player.root, { ...LINE_CAM, snap: true });
     cam.fov(50);
     cam.snap();
+    preroll = linePreroll(ctx, W); // opens on his panel, then down to the line camera
     line.tip.position.set(line.x, LINE_Y, LINE_Z0);
     line.chalkAt(LINE_Z0);
     setArm('brush', true);
     lineActive = true;
   }
+  const ribbon = wetRibbon(ctx, line.ribbon);
+  wetPanels(ctx, W.panels || []);
+  audio.ambience(DRIPS.name, false, { fade: 2 }); // the puddles have dried
   await d.wait(0.25);
   await fade(0, 0.6);
+  if (preroll) {
+    H.play('idle', 0.2);
+    await preroll(d, () => cam.follow(player.root, { ...LINE_CAM }));
+  }
   ui.prompt(L.hints.steerLine);
   d.hope(0.84, 16);
   let stepT = 0;
   let stepBad = false;
+  // The brush on the wall: one continuous loop following the tip (gain 0.25 x tip speed, rate
+  // 0.9-1.1 with it). Without the file: the procedural scrape every 0.4-0.6 s.
   let strokeT = 0;
+  let lastTipY = null;
+  let tipK = 1;
+  const brush = audio.sfxBank?.has('brush_wall_loop') ? audio.loopSfx('brush_wall_loop', { volume: 0, bus: 'fx', fade: 0.3 }) : null;
   const panels = W.panels || [];
   const passK = (p, tipZ) => {
     const hi = Math.max(p.z0, p.z1);
@@ -598,17 +678,24 @@ async function fullRun(ctx, d, W) {
       stepT = stepBad ? 0.52 : 0.44;
       stepBad = !stepBad;
       if (stepBad) {
-        audio.footstep('concrete', { volume: 0.45, rate: 0.72 });
-        audio.thud({ volume: 0.12 });
+        audio.sfx('boot_step_wet', { volume: 0.45, bus: 'bus', jitter: 0.04 }); // fallback: the slowed concrete step
+        audio.sfx('body_thud', { volume: 0.12, bus: 'bus', lowpass: 900, jitter: 0.04 });
       } else audio.footstep('concrete', { volume: 0.3 });
     }
-    strokeT -= dt;
-    if (strokeT <= 0) {
+    if (dt > 0) {
+      const vy = lastTipY == null ? 0 : Math.abs(y - lastTipY) / dt;
+      lastTipY = y;
+      tipK += (Math.hypot(LINE_SPEED, vy * 4) / LINE_SPEED - tipK) * (1 - Math.exp(-10 * dt));
+    }
+    if (brush) {
+      brush.set(0.25 * Math.min(1.2, tipK) * (speaking(ctx) ? 0.6 : 1), THREE.MathUtils.clamp(0.9 + (tipK - 1) * 0.5 + 0.05, 0.9, 1.1), 0.08);
+    } else if ((strokeT -= dt) <= 0) {
       strokeT = 0.4 + Math.random() * 0.2;
       audio.scrape({ volume: 0.06 });
     }
     return tipZ <= LINE_Z1 + 1e-3;
   });
+  brush?.stop(0.35);
   if (res === 'skipped') {
     player.root.position.z = LINE_Z1 + TIP_LEAD;
     line.tip.position.set(line.x, LINE_Y, LINE_Z1);
@@ -619,6 +706,7 @@ async function fullRun(ctx, d, W) {
   ui.prompt(null);
   ui.objective(null);
   line.hideChalk();
+  ribbon.dry();
   lineActive = false;
   line.brush.visible = false;
   setArm('brush', false);
@@ -641,7 +729,7 @@ async function fullRun(ctx, d, W) {
   await d.say(T.line.tiers[tier]);
   await d.say(T.line.sign.slice(0, 2));
   W.initials.visible = true;
-  audio.scrape({ volume: 0.12 });
+  audio.sfx('brush_stroke', { volume: 0.35, fallback: (a) => a.scrape({ volume: 0.12 }) });
   mood.focusOn(W.initials, { slot: 0, offsetY: 0, strength: 1, decay: 0.2, floor: 0.7, radius: 0.3 });
   d.hope(0.9);
   await d.say(T.line.sign.slice(2));
@@ -656,9 +744,10 @@ async function fullRun(ctx, d, W) {
     ines.play('hold_can', 0.3);
     await d.say(T.line.photo);
     ines.play('reach', 0.25, { once: true });
-    await d.wait(0.75);
+    await d.wait(0.7);
+    audio.sfx('camera_shutter', { volume: 0.5, pos: ines.root, ref: 2 }); // 50 ms ahead of the flash (fallback: tick)
+    await d.wait(0.05);
     mood.flash(0.5);
-    audio.tick({ volume: 0.45 });
     await d.wait(0.9);
   }
   // Everyone back where they were (the street camera looks the other way).
@@ -687,6 +776,33 @@ async function fullRun(ctx, d, W) {
       r.c.root.position.set(r.x, 0, r.z);
     });
     player.frozen = true;
+    // The pass: the recorded group (approach peak ~10 s into the file) lined up so its loudest moment is
+    // the group going by Hugo (~3.8 s); panned with the pack, dipped under the voices. Bastien's own
+    // steps on the spot are run_step at 0.2.
+    const pack = new THREE.Vector3();
+    const packPos = () => {
+      let n = 0;
+      pack.set(0, 0, 0);
+      for (const r of runners) {
+        if (r === bastien || r.state === 'off' || r.state === 'gone') continue;
+        pack.x += r.x;
+        pack.z += r.z;
+        n++;
+      }
+      if (!n) return null;
+      pack.multiplyScalar(1 / n);
+      pack.y = 1;
+      return pack;
+    };
+    const passing = audio.sfx('club_pass', { volume: 0.5, bus: 'bus', offset: 6.2, jitter: 0, pos: packPos, ref: 60, panWidth: 0.8, fallback: false });
+    if (passing) duckUnderVoice(ctx, passing, { db: 6 });
+    let jogStep = 0;
+    const offJog = world.onUpdate((dt) => {
+      if (bastien.state !== 'spot') return;
+      if ((jogStep -= dt) > 0) return;
+      jogStep = 0.6;
+      audio.sfx('run_step', { volume: 0.2, bus: 'bus', jitter: 0.06, pos: bastien.c.root, ref: 1.5 });
+    });
     let t = 0;
     const r1 = await d.until((dt) => {
       t += dt;
@@ -714,6 +830,8 @@ async function fullRun(ctx, d, W) {
       r.state = 'gone';
       r.c.root.visible = false;
     }
+    offJog();
+    passing?.stop(1.2);
     player.frozen = false;
     await d.say(T.club.afterThoughts);
   }
@@ -748,8 +866,10 @@ async function fullRun(ctx, d, W) {
     // Closer on the leg for the straps.
     await d.gate(cam.tween({ pos: [sx + 2.3, 1.25, sz + 1.9], look: [sx + 0.45, 0.45, sz], fov: 48 }, 1.2));
     await pressE(T.prompts.strap);
-    for (let i = 0; i < 3; i++) d.after(i * 0.3, () => audio.rip());
-    await d.wait(1);
+    // Three straps, 0.3 s apart, one recorded variant each (fallback: rip()); the last rip clears before
+    // the line.
+    for (let i = 0; i < 3; i++) d.after(i * 0.3, () => audio.sfx('velcro_rip', { volume: 0.5, variant: i }));
+    await d.wait(1.45);
     player.setBoot(false);
     player.limp = 0.3;
     player.footsteps = 'concrete';
@@ -765,6 +885,8 @@ async function fullRun(ctx, d, W) {
 
   // ==================================================================== Golden hour: the walk home
   await fade(1, 1.4);
+  audio.ambience(STREET.name, false, { fade: 4 });
+  audio.ambience(BIRDS.name, true, { volume: BIRDS.volume, fade: 4 });
   W.setGolden();
   mood.applyPreset('golden', GOLDEN_LIGHT);
   d.hope(1.0, 0);
@@ -793,6 +915,8 @@ async function fullRun(ctx, d, W) {
 
   // Sami rides past; barks in order as he passes.
   let samiBarks = 0;
+  let samiBell = false;
+  let breathed = false;
   d.after(2.2, () => {
     rideTo([[1.7, -30], [2.4, -43.5]], 4.2).then((r) => {
       if (r === 'arrived') parkAt(2.4, -43.8, Math.PI);
@@ -830,7 +954,12 @@ async function fullRun(ctx, d, W) {
         ui.watch(face, { tick: false });
       }
     }
-    // Sami's barks.
+    // Sami's bell as he comes up behind, then his barks as he passes.
+    // (Held a moment while a line is being said, but never past 4 m behind him.)
+    if (!samiBell && sc.riding && sc.v > 1 && rig.position.z < p.z + 7 && (!speaking(ctx) || rig.position.z < p.z + 4)) {
+      samiBell = true;
+      audio.sfx('bike_bell', { volume: 0.35, pos: rig, ref: 2 });
+    }
     if (samiBarks === 0 && sc.riding && rig.position.z < p.z + 1.5 && rig.position.z > p.z - 6) {
       samiBarks = 1;
       const B0 = T.walk.sami;
@@ -843,6 +972,10 @@ async function fullRun(ctx, d, W) {
       if (!stoppedSaid && jogT >= 1.5 && !player.frozen && !player.locked) {
         stoppedSaid = true;
         thoughtSoon(T.walk.stopped, 3.8);
+      }
+      if (!breathed && jogT >= 1.5) {
+        breathed = true; // his breath back after the first jog, low
+        audio.sfx('breath_tired', { volume: 0.2, bus: 'bus', fallback: false });
       }
       jogT = 0;
     }
@@ -878,7 +1011,8 @@ async function fullRun(ctx, d, W) {
       await d.wait(0.7);
       await d.say(T.walk.outline);
       W.shop.watch.visible = true;
-      audio.tick({ volume: 0.3 });
+      // The strap and buckle on the nail: the recorded metal latch (watch_hang_nail is too weak a take).
+      audio.sfx('spoke_key', { volume: 0.4, variant: 'spoke_key_02', fallback: (a) => a.tick({ volume: 0.3 }) });
       watchOn = false;
       ui.watch(null);
       setArm('reach', false);
@@ -920,6 +1054,8 @@ async function fullRun(ctx, d, W) {
   await d.say(T.walk.crane);
   await d.gate(crane);
   await d.wait(0.8);
+  audio.ambience(BIRDS.name, false, { fade: 2.6 });
+  freewheel?.stop(0.5);
   await fade(1, 2.4, '#ffffff');
   ui.letterbox(false);
 }
@@ -934,8 +1070,8 @@ async function shortRun(ctx, d) {
   await d.gate(ui.notebook.add(N.teach, { hand: 'sami' }));
   d.hope(0.9);
   await d.say(T.boot.ask);
-  for (let i = 0; i < 3; i++) d.after(i * 0.3, () => audio.rip());
-  await d.wait(1);
+  for (let i = 0; i < 3; i++) d.after(i * 0.3, () => audio.sfx('velcro_rip', { volume: 0.5, variant: i }));
+  await d.wait(1.45);
   player.setBoot(false);
   player.limp = 0.3;
   player.footsteps = 'concrete';

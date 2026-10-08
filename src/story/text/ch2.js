@@ -38,6 +38,8 @@ export default {
   ghost: [
     think("Somebody painted that by hand, before I was born. The shop's long gone. The letters didn't get the message."),
   ],
+  // Non-blocking, if he stays put by the ghost sign after `ghost`.
+  ghostLinger: "The thin strokes have lasted best. You'd think it'd be the other way round.",
   billboard: [think('Never stop. I took it as advice. It was a slogan for a shoe.')],
 
   // z < -24

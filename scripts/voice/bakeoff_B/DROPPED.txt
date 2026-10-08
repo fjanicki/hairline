@@ -1,0 +1,1 @@
+Candidate B (Chatterbox) was DROPPED by the user after listening ("I dont like the voices"). Do not run or retry candidate B; report it as dropped. The final model must be chosen between A (Kyutai) and C (Fish S2 Pro) only.

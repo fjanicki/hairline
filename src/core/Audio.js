@@ -1,10 +1,22 @@
 import { assetUrl } from './Assets.js';
+import { SfxBank, SFX_BEDS } from './Sfx.js';
+import { AudioDebug } from './AudioDebug.js';
 
 // WebAudio graph:
-//   music / ambience / drone / steps / heartbeat -> bus -> master -> destination
+//   music / ambience / drone / loopSfx on 'beds' -> beds (duck()) -> bus -> master -> limiter -> destination
+//   steps / heartbeat / one-shots on 'bus'      -> bus
 //   gun / snap / thud / tone / noise / craft sfx  -> fx  -> master   (tone/noise take bus:'bus' too)
+//   voice clips (core/Voice.js)                   -> voice -> master
 // cut() silences the bus only, so a snap can still play over the silence.
 // Every method is safe before the user gesture (the context just stays suspended).
+//
+// Recorded SFX (src/core/Sfx.js, docs/assets/sfx.md): sfx(name, opts) one-shots, loopSfx(name, opts)
+// handles, beds through ambience(name), simple positional sources (updateListener, per frame from main.js).
+// Debug instrumentation (?debug=1, src/core/AudioDebug.js) is ONE shared implementation for every audio
+// feature: other runtimes (voices) log with audio.logEvent('voice', key, {bus, gain, ...}) and register
+// their output gain with audio.addMeter('voice', node). Read via __game.debug.audioLog / meter().
+
+const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).get('debug') === '1';
 
 const FILES = {
   contemplation: 'audio/contemplation.mp3',
@@ -12,6 +24,11 @@ const FILES = {
   rain: 'audio/rain.ogg',
   crowd: 'audio/crowd.ogg',
 };
+// Recorded beds (single-file sfx loops) play through ambience(name) like rain / crowd.
+for (const name of SFX_BEDS) FILES[name] = `sfx/${name}.ogg`;
+const SFX_BED_SET = new Set(SFX_BEDS);
+// Public procedural cues logged as kind 'proc' under ?debug=1 (nested calls are not logged twice).
+const PROC = ['hammer', 'tick', 'thud', 'tone', 'noise', 'scrape', 'ping', 'rip', 'buzz', 'snap', 'gun', 'heartbeat'];
 const STEP_SURFACES = ['concrete']; // the boot's clump is procedural
 
 export class AudioSys {
@@ -28,7 +45,19 @@ export class AudioSys {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new Ctx();
       this.master = this.ctx.createGain();
-      this.master.connect(this.ctx.destination);
+      // Safety limiter after the master (voice peaks reach -1 dBFS with a hammer blow under them):
+      // transparent below -3 dBFS, so the mix is unchanged; mute still acts on master.gain.
+      this.limiter = this.ctx.createDynamicsCompressor();
+      this.limiter.threshold.value = -3;
+      this.limiter.knee.value = 0;
+      this.limiter.ratio.value = 20;
+      this.limiter.attack.value = 0.003;
+      this.limiter.release.value = 0.12;
+      // The WebAudio compressor adds automatic makeup gain, (1 / gain at 0 dBFS)^0.6: here
+      // 0.6 x 2.85 dB = 1.71 dB. Trim it back so the limiter changes nothing below its threshold.
+      this._limTrim = this.ctx.createGain();
+      this._limTrim.gain.value = Math.pow(10, -(0.6 * (3 - 3 / 20)) / 20);
+      this.master.connect(this.limiter).connect(this._limTrim).connect(this.ctx.destination);
       this.bus = this.ctx.createGain();
       this.bus.connect(this.master);
       this.fx = this.ctx.createGain();
@@ -39,6 +68,103 @@ export class AudioSys {
     } catch (err) {
       console.warn('[audio] WebAudio unavailable', err);
     }
+    this.sfxBank = new SfxBank(this);
+    this.surface = null; // 'wood' (indoor floor) | 'street' (wet street, boot only): the player's steps (set by a chapter, reset per chapter)
+    this.dbg = null;
+    this.audioLog = null;
+    if (DEBUG && this.ok) {
+      this.dbg = new AudioDebug(this);
+      this.audioLog = this.dbg.log;
+      this.dbg.addMeter('bus', this.bus);
+      this.dbg.addMeter('fx', this.fx);
+      this.dbg.addMeter('master', this.master);
+      this.dbg.addMeter('out', this._limTrim); // after the limiter (what reaches the speakers)
+      let depth = 0;
+      for (const m of PROC) {
+        const fn = this[m];
+        this[m] = (...args) => {
+          const top = depth === 0;
+          depth++;
+          let r;
+          try {
+            r = fn.apply(this, args);
+          } finally {
+            depth--;
+          }
+          if (top && r !== 'eaten') this.dbg.push('proc', m, { volume: args[0]?.volume, bus: args[0]?.bus });
+          return r;
+        };
+      }
+    }
+  }
+
+  // ------------------------------------------------------------- debug (shared; see AudioDebug.js)
+
+  /** Log one started sound (no-op without ?debug=1). Voices: logEvent('voice', key, {bus:'voice', gain}). */
+  logEvent(kind, name, info) {
+    this.dbg?.push(kind, name, info);
+  }
+
+  /** Meter a node under `name` (no-op without ?debug=1). Voices: addMeter('voice', voiceGain). */
+  addMeter(name, node) {
+    this.dbg?.addMeter(name, node);
+  }
+
+  /** {state, muted, paused, bus|fx|master|...: {rms, peak} dBFS}; meter(secs): RMS history rows. */
+  meter(secs) {
+    return this.dbg ? this.dbg.meter(secs) : null;
+  }
+
+  // ------------------------------------------------------------- recorded sfx (Sfx.js)
+
+  /**
+   * One-shot from public/assets/sfx (a random variant, never the last one; weights from the doc).
+   * opts: { volume=0.5, rate=1, jitter=0.04, gainJitter=0 (dB), bus='fx'|'bus', lowpass, highpass, q,
+   * band:'tv'|'radio', pan, pos ([x,y,z] | Vector3 | Object3D | () => pos), ref=1.5, rolloff=1,
+   * delay=0, offset=0, alt (another set, picked 50/50), fallback (fn(audio, opts) | false) }.
+   * Missing / undecoded file: plays the procedural cue it replaces. Returns {dur, ended, stop(fade)} | null.
+   */
+  sfx(name, opts) {
+    return this.sfxBank.play(name, opts);
+  }
+
+  /**
+   * Gameplay-driven loop: opts as sfx() plus fade=0.5 (fade-in), offset (default random), bus='bus'.
+   * Returns { set(volume, rate, secs=0.1), setPos(pos), lowpass(hz, secs), stop(fade=0.3), playing }.
+   * Stopped by cut() when on 'bus', and by releaseChapter().
+   */
+  loopSfx(name, opts) {
+    return this.sfxBank.loop(name, opts);
+  }
+
+  /** Per frame (main.js): camera for left/right, head (Object3D, +1.5 m) for distance. */
+  updateListener(camera, head) {
+    this.sfxBank.updateListener(camera, head);
+  }
+
+  /**
+   * Chapter change (main.js, before the new chapter's preload): stops loopSfx handles and recorded beds
+   * left running, resets the step surface, and drops decoded sfx buffers not in `keep` (sound names).
+   */
+  releaseChapter(keep = [], { prefetch = [] } = {}) {
+    if (!this.ok) return 0;
+    this.sfxBank.stopLoops(0.4);
+    for (const name of [...this._amb.keys()]) if (SFX_BED_SET.has(name) && !keep.includes(name)) this.ambience(name, false, { fade: 0.4 });
+    this.surface = null;
+    const freed = this.sfxBank.release(keep, prefetch);
+    this.logEvent('release', 'chapter', { freed, keep: keep.length, prefetch: prefetch.length });
+    return freed;
+  }
+
+  /**
+   * Fetch (not decode) the compressed files of the named sets / beds in the background: the next
+   * chapter's sounds, decoded only once that chapter's build calls preload() (memory: a long stereo
+   * bed is ~0.4 MB compressed but ~20 MB decoded).
+   */
+  prefetch(names = []) {
+    if (!this.ok) return;
+    for (const n of names) if (FILES[n] && !SFX_BED_SET.has(n)) this._buffer(n); // music / rain / crowd: small, kept decoded as before
+    this.sfxBank.prefetch(names.filter((n) => !FILES[n] || SFX_BED_SET.has(n)));
   }
 
   get t() {
@@ -54,9 +180,18 @@ export class AudioSys {
 
   setPaused(p) {
     this._paused = p;
-    if (!this.ok || !this.unlocked) return;
-    if (p) this.ctx.suspend().catch(() => {});
-    else this.ctx.resume().catch(() => {});
+    if (!this.ok) return;
+    // Before the first gesture the context is normally still suspended (nothing to do). Where autoplay
+    // is allowed it already runs (debug autostart): pause must silence it then too, and resume it after.
+    if (p) {
+      if (this.unlocked || this.ctx.state === 'running') {
+        this._pauseSuspended = true;
+        this.ctx.suspend().catch(() => {});
+      }
+    } else if (this.unlocked || this._pauseSuspended) {
+      this._pauseSuspended = false;
+      this.ctx.resume().catch(() => {});
+    }
   }
 
   toggleMute() {
@@ -75,13 +210,21 @@ export class AudioSys {
    * Start fetching music/ambience files in the background (default: all of them), plus the footstep
    * samples. Each file is fetched once; music() and ambience() load anything not preloaded on demand.
    */
-  preload(names = Object.keys(FILES)) {
+  preload(names = Object.keys(FILES).filter((n) => !SFX_BED_SET.has(n))) {
     for (const name of names) if (FILES[name]) this._buffer(name);
     for (const s of STEP_SURFACES) for (let i = 0; i < 5; i++) this._buffer(`step_${s}_${i}`);
+    // Recorded sfx sets named in the list (chapter `sounds`): every variant, once the manifest is in.
+    if (this.ok) this.sfxBank.preload(names.filter((n) => !FILES[n]));
+  }
+
+  /** The decoded AudioBuffer of a music / ambience file (Promise; null if unavailable), for own graphs. */
+  buffer(name) {
+    return this._buffer(name);
   }
 
   _buffer(name) {
     if (!this.ok) return Promise.resolve(null);
+    if (SFX_BED_SET.has(name)) return this.sfxBank.file(`${name}.ogg`); // one cache with sfx(), released per chapter
     if (!this._buffers.has(name)) {
       let paths = [FILES[name]].flat();
       const m = name.match(/^step_(\w+)_(\d)$/);
@@ -130,6 +273,7 @@ export class AudioSys {
     voice.gain.gain.value = 0;
     this._ramp(voice.gain.gain, volume, fade);
     this._music = voice;
+    this.logEvent('music', name, { bus: 'bus', gain: volume });
   }
 
   /**
@@ -171,6 +315,7 @@ export class AudioSys {
     voice.gain.gain.value = 0;
     this._ramp(voice.gain.gain, placeholder.volume, placeholder.fade);
     this._amb.set(name, voice);
+    this.logEvent('amb', name, { bus: 'bus', gain: placeholder.volume, lowpass: lowpass ?? undefined });
   }
 
   /** Turn every ambience off (and optionally the music). */
@@ -191,9 +336,31 @@ export class AudioSys {
       filter.frequency.value = lowpass;
       src.connect(filter).connect(gain);
     } else src.connect(gain);
-    gain.connect(this.bus);
+    gain.connect(this._bedBus()); // music + ambience beds: the voice runtime ducks them (duck())
     src.start();
     return { src, gain, filter };
+  }
+
+  /** Beds (music, ambience, the drone, bed-like loopSfx on bus 'beds') -> this gain -> bus. Created on first use. */
+  _bedBus() {
+    if (!this._beds) {
+      this._beds = this.ctx.createGain();
+      this._beds.connect(this.bus);
+    }
+    return this._beds;
+  }
+
+  /**
+   * Voice ducking: dip only the music and ambience beds by `db` (one-shots and loops on fx/bus are not
+   * touched) or bring them back. opts: { db=7, secs (attack 0.12 / release 0.45) }.
+   */
+  duck(on, { db = 7, secs } = {}) {
+    if (!this.ok) return;
+    const g = this._bedBus().gain;
+    const to = on ? Math.pow(10, -Math.abs(db) / 20) : 1;
+    g.cancelScheduledValues(this.t);
+    g.setTargetAtTime(to, this.t, (secs ?? (on ? 0.12 : 0.45)) / 3);
+    this.dbg?.push('duck', on ? 'on' : 'off', { db: on ? -Math.abs(db) : 0 });
   }
 
   _stopVoice(v, fade) {
@@ -216,7 +383,32 @@ export class AudioSys {
   // ------------------------------------------------------------- one-shots
 
   /** Footstep sample. surface: 'concrete' (anything else falls back to it). opts: { volume=0.35, rate } */
-  async footstep(surface = 'concrete', { volume = 0.35, rate } = {}) {
+  footstep(surface = 'concrete', opts = {}) {
+    // Indoors (audio.surface = 'wood', Ch1 flat / Ch4 workshop) the Player's concrete steps become the
+    // recorded wood steps; the boot's clump (rate < 0.8) is boot_step_wood + body_thud, and the Player's
+    // thud() that follows it in the same call stack is absorbed (docs/assets/sfx.md, Global).
+    if (this.surface === 'wood' && surface === 'concrete' && this.ok && this.ctx.state === 'running') {
+      if ((opts.rate ?? 1) < 0.8) {
+        this.sfx('boot_step_wood', { volume: 0.35, bus: 'bus', jitter: 0.04 });
+        this.sfx('body_thud', { volume: 0.15, bus: 'bus', lowpass: 900, jitter: 0.04 });
+        this._eatThud = true;
+        queueMicrotask(() => (this._eatThud = false));
+      } else this.sfx('step_wood', { volume: opts.volume ?? 0.3, bus: 'bus', jitter: 0.1 });
+      return Promise.resolve();
+    }
+    // Outdoors on the wet street (audio.surface = 'street', Ch2 / Ch5): only the boot's clump changes,
+    // to boot_step_wet + body_thud (the good foot keeps the Kenney concrete step; docs/assets/sfx.md, Global).
+    if (this.surface === 'street' && surface === 'concrete' && (opts.rate ?? 1) < 0.8 && this.ok && this.ctx.state === 'running') {
+      this.sfx('boot_step_wet', { volume: 0.35, bus: 'bus', jitter: 0.04 });
+      this.sfx('body_thud', { volume: 0.12, bus: 'bus', lowpass: 900, jitter: 0.04 });
+      this._eatThud = true;
+      queueMicrotask(() => (this._eatThud = false));
+      return Promise.resolve();
+    }
+    return this._footstepSample(surface, opts);
+  }
+
+  async _footstepSample(surface = 'concrete', { volume = 0.35, rate } = {}) {
     if (!this.ok || this.ctx.state !== 'running') return;
     if (!STEP_SURFACES.includes(surface)) surface = 'concrete';
     const buf = await this._buffer(`step_${surface}_${(Math.random() * 5) | 0}`);
@@ -264,6 +456,10 @@ export class AudioSys {
   /** A low body thud (a fall), ~0.5 s. On the fx bus, so it plays through cut(). */
   thud({ volume = 0.45 } = {}) {
     if (!this.ok) return;
+    if (this._eatThud) {
+      this._eatThud = false; // the boot step already played body_thud (footstep())
+      return 'eaten';
+    }
     const t = this.t;
     const o = this.ctx.createOscillator();
     o.type = 'sine';
@@ -280,8 +476,9 @@ export class AudioSys {
 
   // ------------------------------------------------------------- procedural one-shots (HAIRLINE)
 
+  /** 'bus' | 'beds' (bus, ducked under voices: room tones, hums, a TV) | anything else: fx. */
   _out(bus) {
-    return bus === 'bus' ? this.bus : this.fx;
+    return bus === 'bus' ? this.bus : bus === 'beds' ? this._bedBus() : this.fx;
   }
 
   /**
@@ -393,8 +590,12 @@ export class AudioSys {
     src.stop(t + dur + tail + 0.05);
   }
 
-  /** Mood drone, called every frame by Mood. Two detuned saws through a lowpass at 300 + 1500*hope. */
-  drone(hope = 0, { volume = 0.035 } = {}) {
+  /**
+   * Mood drone, called every frame by Mood. Two detuned saws through a lowpass at 300 + 1500*hope.
+   * Through the beds gain (ducked under voices like the music). 0.02 (was 0.035, -4.9 dB): at 0.035 the
+   * 55 Hz drone sat 8-9 dB over the recorded beds on full-range playback.
+   */
+  drone(hope = 0, { volume = 0.02 } = {}) {
     if (!this.ok) return;
     if (!this._drone) {
       const g = this.ctx.createGain();
@@ -410,7 +611,7 @@ export class AudioSys {
         o.start();
         return o;
       });
-      f.connect(g).connect(this.bus);
+      f.connect(g).connect(this._bedBus());
       this._drone = { g, f, oscs, vol: volume, lastHope: -1 };
       g.gain.setTargetAtTime(volume, this.t, 2);
     }
@@ -451,6 +652,7 @@ export class AudioSys {
       this._music = null;
     }
     this._musicToken = null;
+    for (const h of [...this.sfxBank.loops]) if (h.bus === 'bus' || h.bus === 'beds') h.stop(0.05); // fx loops play through
     this.isCut = true;
   }
 

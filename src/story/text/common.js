@@ -52,18 +52,22 @@ export const common = {
     name: 'HAIRLINE',
     tagline: 'The crack was thinner than a hair. It went all the way through.',
     begin: 'Click to begin',
+    // Keys are tokens ({KeyW}, {Space}...), resolved for the player's layout (docs/API.md, i18n).
     controls: [
-      ['WASD / Arrows', 'Move / steady a brush'],
-      ['Mouse', 'Look around · R re-centre'],
-      ['Shift', 'Try to jog'],
-      ['E', 'Interact / advance'],
-      ['Space', 'Timing prompts'],
-      ['A / D', 'Keep a rhythm'],
-      ['1 – 3', 'Choices'],
-      ['M', 'Mute'],
-      ['Esc', 'Pause'],
+      ['{KeyW}{KeyA}{KeyS}{KeyD} / {Arrows}', 'Move / steady a brush'],
+      ['Mouse', 'Look around · {KeyR} re-centre'],
+      ['{Shift}', 'Try to jog'],
+      ['{KeyE}', 'Interact / advance'],
+      ['{Space}', 'Hold the tape · pluck a spoke'],
+      ['{KeyA} / {KeyD}', 'Keep a rhythm'],
+      ['1 – 5', 'Choices · paint tins'],
+      ['{KeyM}', 'Mute'],
+      ['{Escape}', 'Pause'],
     ],
   },
+
+  // Names of the non-letter key tokens ({Space}...). Letter tokens ({KeyA}) follow the keyboard layout.
+  keyNames: { Space: 'Space', Shift: 'Shift', Escape: 'Esc', Enter: 'Enter', Arrows: 'Arrows' },
 
   loading: 'Loading',
   noWebGL: 'This demo needs WebGL.',
@@ -78,8 +82,8 @@ export const common = {
     resume: 'Resume',
     restart: 'Restart chapter',
     options: 'Options',
-    escKey: 'ESC', // footer: '{escKey} · {muteHint}'
-    muteHint: 'M to mute',
+    escKey: '{Escape}', // footer: '{escKey} · {muteHint}'
+    muteHint: '{KeyM} to mute',
     quality: 'Graphics',
     tiers: { low: 'Low', medium: 'Medium', high: 'High' },
   },
@@ -87,6 +91,11 @@ export const common = {
   options: {
     title: 'Options',
     language: 'Language',
+    // Voices row: French voice-over only; in English the row is greyed with the note.
+    voices: 'Voices',
+    voicesOn: 'On',
+    voicesOff: 'Off',
+    voicesNote: 'French only',
     back: 'Back',
   },
 
@@ -98,6 +107,7 @@ export const common = {
     space: 'SPACE',
     distance: '{n} m',
     interact: 'Interact',
+    next: '{KeyE} ▸', // dialogue / card advance cue
     muted: 'Muted',
     soundOn: 'Sound on',
   },
@@ -126,13 +136,13 @@ export const common = {
   },
 
   hints: {
-    jog: 'Hold Shift to jog',
-    rhythm: 'Alternate A and D. Steady, not fast.',
-    sand: 'Alternate A and D. Steady.',
-    steer: 'The brush follows the chalk. WASD: small corrections only',
-    steerLine: 'W / S to steady the brush',
+    jog: 'Hold {Shift} to jog',
+    rhythm: 'Alternate {KeyA} and {KeyD}. Steady, not fast.',
+    sand: 'Alternate {KeyA} and {KeyD}. Steady.',
+    steer: 'The brush follows the chalk. {KeyW}{KeyA}{KeyS}{KeyD}: small corrections only',
+    steerLine: '{KeyW} / {KeyS} to steady the brush',
     still: "Don't touch anything",
-    space: 'Space',
+    space: '{Space}',
   },
 
   // GPS watch HUD (ui.watch / ui.watchBuzz). Docked bottom-right.
@@ -194,10 +204,41 @@ export const common = {
   },
 
   ending: {
+    // The closing card: 7 lines chosen from memory by story/ending.js (endingLines). `lines` is the
+    // default selection (no panel, Sami right first time, no jobs, the grey his own).
+    cards: {
+      street: {
+        plain: 'Rue des Tanneurs never got another billboard.',
+        wheel: "Rue des Tanneurs never got another billboard. Where it was, there's a small wheel. Sami says it's his.",
+        door: "Rue des Tanneurs never got another billboard. Where it was, there's a small grey door. People knock on the real one.",
+        hand: 'Rue des Tanneurs never got another billboard. Where it was, a small hand holds a brush very still.',
+      },
+      sami: {
+        first: "Sami Haddad fixes punctures. Two euros, or free if you'll learn.",
+        second: "Sami Haddad fixes punctures. Two euros, or free if you'll learn. He lets you get it wrong first.",
+      },
+      job: {
+        board: "Marco's board says KEBAB again, by hand. He added GREAT himself. It's a bit drunk.",
+        wheel: "Ines rides a wheel that doesn't rub. She signs her work now. Small, in the corner.",
+        shutter: "Mme Benali's shutter goes up at six without a sound. She misses the argument.",
+      },
+      grey: {
+        own: "No. 14's door is a grey that's been somewhere. He never wrote the recipe down.",
+        odile: "No. 14's door is a grey Odile finished. He says he mixed it. She lets him.",
+      },
+      radio: {
+        fixed: "Odile's radio gets four stations now. She listens to the fishing one.",
+        one: "Odile's radio still gets one station. She's learned a great deal about fishing.",
+      },
+      ask: 'Odile Marchal\'s list got one line longer that year. It says "Ask."',
+      runs: 'Hugo Revel runs some Sundays. Nobody knows how far, including him.',
+      watch: "His watch hangs on a nail above the workbench. It thinks he's been resting for a year.",
+    },
     lines: [
       'Rue des Tanneurs never got another billboard.',
       "Sami Haddad fixes punctures. Two euros, or free if you'll learn.",
-      "Odile's radio gets four stations now. She listens to the fishing one.",
+      "No. 14's door is a grey that's been somewhere. He never wrote the recipe down.",
+      "Odile's radio still gets one station. She's learned a great deal about fishing.",
       'Odile Marchal\'s list got one line longer that year. It says "Ask."',
       'Hugo Revel runs some Sundays. Nobody knows how far, including him.',
       "His watch hangs on a nail above the workbench. It thinks he's been resting for a year.",
@@ -208,7 +249,7 @@ export const common = {
     thanks: 'Thank you for playing.',
     playAgain: 'Play again',
     credits:
-      'Characters and animations: Quaternius. Props, materials and HDRIs: Poly Haven, ambientCG. Street pieces and footsteps: Kenney. Music and ambience: OpenGameArt. All CC0.',
+      'Characters and animations: Quaternius. Props, materials and HDRIs: Poly Haven, ambientCG. Street pieces and footsteps: Kenney. Music and ambience: OpenGameArt. These are all CC0. French voices: Kyutai TTS (kyutai/tts-1.6b-en_fr, CC BY 4.0), with voices from CML-TTS (CC BY 4.0) and a voice donation (CC0).',
   },
 };
 

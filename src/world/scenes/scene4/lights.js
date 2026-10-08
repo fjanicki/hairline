@@ -176,17 +176,28 @@ export async function buildLights(ctx, group, surf) {
   const v = new THREE.Vector3();
   const audio = ctx.audio;
   let t = 0;
+  // Sound (docs/assets/sfx.md Ch4): the tube's hum is a point source gated by the tube (it drops out in
+  // each stutter); a long stutter plays a recorded fluoro_flicker (at most one every 5 s; the short
+  // ones are the hum's gaps). Started on the first frame; main.js stops it at the next chapter.
+  const TUBE_POS = [TUBE.x, TUBE.y - 0.05, TUBE.z];
+  let hum = null;
+  let flickAt = -1e9;
 
   function updateTube(raw) {
     const s = tube_;
+    if (!hum && audio?.loopSfx) hum = audio.loopSfx('fluoro_hum', { volume: 0, bus: 'beds', pos: TUBE_POS, ref: 1.5, fade: 1.5 }); // ducks under voices
     let target = 1;
     if (s.mode === 'off') target = 0;
     else if (s.mode === 'flicker') {
       s.next -= raw;
       if (s.next <= 0 && s.off <= 0) {
-        s.off = 0.05 + R() * (R() < 0.3 ? 0.6 : 0.15);
+        const long = R() < 0.3;
+        s.off = 0.05 + R() * (long ? 0.6 : 0.15);
         s.next = 0.6 + R() * 3.5;
-        if (R() < 0.6) audio?.tone?.({ freq: 120, to: 100, dur: 0.06, type: 'square', volume: 0.025 });
+        if (long && t - flickAt >= 5) {
+          flickAt = t;
+          audio?.sfx?.('fluoro_flicker', { volume: 0.2, bus: 'bus', pos: TUBE_POS, ref: 1.5, fallback: (a) => a.tone({ freq: 120, to: 100, dur: 0.06, type: 'square', volume: 0.025 }) });
+        }
       }
       if (s.off > 0) {
         s.off -= raw;
@@ -194,6 +205,7 @@ export async function buildLights(ctx, group, surf) {
       } else target = 0.92 + 0.05 * Math.sin(t * 50);
     }
     s.level = s.mode === 'flicker' ? target : damp(s.level, target, 10, raw);
+    hum?.set(s.level > 0.3 ? 0.1 * Math.min(1, s.level) : 0, null, 0.03); // the hum cuts out with the tube
     tubeLight.intensity = (s.mode === 'on' ? 4.2 : 6) * s.level; // fixed in Week 7: a steadier, softer tube
     tubeMat.emissiveIntensity = 0.15 + 2.6 * s.level;
   }

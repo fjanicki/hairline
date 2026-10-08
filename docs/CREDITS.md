@@ -3,7 +3,9 @@
 Every third-party file the game uses, where it comes from and under which licence. **Everything
 is CC0** (public domain dedication): no attribution is required and commercial use and
 redistribution are allowed. The game credits the sources anyway, here, in the README and on the
-end card. There is no CC-BY, Mixamo, login-walled or paid asset in the build.
+end card. Exception: the French voice-over is CC BY 4.0 (Kyutai TTS, CML-TTS voices; see
+[French voices](#french-voices-kyutai-tts-cc-by-40-cml-tts-cc-by-40-voice-donation-cc0)), credited
+on the end card. There is no Mixamo, login-walled or paid asset in the build.
 
 None of these files are in git. `npm run setup:assets` (`bash scripts/fetch-assets.sh`)
 downloads them from the URLs below into `.cache/dl` and copies only the files the game uses into
@@ -146,6 +148,21 @@ ours is Joth's, at the page below.
 | `audio/piano.ogg` (Ch5 and the end card; transcoded to Ogg Opus by `fetch-assets.sh`) | "Emotional piano loop", extenz | https://opengameart.org/content/emotional-piano-loop (CC0) | https://opengameart.org/sites/default/files/Piano%20Loop.wav |
 | `audio/rain.ogg` (file `2.ogg` of the zip) | "Rain (loopable)", Ylmir | https://opengameart.org/content/rain-loopable (CC0) | https://opengameart.org/sites/default/files/Rain%20OGG.zip |
 | `audio/crowd.ogg` (the Ch3 race) | "Crowd Shouting/Speaking Ambience", StarNinjas | https://opengameart.org/content/crowd-shoutingspeaking-ambience (CC0; the author asks for a link to their profile, given here as a courtesy) | https://opengameart.org/sites/default/files/crowd_shouting_0.ogg |
+
+## French voices: Kyutai TTS (CC BY 4.0), CML-TTS (CC BY 4.0), voice donation (CC0)
+
+The French voice-over (`public/assets/voice/fr/*.ogg`, 301 clips, played only in French with
+Options > Voices on) is synthesised; how it is made and checked is in `docs/voice.md`. Unlike the
+rest of this page these are **CC BY 4.0** items, so the credit below (and on the end card) is required.
+
+| Item | Licence |
+|---|---|
+| Kyutai TTS 1.6B en_fr weights ([`kyutai/tts-1.6b-en_fr`](https://huggingface.co/kyutai/tts-1.6b-en_fr)) | CC BY 4.0 (credit: Kyutai) |
+| moshi-mlx 0.3.0 / moshi (inference code, not shipped) | MIT / Apache-2.0 |
+| Voice embeddings `cml-tts/fr/*` in [`kyutai/tts-voices`](https://huggingface.co/kyutai/tts-voices) (12 of the 13 voices) | CC BY 4.0 (CML-TTS, derived from LibriVox public-domain readings; credit: the CML-TTS authors) |
+| Voice embedding `voice-donations/Erick_enhanced` (Dr Okafor) | CC0 |
+
+QA-only tools (nothing of them is in the clips) are listed in `docs/voice.md` section 9.
 
 ## Code
 

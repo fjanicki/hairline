@@ -2,9 +2,10 @@
 // Usage: node scripts/i18n-check.mjs [fr] [--all]   (--all lists every finding, not the first 12 per kind)
 // Errors (exit 1): missing / extra keys, array lengths, types, line flags (who / inner / voicemail /
 // correct), menu option counts, game data or as-is signage changed, *stage* markers, {placeholders},
-// [key chips] and key names lost, numbers lost, text still marked '⟦EN⟧', text over its UI LIMIT.
+// [key chips] lost, {KeyA} key tokens differing from English or unknown, key names written literally
+// instead of as tokens, numbers lost, text still marked '⟦EN⟧', text over its UI LIMIT (tokens resolved).
 // Warnings: text identical to English (names and brands may legitimately be).
-import { FILES, MARK, KEY_NAMES, loadLang, leaves, isObj, isData, isName, isAsIs, sameData } from './i18n-lib.mjs';
+import { FILES, MARK, KEY_TOKEN, keyText, loadLang, leaves, isObj, isData, isName, isAsIs, sameData } from './i18n-lib.mjs';
 
 const argv = process.argv.slice(2);
 const code = argv.find((a) => !a.startsWith('--')) || 'fr';
@@ -42,12 +43,16 @@ export const LIMITS = {
   '*.objectives.*': 83, // top-left, clear of the centred hint
   '*.prompts.*': 100, // '[E] ' + prompt, centred, clear of the watch
   'hints.*': 110,
-  'ch4.week4.truing.cue': 43, // timing-ring key chip (320 px)
+  'ch4.week4.truing.hint': 110, // craft prompt (bottom-centre)
+  'ch4.sanding.hint': 100,
   'ui.space': 43,
   'ch2.hold.gauge': 41, // gauge caption (360 px, wide caps)
   'ch3.gauge.label': 41,
   'ch4.sanding.gauge': 41,
+  'ch4.week4.truing.gauge': 41,
+  'ch4.week4.truing.pitch.*': 41, // gauge readout
   'ch5.line.gauge': 41,
+  'ch5.jobs.shutter.gauge': 41,
   'ui.pain': 21,
   // Buttons and options (pause / title / end)
   'pause.resume': 39,
@@ -56,6 +61,10 @@ export const LIMITS = {
   'options.back': 39,
   'mobile.continue': 39,
   'ending.playAgain': 39,
+  'ending.cards.*.*': 140, // end card lines (seven at once: must fit a landscape phone)
+  'ending.cards.ask': 140,
+  'ending.cards.runs': 140,
+  'ending.cards.watch': 140,
   reload: 39,
   'options.language': 17,
   'pause.quality': 17,
@@ -70,9 +79,15 @@ export const LIMITS = {
   '*.*.*.options.*.text': 134,
   '*.*.*.*.options.*.text': 134,
   'ch2.nameOne.prompt': 193,
-  'ch4.day8.greyMenu.prompt': 193,
+  'ch4.day8.tape.hint': 100, // craft prompt (bottom-centre)
+  'ch4.day8.mixer.hint': 100,
+  'ch5.jobs.radio.hint': 100, // craft prompt (bottom-centre)
+  'ch4.day8.mixer.tins.*': 12, // colour-toy chip: tin names under the dots
+  'ch4.day8.mixer.tip': 16, // chip buttons (with their key chip)
+  'ch4.day8.mixer.done': 16,
   'ch4.week7.signMenu.prompt': 193,
   'ch5.teach.menu.prompt': 193,
+  'ch5.panel.menu.prompt': 193,
   'ch5.walk.restMenu.prompt': 193,
 };
 
@@ -132,20 +147,16 @@ const at = (t, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]),
 const STAGE = /\*[^*]+\*/g;
 const BRACES = /\{[^}]*\}/g;
 const CHIPS = /\[[^\]]+\]/g;
-const KEYS = /\b(WASD|Shift|Esc|ESC|Space|SPACE|Enter|Arrows)\b/g;
-const KEY_PATHS = /^(title\.controls|hints|pause\.muteHint|ui\.space|ch\d\.keys|ch\d\.prompts)/; // single-letter keys only here
-const LETTER_KEYS = /(?<![\p{L}'’])([ADEMRWS]|1 – 3)(?![\p{L}'’])/gu;
+const TOKEN_LIKE = /\{[A-Z][A-Za-z0-9]*\}/g; // '{KeyA}', '{Space}'; '{n}' placeholders are lower-case
+const KEY_PATHS = /^(title\.controls|hints|pause\.(escKey|muteHint)|ui\.next|ch\d\.keys|ch\d\.prompts|ch4\.(week4\.truing|sanding)\.hint|ch5\.jobs\.radio\.hint|ch4\.day8\.(tape|mixer)\.hint)/;
+// Literal key names where a token belongs: a lone capital letter (not a word), WASD-style runs, key words.
+const LITERAL_KEYS = /(?<![\p{L}'’])([A-Z]|[WASDZQ]{4}|Shift|Maj|Space|Espace|Esc|ESC|Échap|Arrows|Flèches|Enter|Entrée)(?![\p{L}'’])/gu;
 const NUM = /\d+(?:[.,:]\d+)*/g;
 const normNum = (s) => s.replace(/,/g, '.');
 // Caption times: '5:12 AM' -> '5 H 12' (docs/i18n-fr.md 4.3).
 const normTimes = (s) => s.replace(/(\d+)[\s\u00a0\u202f]H[\s\u00a0\u202f](\d{2})\b/g, '$1:$2');
-const ALIAS = KEY_NAMES[code] || {};
-const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-/** Key name t (or this language's name for it) appears in s as a word. */
-const hasKey = (t, s) => [t, ALIAS[t]].filter(Boolean).some((k) => new RegExp(`(?<![\\p{L}'’])${reEsc(k)}(?![\\p{L}'’])`, 'u').test(s));
-const lostKeys = (re, a, b) => [...new Set(a.match(re) || [])].filter((t) => !hasKey(t, b));
-/** '[A / D]' -> '[Q / D]', '[Space]' -> '[Espace]'. */
-const localChip = (c) => c.replace(/[A-Za-z]+/g, (k) => ALIAS[k] ?? k);
+const tokens = (s) => (s.match(TOKEN_LIKE) || []).sort().join(' ');
+const literalKeys = (s) => s.replace(TOKEN_LIKE, '').match(LITERAL_KEYS) || [];
 const lost = (re, a, b, norm = (x) => x) => {
   const want = (a.match(re) || []).map(norm);
   const have = (b.match(re) || []).map(norm);
@@ -176,19 +187,21 @@ for (const [path, en] of leaves(EN)) {
     continue;
   }
   translated++;
-  if (tr === en) warn('identical', `${path}: ${en.slice(0, 70)}`);
+  if (tr === en && /\p{L}/u.test(tr.replace(TOKEN_LIKE, ''))) warn('identical', `${path}: ${en.slice(0, 70)}`);
   const stages = [en, tr].map((x) => (x.match(STAGE) || []).length);
   if (stages[0] !== stages[1]) err('stage', `${path}: *...* markers ${stages[0]} -> ${stages[1]}`);
   for (const t of lost(BRACES, en, tr)) err('placeholder', `${path}: lost ${t}`);
-  for (const t of lost(CHIPS, en, tr)) if (!tr.includes(localChip(t))) err('placeholder', `${path}: lost ${t}`);
-  for (const t of lostKeys(KEYS, en, tr)) err('key-name', `${path}: lost ${t}`);
-  if (KEY_PATHS.test(path)) for (const t of lostKeys(LETTER_KEYS, en, tr)) err('key-name', `${path}: lost key ${t}`);
+  for (const t of lost(CHIPS, en, tr)) err('placeholder', `${path}: lost ${t}`);
+  if (tokens(en) !== tokens(tr)) err('key-token', `${path}: ${tokens(en) || '-'} -> ${tokens(tr) || '-'}`);
+  for (const t of (tr.match(TOKEN_LIKE) || []).filter((t) => !t.match(KEY_TOKEN))) err('key-token', `${path}: unknown ${t}`);
+  if (KEY_PATHS.test(path)) for (const [lng, s] of [['en', en], [code, tr]]) for (const t of literalKeys(s)) err('key-literal', `${path} (${lng}): '${t}' -> use a token ({KeyA}, {Space}...)`);
   for (const t of lost(NUM, en, normTimes(tr), normNum)) err('number', `${path}: lost ${t}`);
   const lim = limitFor(path);
   if (lim) {
-    const r = tr.length / Math.max(1, en.length);
-    ratios.push({ path, en: en.length, tr: tr.length, limit: lim, ratio: +r.toFixed(2), over: tr.length > lim });
-    if (tr.length > lim) err('limit', `${path}: ${tr.length} chars > ${lim} (${JSON.stringify(tr)})`);
+    const trLen = keyText(tr, TR.keyNames).length; // as shown (US labels; every layout's letters are one character)
+    const r = trLen / Math.max(1, keyText(en, EN.keyNames).length);
+    ratios.push({ path, en: keyText(en, EN.keyNames).length, tr: trLen, limit: lim, ratio: +r.toFixed(2), over: trLen > lim });
+    if (trLen > lim) err('limit', `${path}: ${trLen} chars > ${lim} (${JSON.stringify(tr)})`);
   }
 }
 // Ch2's fascia is revealed letter by letter from fasciaStart to fascia.

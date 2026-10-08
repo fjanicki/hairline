@@ -6,6 +6,10 @@
 // A key missing from a translation falls back to English (debug: warning '[i18n] missing fr key: path').
 // Adding a language: text/<code>/*.js mirroring text/*.js, an entry in LANGS, the import in script.js;
 // check it with `node scripts/i18n-check.mjs <code>`.
+// Key names in text are tokens ('{KeyA}', '{Space}'): L holds them resolved for the player's keyboard
+// layout and language (core/KeyLabels.js); when the layout is learned, L is re-resolved and listeners fire.
+
+import { keyText, onKeyLabels, setKeyNames } from '../core/KeyLabels.js';
 
 export const LANGS = [
   { code: 'en', label: 'English' },
@@ -47,7 +51,8 @@ function initialLang() {
 let lang = 'en';
 let L = null; // the live tree (script.js exports it)
 let tables = {}; // code -> raw text tree as authored
-const merged = {}; // code -> English-shaped tree, gaps filled from English
+const merged = {}; // code -> English-shaped tree, gaps filled from English (key tokens unresolved)
+let live = {}; // code -> merged tree with key tokens resolved (cleared when key labels change)
 const index = new Map(); // any language's string -> its key path (English first)
 const listeners = new Set();
 const chapterListeners = new Set();
@@ -103,20 +108,54 @@ function mergedFor(code) {
   if (!merged[code]) {
     const missing = [];
     merged[code] = code === 'en' ? tables.en : fill(tables.en, tables[code], '', missing);
-    addToIndex(merged[code]);
     if (DEBUG && missing.length) setTimeout(() => missing.forEach((p) => console.warn(`[i18n] missing ${code} key: ${p}`)));
   }
   return merged[code];
 }
 
+const resolveKeys = (v, names) =>
+  typeof v === 'string' ? keyText(v, names) : isObj(v) ? (Array.isArray(v) ? v.map((x) => resolveKeys(x, names)) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolveKeys(x, names)]))) : v;
+
+/** merged tree with '{KeyA}' / '{Space}' resolved for this language and the current layout. */
+function liveFor(code) {
+  if (!live[code]) {
+    const m = mergedFor(code);
+    live[code] = resolveKeys(m, m.keyNames);
+    addToIndex(live[code]); // old resolutions stay indexed, so retext() maps them to the new ones
+  }
+  return live[code];
+}
+
+function notify() {
+  for (const set of [listeners, chapterListeners]) {
+    for (const fn of [...set]) {
+      try {
+        fn(lang);
+      } catch (err) {
+        console.error('[i18n] listener failed', err);
+      }
+    }
+  }
+}
+
+// The layout became known (getLayoutMap, a keydown): re-resolve L like a language change.
+onKeyLabels(() => {
+  if (!L) return;
+  const before = JSON.stringify(liveFor(lang));
+  live = {};
+  if (JSON.stringify(liveFor(lang)) === before) return;
+  replaceInPlace(L, liveFor(lang));
+  notify();
+});
+setKeyNames(() => L?.keyNames);
+
 /** script.js: build L from { en, fr, ... } text trees and apply the initial language. */
 export function initTexts(trees) {
   tables = trees;
-  L = clone(trees.en);
-  mergedFor('en');
+  L = clone(liveFor('en'));
   const first = initialLang();
   if (first !== 'en' && trees[first]) {
-    replaceInPlace(L, mergedFor(first));
+    replaceInPlace(L, liveFor(first));
     lang = first;
   }
   try {
@@ -138,27 +177,19 @@ export function setLang(code) {
     /* storage blocked: this session only */
   }
   if (code === lang) return true;
-  replaceInPlace(L, mergedFor(code));
+  replaceInPlace(L, liveFor(code));
   lang = code;
   try {
     document.documentElement.lang = code;
   } catch {
     /* no document */
   }
-  for (const set of [listeners, chapterListeners]) {
-    for (const fn of [...set]) {
-      try {
-        fn(code);
-      } catch (err) {
-        console.error('[i18n] listener failed', err);
-      }
-    }
-  }
+  notify();
   return true;
 }
 
 /**
- * fn(code) after every language change. Returns unsubscribe. { chapter: true } listeners (scene
+ * fn(code) after every language change, and when the key labels change (layout learned). Returns unsubscribe. { chapter: true } listeners (scene
  * canvas text) are dropped by the Director between chapters (releaseChapterListeners).
  */
 export function onLangChange(fn, { chapter = false } = {}) {
@@ -182,6 +213,7 @@ export function retext(s) {
     const v = at(L, p);
     return typeof v === 'string' ? v : s;
   }
+  if (/\{[A-Z]\w*\}/.test(s)) return keyText(s); // a stray token string
   // '[A / D] Alternate…' / '[Space]': the key chip follows too ('[Q / D]', '[Espace]').
   const m = s.match(/^(\[[^\]]+\])(\s*)([\s\S]*)$/);
   if (!m) return s;

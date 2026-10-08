@@ -11,6 +11,8 @@ export class Input {
     this.down = new Set();
     this.pressed = new Set();
     this.pressTime = new Map(); // code -> performance.now() of the last keydown
+    this.pressN = new Map(); // code -> keydowns since the previous frame (a hitch can merge several)
+    this._nextN = new Map();
     this.enabled = true;
     this._next = new Set();
     this._synthetic = new Map(); // code -> active synthetic hold count
@@ -33,6 +35,7 @@ export class Input {
   _press(code, t = performance.now()) {
     this.down.add(code);
     this._next.add(code);
+    this._nextN.set(code, (this._nextN.get(code) || 0) + 1);
     this.pressTime.set(code, t);
   }
 
@@ -49,6 +52,13 @@ export class Input {
   beginFrame() {
     this.pressed = this._next;
     this._next = new Set();
+    this.pressN = this._nextN;
+    this._nextN = new Map();
+  }
+
+  /** How many times `code` went down since the previous frame (raw, like `pressed`). */
+  pressCount(code) {
+    return this.pressN.get(code) || 0;
   }
 
   /** Movement axes, world-relative. W/Up: z=-1, S/Down: z=+1, A/Left: x=-1, D/Right: x=+1. */
@@ -71,6 +81,7 @@ export class Input {
   /** Removes a press so later systems in this frame do not also react to it. */
   consume(code) {
     this.pressed.delete(code);
+    this.pressN.delete(code);
   }
 
   get shift() {
@@ -85,6 +96,7 @@ export class Input {
   /** Synthetic key press for tests: visible in `pressed` for exactly one frame. */
   press(code) {
     this._next.add(code);
+    this._nextN.set(code, (this._nextN.get(code) || 0) + 1);
     this.pressTime.set(code, performance.now());
     for (const fn of this._listeners) fn(code, null);
   }

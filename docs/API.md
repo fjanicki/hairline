@@ -63,13 +63,17 @@ owns `getLang()`, `setLang(code)`, `onLangChange(fn, { chapter })` (returns unsu
   every language (`AS_IS` in `scripts/i18n-lib.mjs`).
 - Numbers: `ui.watch()` and the end card show decimals through `num(s)` (`'212.4 km'` -> `'212,4 km'` in
   French), so code keeps `toFixed()`; parse a face from text with `parseNum(s)` (either mark).
-- Key names: never hard-code a key chip; read it from text (`L.ch3.keys.both` = `[A / D]` / `[Q / D]`,
-  `L.hints.space`, `L.pause.escKey`). French names the AZERTY keys for the same physical codes
-  (`KEY_NAMES` in `scripts/i18n-lib.mjs`, which the checker accepts in place of the English names).
+- Key names: text writes keys as tokens, in every language: `{KeyA}`…`{KeyZ}` (a physical
+  `KeyboardEvent.code`, labelled with the player's layout: `{KeyW}{KeyA}{KeyS}{KeyD}` shows WASD on QWERTY,
+  ZQSD on AZERTY) and `{Space}` `{Shift}` `{Escape}` `{Enter}` `{Arrows}` (named from `L.keyNames`).
+  `L` holds them resolved (`src/core/KeyLabels.js`: real keydowns > `navigator.keyboard.getLayoutMap()` >
+  US QWERTY); when the layout is learned, `L` is re-resolved and `onLangChange` listeners fire. Code never
+  writes a key letter: use `L.ch3.keys.both`, `L.hints.*`, or `label('KeyE')` / `keyText(s)` from KeyLabels.
+  The checker requires the same tokens in English and translations and flags literal key names.
 
 **Adding a language:** `node scripts/i18n-skeleton.mjs <code>` writes `src/story/text/<code>/*.js` with
 every text leaf marked `⟦EN⟧ `; translate those (keep keys, array lengths, `who`/`inner`/`voicemail`/
-`correct`, `*stage*` markers, `{n}`, `[E]` chips and key names), add `{ code, label }` to `LANGS` in
+`correct`, `*stage*` markers, `{n}`, `[{KeyE}]` chips and `{KeyA}` key tokens), add `{ code, label }` to `LANGS` in
 `i18n.js` and the imports to `TEXTS` in `script.js`. Then `node scripts/i18n-check.mjs <code>` reports
 missing/extra keys, shape and flag mismatches, lost markers/placeholders/numbers, untranslated text,
 and text over the UI `LIMITS` (max characters per tight spot, measured at 1280x800); exit 1 on errors.
@@ -231,6 +235,7 @@ Keys are `KeyboardEvent.code` strings: `'KeyW'`, `'KeyE'`, `'Space'`, `'ShiftLef
 | `shift` | getter `boolean` | Either Shift held (respects `enabled`). |
 | `consume(code)` | | Remove a press so later systems this frame ignore it. |
 | `lastPress(code)` | `→ number \| undefined` | `performance.now()` timestamp of the latest keydown. |
+| `pressCount(code)` | `→ number` | Keydowns of `code` since the previous frame (raw). A hitch can merge several presses into one frame; `pressed` only says "at least one" (the colour toy counts every drop). |
 | `press(code)` | | Synthetic one-frame press (tests). |
 | `hold(code, ms=500)` | `→ Promise` | Synthetic hold (tests and debug). |
 | `onKey(fn)` | `fn(code, event) → off()` | Raw keydown listener. It fires even while paused. Call the returned `off()` at chapter end. |
@@ -344,10 +349,11 @@ Every method is safe before the user gesture: nothing plays until the title clic
 |---|---|
 | `music(name \| null, {volume=0.45, fade=2.5, loop=true})` | Cross-fades beds. Names: `'contemplation'` and `'piano'` (Ch5 and the ending). `null` fades out. Calling with the current name only changes the volume. Usually set through the chapter's `music` field instead. |
 | `ambience(name, on=true, {volume, fade=2, lowpass})` | `'rain'` or `'crowd'` (low-passed at 900 Hz by default; pass `lowpass` in Hz, e.g. Ch3 race `{lowpass: 1400}`). Usually set through the chapter's `ambience` field. Safe to call repeatedly while the file is still loading. |
+| `buffer(name) → Promise<AudioBuffer \| null>` | The decoded music / ambience file, for a graph of your own on `audio.ctx` into `audio.bus` (Ch5's radio plays `'contemplation'` through its own filters: `crafts/radio.js`). |
 | `footstep(surface='concrete', {volume=0.35, rate})` | One sample. Player footsteps are already automatic (including `'boot'`). |
-| `preload(names)` | Fetch music/ambience files early (default: all). main.js preloads the start chapter's sounds at boot and each chapter's (plus the next one's) with its build, from the chapter's `music`, `ambience` and `sounds` fields; anything else loads on first use. |
+| `preload(names)` | Fetch music/ambience files early (default: all). main.js preloads the start chapter's sounds at boot and each chapter's with its build (the next chapter's sfx are only fetched then, see `prefetch`), from the chapter's `music`, `ambience` and `sounds` fields; anything else loads on first use. |
 | `heartbeat({volume})` | Two 55 Hz thumps (stumbles call it). |
-| `snap({volume=0.9})` | Small dry bandpassed click (Ch3 KM 31: `snap({volume: 0.3})`, "a pencil lead"). Plays after `cut()`. |
+| `snap({volume=0.9})` | Small dry bandpassed click. Ch3 KM 31 now plays the recorded `crack_pencil_lead` (fx 0.5, lowpass 3 kHz, `src/story/ch3sound.js`); `snap({volume: 0.3})` is its fallback. Plays after `cut()`. |
 | `thud({volume=0.45})` | Low body thud. Plays after `cut()`. |
 | `tone({freq=440, to, dur=0.3, type='sine', volume=0.3, bus='fx', attack=0.01, delay=0})` | Pitch-ramped oscillator (exponential ramp `freq → to` over `dur`). Use it for the Ch3 whine. `bus:'fx'` plays through `cut()`; `bus:'bus'` is silenced by it. |
 | `noise({type='bandpass', freq=1000, q=1, dur=0.2, volume=0.3, tail=0.05, bus='fx', delay=0, attack=0, brown=false})` | Filtered noise burst (`type` is any BiquadFilter type). The Ch2 scaffold creak: `noise({type:'bandpass', freq:240, q:6, dur:0.4})`. |
@@ -358,11 +364,80 @@ Every method is safe before the user gesture: nothing plays until the title clic
 | `rip({volume=0.3})` | Velcro strap (~0.35 s). |
 | `buzz({volume=0.18})` | Two 180 Hz square pulses, low-passed (`ui.watchBuzz` calls it). |
 | `gun({volume})` | Legacy starting-gun crack (unused). |
-| `drone(hope)` | Called every frame by Mood. Do not call it. |
+| `drone(hope)` | Called every frame by Mood. Do not call it. It goes through the beds gain (ducked under voices) at 0.02. |
 | `cut()` | Silences music, ambience, drone and steps within 50 ms (Ch3 at KM 31). `fx` one-shots still play. |
 | `restore(fade=0.8)` | Undoes `cut()`. The Director calls it at every chapter start. |
 | `stopAll({fade=1.5, music=true})` | Fades all ambience (and music). |
 | `toggleMute()`, `setMuted(b)`, `muted` | M is wired globally. |
+| `prefetch(names)` | Fetch, without decoding, the compressed files of sets / beds (main.js: the next chapter's `sounds`, decoded by its own build). |
+
+The master feeds a safety limiter (`audio.limiter`: −3 dBFS, ratio 20, 3 ms attack) before the speakers; it is transparent below −3 dBFS. Pause suspends the context, also on the debug autostart path before the first click.
+
+#### Runtime API: recorded SFX (`src/core/Sfx.js`)
+
+The files are in `public/assets/sfx/` and the manifest is `sfx.json`. `docs/assets/sfx.md` (Integration list) gives every cue's set name, bus, volume and filter. A **set name** is a manifest key such as `'hammer_floor'`, and its files are the variants.
+
+| Method | Notes |
+|---|---|
+| `sfx(name, opts) → {dur, ended, stop(fade)} \| null` | One-shot. Picks a random variant, never the last one played (`hammer_floor_06` has half weight). opts: `volume=0.5`, `rate=1`, `jitter=0.04` (± rate), `gainJitter=0` (± dB), `bus='fx'\|'bus'\|'beds'` (`'beds'`: the bus through the beds gain, ducked under voices), `lowpass`, `highpass`, `q=0.7`, `band='tv'\|'radio'` (speaker band: hp 250/300 → lp 4500/3400 → light shaper), `pan` (−1..1), `pos` (point source, see below), `ref=1.5`, `rolloff=1`, `delay=0`, `offset=0`, `alt` (a second set, 50/50, e.g. `alt: 'mug_clink_alt'`), `fallback` (fn(audio, opts), or `false`). If the file is missing or not decoded yet, it plays the procedural cue the file replaces (a table in `Sfx.js`; for a cue not in the table, pass `fallback`) and returns `null`. While the game is paused or before the first click, nothing plays and nothing is queued. |
+| `loopSfx(name, opts) → handle` | A loop that gameplay drives. opts are the same as `sfx()`, plus `fade=0.5` (fade-in), `offset` (default: a random point in the file) and `bus` (default `'bus'`). `handle.set(volume, rate, secs=0.1)` is cheap and can be called every frame; it only acts on a change. Also `handle.setPos(pos)`, `handle.lowpass(hz, secs)`, `handle.stop(fade=0.3)` (idempotent) and `handle.playing`. You can call it before the buffer has loaded: it starts when the buffer is ready, and if `stop()` came first it never starts. `cut()` stops loops on `'bus'` and `'beds'`. Put room tones, hums, a TV or a radio bed on `'beds'` so they duck under voices. Loops on `'fx'` keep playing through `cut()`. |
+| `ambience(name, on, opts)` | Also plays the recorded single-file beds, which are registered in `FILES`: `amb_*`, `fluoro_hum`, `neon_buzz`, `tv_race_bed`, `radio_static`, `radio_tune_sweep`, `radio_talk_fishing`, `brush_wall_loop`, `sand_loop`. Beds go through the voice runtime's `duck()`. **The Director only starts `'rain'` and `'crowd'` from `chapter.ambience`**, so start any other bed in `run()`. Listing it in `ambience` or `sounds` only preloads it. |
+| **Positional** `pos` | `[x,y,z]`, a `Vector3`, an `Object3D` (it follows the object), or `() => pos`. Gain uses the inverse model `ref / (ref + rolloff·(d − ref))`, measured from Hugo's head (`player.root` + 1.5 m). Pan is taken from the camera's right vector (width 0.7). main.js updates it every frame through `audio.updateListener(camera, player.root)`. |
+| `surface` | Set `audio.surface = 'wood'` for an indoor chapter (Ch1 flat, Ch4 workshop). The Player's steps then become `step_wood`, and the boot step becomes `boot_step_wood` + `body_thud` (lowpass 900 Hz). The thud the Player plays next to the boot step is absorbed. `audio.surface = 'street'` (Ch2 wet street, Ch5) changes only the boot step outdoors, to `boot_step_wet` (0.35) + `body_thud` (0.12, lowpass 900 Hz); the good foot keeps the Kenney concrete step. `releaseChapter()` resets it. |
+| `releaseChapter(keep, {prefetch})` | main.js calls this in each chapter's build wrapper, before `preload()`, and the Director before the end card (`['piano']`). It stops every `loopSfx` handle and every recorded bed that is not in `keep`, resets `surface`, drops the decoded sfx buffers that are not in `keep` (this chapter's `music`, `ambience` and `sounds`) and the prefetched bytes not in `prefetch` (the next chapter's, fetched but decoded only at its build). Do not call it from a chapter. |
+| `preload(names)` | Also takes set names: list a chapter's sets in its `sounds` field (Ch1: `SOUNDS` in `ch1.js`), and every variant loads with the chapter. |
+
+**Pattern** (a gated hum at a point, then a one-shot through a band):
+
+```js
+const hum = audio.loopSfx('fluoro_hum', { volume: 0.1, bus: 'beds', pos: [2.79, 1.9, 1.75] });
+world.onUpdate(() => hum.set(tube.on ? 0.1 : 0, null, 0.03));
+audio.sfx('tv_crt_off', { volume: 0.45, pos: tvScreen });
+const radio = audio.loopSfx('radio_static', { volume: 0.3, band: 'radio', bus: 'fx' });
+radio.set(0.5 * dialSpeed, 1, 0.08); // ... radio.stop(0.2)
+```
+
+**Ch4 / Ch5 helpers (`src/story/crafts/sound.js`).**
+
+- `speaking(ctx)`: true while a voice clip plays (never in English, or with voices off).
+- `duckUnderVoice(ctx, handle, {db=6})`: dips a long one-shot (a kettle, the run club passing) while a clip plays. Driven loops do the same in their own `set()` (×0.6 while `speaking`).
+- `wheelSound(ctx, rig)`: `freewheel_tick`, whose gain and rate follow a `bikeRig`'s measured rear-wheel speed (hand turns, a spin on the stand, a walk beside the rider), plus `freewheel_coastdown` when a free spin is let go. Returns `{dispose()}`.
+- `stirSlice(audio)`: a 0.4 s slice of `paint_stir_loop` with 60 ms fades.
+- `scrapeAt(audio, rate, {name, volume:[base, perK], pitch:[base, perK]})` (`crafts/juice.js`) plays a recorded stroke whose gain and rate follow the stroke rate: `sand_stroke` by default, `shutter_runner_scrape` in Ch5.
+- The Ch5 radio set (`radioVoice`) goes out through the beds bus, so the voice duck covers it. Its static is the recorded `radio_static`, and `radio_tune_sweep` follows the dial speed. `hush(secs)` quiets its formant talk while a station's voice clip plays.
+- Ch4 leaves `audio.surface` unset, because the workshop floor is garage concrete (`scene4/shell.js`), not boards.
+
+**Debug (`?debug=1`, `src/core/AudioDebug.js`).** Every audio feature shares one implementation.
+
+- `__game.debug.audioLog`: every sound that starts, as `{t (AudioContext s), at (performance.now ms), kind, name, file, bus, gain, rate, pos, ...}`.
+  - `kind` is one of: `sfx`, `loop`, `loopStop`, `amb`, `music`, `proc` (a procedural cue), `fallback`, `skipped` (paused / locked), `release`, `duck`, `voice`.
+  - The list keeps the last 5000 or so entries.
+- `__game.debug.meter()`: `{state, muted, paused, t, bus, fx, master, ...}`, where each tap is `{rms, peak}` in dBFS over the last 85 ms (taps: `bus`, `fx`, `master`, `out` after the limiter, and `voice`, `beds` from the voice runtime). The level is −120 when suspended.
+- `__game.debug.meter(secs)`: the RMS rows sampled every 50 ms over the last `secs`, as `{t, at, bus, fx, master}`.
+- `master` is measured after the mute gain, so muting reads −120 there. `bus` and `fx` are measured before it.
+- Other runtimes add their own entries:
+  - `audio.logEvent(kind, name, info)` adds an entry to the log.
+  - `audio.addMeter(name, node)` adds a meter tap (the voice runtime: `addMeter('voice', voiceGain)`).
+
+#### Runtime API: French voices (`ctx.voice`, `src/core/Voice.js`)
+
+French voice-over for the displayed lines (docs/voice.md §8). Chapters rarely call it: the UI plays dialogue lines, menu replies, voiced card lines, thoughts and barks itself. It is active only in French with the Voices option on (`localStorage['hairline.voice']`, default on); otherwise every call is a no-op and nothing is fetched.
+
+| Member | Notes |
+|---|---|
+| `active` / `enabled` / `supported` | Clips play / the saved option / the language is French. |
+| `setEnabled(on)` | The Options row calls it. Turning it off stops the clip. |
+| `play(text, who, {kind='dialogue'\|'thought'}) → clip \| null` | `clip`: `{dur, busy, state, remaining(), ended, stop(fade)}`. A dialogue stops whatever is playing; a thought is skipped over a dialogue clip. Never two clips at once. |
+| `cur` | The clip loading or playing (`cur?.state === 'playing'`: something is being said; see `speaking(ctx)` in `crafts/sound.js`). |
+| `stop(kind?, fade=0.04)`, `stopAll()` | Ch3 cuts a thought at the crack with `stop('thought', 0.08)`. |
+| `hold(on)` | UI: the beds stay ducked while a dialogue box is open. |
+| `chapter(i)` | Director: stops speech, releases the last chapter's clips and prefetches chapter `i`'s (`-1` at the end card). |
+
+UI side (§4.5): `ui.thought(text, secs, {who, replace})` returns the clip; `replace: true` cuts the same speaker's line being said instead of waiting behind it (the Ch5 radio). `ui.thoughtSpeaking()` is true while a voiced thought is being said or waits to be: wait on it (capped) before a beat that would cut it (Ch3 STRIDE menus, the KM 31 crack).
+
+To keep a one-shot or loop clear of the voice, dip it while `ctx.voice?.cur?.busy` (Ch1 hammer: −12 dB) or put a bed-like loop on bus `'beds'`, which `duck()` covers.
+
+Debug: `__game.debug.voice`, `voiceLog` (`request`/`start`/`end`/`stop`/`miss`/`skip`/`prefetch`), `voiceMeter()` (the shared meters plus `duck`, `speaking`, `clip`) and `autoAdvance(on)` (tests only: a dialogue line moves on once its clip has been said + 250 ms).
 
 ### 4.5 UI (`ctx.ui`)
 
@@ -379,7 +454,7 @@ Blocking methods return Promises. In chapters, call the **Director wrappers** (`
 | `objective(text \| null)` | | Top-left objective line. |
 | `prompt(text \| null)` | | Bottom-centre prompt, e.g. `'[E] Strap'` or `'[A / D] Alternate. Steady.'`. A leading `[X]` renders as a key chip. It takes priority over hotspot prompts. Clear it yourself. |
 | `hint(text, secs=5)` | | Top-centre transient tip, for example `L.hints.jog`. |
-| `thought(text, secs=3.5, {who}={})` | | **Non-blocking** line in the lower third. Without `who`: Hugo's italic inner line (stumbles, the hammer thought). With `who`: a spoken **bark** with a coloured speaker label (`ui.thought("Stiller.", 2.4, {who: 'Odile'})`). Bark data in the text files is `{who, bag:[...]}`. A new call replaces the current line. Never shown on top of a dialogue: opening a dialogue hides the current thought, and a thought called while a dialogue is open waits and shows when it closes (only the latest one is kept). |
+| `thought(text, secs=3.5, {who}={})` | | **Non-blocking** line in the lower third. Without `who`: Hugo's italic inner line (stumbles, the hammer thought). With `who`: a spoken **bark** with a coloured speaker label (`ui.thought("Stiller.", 2.4, {who: 'Odile'})`). Bark data in the text files is `{who, bag:[...]}`. A new call replaces the current line. Never shown on top of a dialogue: opening a dialogue hides the current thought, and a thought called while a dialogue is open waits and shows when it closes (only the latest one is kept). French voices: it stays up for at least the clip + 0.4 s, and a thought arriving while a voiced one is said waits for it (newest 2; `{replace: true}` cuts the same speaker instead). Returns the voice clip or `null`. |
 | `caption(text \| null, {secs=0})` | | Broadcast lower-third caption (Ch3 `TRAINING BLOCK — WEEK 9 …`). `secs=0` keeps it until `caption(null)`. |
 | `banner(text \| null, {secs=1.6, label, xl=false, mono=false})` | | Big centred text for a moment. `label` is the small caps line above. |
 | `pain(v, visible)` | | The player drives this. Do not call it. |
@@ -421,8 +496,8 @@ Lined school paper in pencil grey, handwritten font, docked small at the top-rig
 | Method | Returns | Notes |
 |---|---|---|
 | `notebook.set(entries \| null)` | | Replace the list (no animation) and show it docked. `set([])` shows an empty page with the heading (Ch4 Day 5). `null` clears and hides. |
-| `notebook.add(text, {hand='hugo'})` | `Promise` (~0.9 s) | Writes a new line with a pencil write-on animation and a scratch sound; opens for 3.2 s. `hand: 'sami'` = bigger, slanted, blue biro ("Teech."). |
-| `notebook.strike(text, on=true)` | `Promise` (~0.7 s) | Draws a light pencil line through an entry; `on=false` erases it (Ch5 finale). |
+| `notebook.add(text, {hand='hugo'})` | `Promise` (~0.9 s) | Writes a new line with a pencil write-on animation and the recorded `pencil_write` (Sami at rate 0.85; the procedural scratch is the fallback); opens for 3.2 s. `hand: 'sami'` = bigger, slanted, blue biro ("Teech."). |
+| `notebook.strike(text, on=true)` | `Promise` (~0.7 s) | Draws a light pencil line through an entry; `on=false` erases it (Ch5 finale): a short `pencil_write` stroke / `pencil_erase`. Opening full size plays `notebook_open` + `page_flip`, docking `notebook_close` (fx; the sets are in Ch4 / Ch5 `sounds`). |
 | `notebook.annotate(text, note)` | `Promise` | Writes a small note after an entry (`annotate(items.run, L.notebook.someSundays)`). |
 | `notebook.open(secs=3)` | | Open full size for `secs`, then dock. `open(0)` stays open until `dock()`. |
 | `notebook.dock()` / `notebook.hide()` | | Dock top-right / hide (entries kept). |
@@ -760,7 +835,7 @@ The steady alternating rhythm: Ch3 running (band 2.3–3.3/s) and Ch4 sanding (b
 | `window` | `6` | Recent intervals used for `rate` and `spread`. |
 | `idleAuto` | `{after: 5, rate: mid-band}` | After `after` s with no stroke, it auto-strokes at `rate`/s until the player presses again ("the body does it anyway"). `null` disables. |
 | `gauge` | none | `{label, scale=1, unit, max, color, warn(s)}`: draws `ui.gauge` every frame with `value = rate × scale`, `band × scale`, readout `` `${round(rate*scale)} ${unit}` ``. Ch3: `{label: 'CADENCE', scale: 60, unit: 'spm'}`. `warn(s) → bool` turns the needle red (default: while mashing). |
-| `prompt` | `'[A / D] ' + L.hints.rhythm` | Prompt text while it runs; `null` for none. Sanding: `` `[A / D] ${L.hints.sand}` ``. |
+| `prompt` | `` `${L.ch3.keys.both} ${L.hints.rhythm}` `` | Prompt text while it runs; `null` for none. Sanding: `` `${L.ch3.keys.both} ${L.hints.sand}` ``. |
 | `freeze` | `true` | Sets `player.frozen` while it runs, restored after. |
 | `steadyAfter` | `4` | Seconds in band before `onSteady`. |
 | `cooldown` | `6` | Minimum seconds between two `onMash` / `onLow` / `onSteady` calls. |
@@ -768,12 +843,13 @@ The steady alternating rhythm: Ch3 running (band 2.3–3.3/s) and Ch4 sanding (b
 | `onFrame(dt, s)` | | Every frame (move the runner, reveal the wood). `dt` is scaled. |
 | `onStroke(s, inBand)` | | Every stroke; `s.auto` is true for assisted strokes. Play `audio.scrape()` / a footstep here. |
 | `onMash(s)`, `onLow(s)`, `onSteady(s)` | | Feedback hooks (throttled). `onLow` fires when the rate drops below the band after having been in it. |
+| `poll() → code \| null` | | Read first every frame; a code that differs from `s.lastKey` is a stroke. Mouse scrubbing: `poll: scrubber(craftPointer(ctx))` (`crafts/juice.js`; the scrubber calls `P.update()` itself). |
 
 State `s`: `{rate, spread (coefficient of variation of the recent intervals; 0 = metronome), inBand, strokes, t, idle (s since the last real stroke), auto, steadyFor, lastKey, mashing}`.
 
 #### `timing(ctx, d, opts) → Promise<{skipped, hits, misses, assisted, rings}>`
 
-Repeated `ui.driveRing`s (Ch4 truing): Space when the ring meets its target, N hits to finish.
+Repeated `ui.driveRing`s: Space when the ring meets its target, N hits to finish. Kept exported but unused since Ch4's truing went by ear (`crafts/truing.js`, below).
 
 | opt | default | |
 |---|---|---|
@@ -960,7 +1036,7 @@ await d.gate(ctx.ui.notebook.add(N.rest));
 let progress = 0;
 await rhythm(ctx, d, {
   band: [1.5, 2.5], mashAt: 3.4, idleAuto: { after: 6, rate: 2 },
-  prompt: `[A / D] ${L.hints.sand}`, gauge: { label: L.ch4.sanding.gauge },
+  prompt: `${L.ch3.keys.both} ${L.hints.sand}`, gauge: { label: L.ch4.sanding.gauge },
   onStroke: (s, inBand) => { ctx.audio.scrape(); progress += inBand ? 0.035 : 0.012; door.setSand(Math.min(1, progress)); },
   onMash: () => ctx.ui.thought(L.ch4.sanding.barks.mash[0], 2.4, { who: 'Odile' }),
   done: () => progress >= 1,
@@ -970,18 +1046,66 @@ ctx.mood.focusOn(doorMesh, { slot: 0, strength: 1, decay: 0.15, floor: 0.5, offs
 d.hope(0.35);
 ```
 
-### Truing (Ch4) with the timing helper
+### Truing by ear (Ch4 Week 4, Ch5 Ines's wheel)
 
 ```js
-const res = await timing(ctx, d, {
-  hits: 4, rings: 8, duration: 2.4,
-  cue: '[Space] when the rub meets the pad', shout: 'Quarter turn.',
-  onRing: () => d.after(1.8, () => ctx.audio.tick()),     // the rub lands on the perfect moment
-  onHit: () => { wobble *= 0.6; ctx.audio.ping(); },
-  onMiss: () => ctx.ui.thought(missBag[(Math.random() * missBag.length) | 0], 2.2, { who: 'Sami' }),
-});
-ctx.mood.focusOn(bike, { slot: 1, floor: 0.55, offsetY: 0.5 });
+import { rigBike } from '../world/bikeRig.js';            // scene side: rig = rigBike(B.bicycle(...)); call rig.update(dt) each frame
+import { trueWheel } from './crafts/truing.js';
+import { reveal } from './crafts/finish.js';
+// A / D (or a drag) turn spoke by spoke, Space / click plucks the one at 12 o'clock, W / S (or the
+// scroll wheel) give it a quarter turn. Idle assist: a chalk mark at 8 s, then it trues itself.
+const res = await trueWheel(ctx, d, { rig, faults: [[3, 0.7], [10, 1.3]], text: L.ch5.jobs.wheel.truing });
+await reveal(ctx, d, { hold: 1.0 });                       // the wheel is already spinning free
 ```
+
+Other craft modules (`src/story/crafts/`, docs/DESIGN.md R3.1):
+
+| Module | Exports | What |
+|---|---|---|
+| `pointer.js` | `craftPointer(ctx) → P` | The mouse inside a craft: call `P.update()` once a frame, then read `ndc`, `down`, `pressed`, `released`, `click`, `dragX/Y`, `wheel` (whole notches), `scrolling` (any wheel event this frame), `pick(objects)`, `cursor(css)`; `dispose()` at the end. |
+| `finish.js` | `dry(ctx, mat, {secs})`, `reveal(ctx, d, {hold, pulse})`, `settle(audio)` | Wet to matte; the held "look at what you made" beat. |
+| `juice.js` | `makeDust`, `scrapeAt`, `brushHiss`, `scrubber(P)` | Particles and sounds; `scrubber` turns a mouse drag into A/D strokes for `rhythm({poll})` (a drag's opening run doesn't count). |
+| `mix.js` | `TINS`, `CANON`, `RECIPE`, `mixLab`, `mixHex`, `classify(counts)` | The colour toy's pigment model and Odile's verdicts (pure functions). |
+| `mixer.js` | `mixGrey(ctx, d, {mixer, text}) → {hex, tries, assisted, skipped}` | Ch4 Day 8's colour toy. Done on an unchanged pot, or an E within 0.4 s of her lines, only shakes the chip. |
+| `tape.js` | `measureTape(ctx, d, {tape, text}) → {readings, agreed, assisted, skipped}` | Ch4 Day 8's measuring (hold Space or the mouse button, let go at the jamb). |
+| `letters.js` | `GLYPHS`, `layoutWord`, `makeLetterBoard`, `letter` | The steered-brush lettering, WASD or a mouse drag. |
+| `truing.js` | `trueWheel`, `pluck`, `spokeFreq` | Truing by ear. One quarter turn per scroll gesture; the rub (pad flash and puff) comes when the guilty spoke is under the chalk tick. |
+| `radio.js` | `tuneRadio`, `radioVoice`, `STATIONS`, `signalAt` | Odile's radio (R3.8b). |
+
+Ch5's street jobs (R3.8) are `src/story/ch5jobs.js`: `setupJobs(ctx, d, W, {bark, followDefault, isRoaming,
+taught}) → {close(), dispose(), busy(), pending(), callShutter()}`, called after `meet`, over the props in
+`scene5/jobs.js` (`W.jobs`). The shutter and the board open at once; the radio and Ines's wheel once
+`taught()` (Sami's Teach is done). Hugo is put back where he started a job. Each writes `mem.jobs.<id>`.
+Hotspot ids `shutter`, `radio`, `board`, `wheel` (`debug.trigger(id)` runs one whether open or not).
+Hugo's panel and the wet line are `src/story/ch5panel.js` (`hugoPanelBeat`, `linePreroll`, `wetRibbon`,
+`wetPanels`).
+
+### Story memory (`src/story/memory.js`) and the ending
+
+What the player did, carried across chapters (docs/DESIGN.md R3.0), saved in
+`sessionStorage['hairline.mem']` so a reload keeps it. `Director.start(i)` calls `beginChapter(i)`, which
+resets chapter i's flags and every later one (jumping to or restarting a chapter replays it clean).
+
+```js
+import { mem, remember } from './memory.js';
+remember('jobs.radio', true);     // dotted path; saved at once, never throws
+if (mem.teachFirst) { /* ... */ }
+```
+
+| Flag | Default | Set in | Meaning |
+|---|---|---|---|
+| `seeds.table` / `seeds.ghost` | false | Ch1 / Ch2 | Shimmed the table; lingered on the ghost sign. |
+| `doorGrey` | `'#8d877c'` | Ch4 | The grey he mixed (No. 14's door in Ch5). |
+| `grey` | `{tries: 0, assisted: false}` | Ch4 | Dones at the colour toy; whether Odile finished it. |
+| `measure` | `{readings: [], agreed: 81.5, assisted: false}` | Ch4 | The tape. |
+| `wheel` | `{secs, plucks, assisted, overTight}` | Ch4 | Truing Sami's wheel. |
+| `teachFirst` | true | Ch5 | Sami's chain right first time. |
+| `panel` | null | Ch5 | `'wheel'`, `'door'` or `'hand'`. |
+| `jobs` | all false | Ch5 | `shutter`, `radio`, `board`, `wheel`. |
+
+Also `DEFAULTS`, `restoreMem()` (main.js, at boot) and `memSnapshot()`. `src/story/ending.js`:
+`endingLines(mem) → string[7]` picks the end card from `L.ending.cards` (street by panel, Sami by
+`teachFirst`, one job card, the radio, then three fixed lines).
 
 ### The boot comes off (Ch5), mid-scene
 
@@ -1063,6 +1187,7 @@ With `?debug=1`, `window.__game` exposes:
   - `shot(holdMs)`: renders one frame and shows it in an overlay `<img>` for `holdMs`, so a page screenshot of an occluded window still shows the 3D view
   - `look(yawDeg, pitchDeg, zoom)`, `view()`, `pointer()`: camera look without a mouse (see 4.6, Camera rig)
   - `lang(code?)`: returns the language; with a code, switches to it (as Options does)
+  - `mem()`: a copy of the story memory (above: `seeds`, `doorGrey`, `grey`, `measure`, `wheel`, `teachFirst`, `panel`, `jobs`)
   - `textLog`: every string the UI has shown (dialogue, speaker labels, thoughts, objectives, prompts, cards, menus, HUD labels, hints), capped at 2000, for diffing against the text files
 
 **Query flags:**

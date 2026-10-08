@@ -81,6 +81,7 @@ export default {
 
   sanding: {
     gauge: 'SANDING',
+    hint: 'Steady. Or hold the mouse button and drag back and forth.',
     barks: {
       who: 'Odile',
       mash: ["You're not sanding it, you're arguing with it.", "Slower. That wood's been here longer than you."],
@@ -93,30 +94,68 @@ export default {
   // ------------------------------------------------------------ Day 8
   day8: {
     start: [odile("Door goes back in the frame. It's eighty-two wide. Measure the frame.")],
-    measure: [
-      hugo('Eighty-one and a half.'),
-      odile('Measure twice.'),
-      hugo('Again?'),
-      odile('Yes.'),
-      hugo('...Eighty-one and a half.'),
-      odile("Doors lie. Frames lie worse. So half a centimetre comes off the hinge side. Plane's on the wall."),
-    ],
-    // Notebook: add measure.
-    grey: [odile('Now. Colour. I want a grey.'), hugo('Easy.'), odile("A grey that isn't sad.")],
-    greyMenu: {
-      who: 'Odile',
-      prompt: 'Five tins: white, black, ochre, blue, red oxide.',
-      options: [
-        { text: "Black and white. It's grey.", correct: false, reply: "That's not a grey. That's a waiting room." },
-        { text: 'More white. Cheer it up.', correct: false, reply: 'Now it\'s a sad grey pretending to be fine. I know the type.' },
-        {
-          text: 'White, a little black. Then ochre. One drop of blue.',
-          correct: true,
-          reply: "...There. Now it's a grey that's been somewhere.",
-        },
+    // Measure twice, with the tape (crafts/tape.js). Readings 80.5 .. 82.5 cm, index (cm - 80.5) / 0.5.
+    tape: {
+      hint: 'Hold {Space} or the mouse button to pull. Let go at the jamb.',
+      readings: [
+        hugo('Eighty and a half.'),
+        hugo('Eighty-one.'),
+        hugo('Eighty-one and a half.'),
+        hugo('Eighty-two.'),
+        hugo('Eighty-two and a half.'),
+      ],
+      again: [
+        hugo('...Eighty and a half.'),
+        hugo('...Eighty-one.'),
+        hugo('...Eighty-one and a half.'),
+        hugo('...Eighty-two.'),
+        hugo('...Eighty-two and a half.'),
+      ],
+      twice: [odile('Measure twice.'), hugo('Again?'), odile('Yes.')],
+      differ: [
+        odile("Two numbers. The frame's only got one."),
+        odile('One of those is lying. Possibly both.'),
+        odile("Again. The frame's not going anywhere."),
+      ],
+      short: odile("That's not the frame, that's air."),
+      help: [odile("Hold still. I'll hold the end.")],
+      cut: [
+        odile("Doors lie. Frames lie worse. So a centimetre and a half comes off the hinge side. Plane's on the wall."),
+        odile("Doors lie. Frames lie worse. So a centimetre comes off the hinge side. Plane's on the wall."),
+        odile("Doors lie. Frames lie worse. So half a centimetre comes off the hinge side. Plane's on the wall."),
+        odile("Doors lie. Frames lie worse. This one's telling the truth, apparently. Hang it as it is."),
+        odile("Doors lie. Frames lie worse. Half a centimetre of air on the hinge side. We'll call it ventilation."),
       ],
     },
-    // Stage beat for the "I know the type" reply (she looks at him): optional, shown after that reply.
+    // Notebook: add measure.
+    grey: [odile('Now. Colour. I want a grey.'), hugo('Easy.'), odile("A grey that isn't sad.")],
+    // The colour toy (crafts/mixer.js): tins in key order 1-5.
+    mixer: {
+      intro: [stage('Five tins: white, black, ochre, blue, red oxide. One pot.')],
+      tins: ['White', 'Black', 'Ochre', 'Blue', 'Red oxide'],
+      hint: '1 – 5 or click a tin: one drop · {KeyT} tip it out · {KeyE} done',
+      tip: 'Tip it out',
+      done: 'Done',
+      full: odile("Pot's full. It's not a bath."),
+      verdicts: {
+        waiting: [odile("That's not a grey. That's a waiting room.")],
+        light: [odile("Now it's a sad grey pretending to be fine. I know the type.")],
+        dark: [odile("That's a funeral. It's a door, not a hearse.")],
+        ochre: [odile("That's not grey. That's custard.")],
+        blue: [odile("Too cold. That grey's waiting for a bus.")],
+        red: [odile("That's gone pink. A pink door. The street would talk.")],
+        mud: [odile("That's mud. Honest mud, but mud. Tip it out.")],
+        target: [odile("...There. Now it's a grey that's been somewhere.")],
+      },
+      hints: [
+        odile('White first. Then black, a drop at a time. Like gossip.'),
+        odile('Five white, one black. Two ochre. One blue, to calm it down.'),
+      ],
+      // Instead of hints[0] when he's already got a plain grey (waiting / light).
+      warm: odile("The grey's there. Now a drop of ochre. Warm, not yellow."),
+      give: [odile('Give it here.'), stage('She tips it out and does it in four moves, without looking.')],
+    },
+    // Stage beat after the first "I know the type" verdict (she looks at him).
     greyLook: stage('She looks at him while she says it.'),
     paintColor: '#8d877c',
     painted: [think("It's grey. I'd swear to it in court. It's grey."), odile("Of course it's grey. Stop staring at it, it'll get ideas.")],
@@ -137,10 +176,20 @@ export default {
     ],
     bike: [think("Rear wheel's out of true. One spoke's gone slack, so the rim wanders and kisses the brake pad once a turn.")],
     hold: [hugo("Hold the bike. Both hands. Don't help."), sami("Holding's not helping?"), hugo("Holding's my whole career.")],
+    // Truing by ear (crafts/truing.js). hint, gauge and pitch are shared with Ch5's wheel.
     truing: {
-      cue: '[Space] when the rub meets the pad',
-      shout: 'Quarter turn.',
-      misses: { who: 'Sami', bag: ['Was it meant to go clunk?', "Odile, he's hitting it.", "Is it fixed? It's not fixed."] },
+      hint: '{KeyA} / {KeyD} turn · {Space} pluck · {KeyW} / {KeyS} tighten / loosen · or drag, click, scroll',
+      gauge: 'PITCH',
+      pitch: { flat: 'FLAT', sharp: 'SHARP', true: 'TRUE' },
+      flat: "There. That one's flat.", // Hugo's thought, with the chalk mark (assist)
+      barks: {
+        who: 'Sami',
+        clunk: 'Was it meant to go clunk?',
+        hitting: "Odile, he's hitting it.",
+        notFixed: "Is it fixed? It's not fixed.",
+        ping: 'It went ping. Is ping good?',
+        higher: "It's getting higher.",
+      },
       assisted: { who: 'Sami', text: "Is it fixed? ...It's fixed." },
     },
     after: [

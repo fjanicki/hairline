@@ -12,9 +12,9 @@ export default {
     finish: 'Aller au bout.',
   },
   keys: {
-    both: '[Q / D]',
-    a: '[Q]',
-    d: '[D]',
+    both: '[{KeyA} / {KeyD}]',
+    a: '[{KeyA}]',
+    d: '[{KeyD}]',
   },
   gauge: {
     label: 'CADENCE',
@@ -34,7 +34,8 @@ export default {
       total: 104.2,
       thoughts: {
         15: 'Le vélo, c’étaient les courses des autres. Celle-ci est à moi. Chaque mètre.',
-        45: 'À cette heure-là, la seule autre lumière allumée, c’est la boulangerie. Je la bats tous les matins.',
+        33: 'À quinze ans, je montais mes roues moi-même. J’entendais un rayon détendu depuis la cuisine.',
+        55: 'À cette heure-là, la seule autre lumière allumée, c’est la boulangerie. Je la bats tous les matins.',
       },
       stride: {
         prompt: 'STRIDE : Six jours d’affilée ! La récup fait partie de l’entraînement. Un jour de repos ?',

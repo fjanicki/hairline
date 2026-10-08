@@ -2,6 +2,7 @@ import { Engine, hasWebGL } from './core/Engine.js';
 import { Input } from './core/Input.js';
 import { Assets } from './core/Assets.js';
 import { AudioSys } from './core/Audio.js';
+import { Voice } from './core/Voice.js';
 import { Sky } from './render/Sky.js';
 import { Mood } from './render/Mood.js';
 import { Environment } from './render/Environment.js';
@@ -21,6 +22,7 @@ import { UI } from './ui/UI.js';
 import { L } from './story/script.js';
 import { getLang, setLang } from './story/i18n.js';
 import * as minigames from './story/minigames.js';
+import { restoreMem, memSnapshot } from './story/memory.js';
 import ch1 from './story/ch1.js';
 import ch2 from './story/ch2.js';
 import ch3 from './story/ch3.js';
@@ -80,6 +82,8 @@ async function boot() {
 
   const audio = new AudioSys();
   ui.audio = audio;
+  const voice = new Voice({ audio, L, debug: flags.debug }); // French voice-over (docs/voice.md)
+  ui.voice = voice;
   const assets = new Assets();
   assets.halfRes = engine.tier.name === 'low'; // prop textures at half size, like the material sets
   const sky = new Sky();
@@ -172,6 +176,7 @@ async function boot() {
     look,
     env,
   };
+  ctx.voice = voice;
   // Render first pass around every chapter build (the chapter modules stay untouched): activate the
   // chapter look, preload its materials, props and HDRIs in parallel (and the next chapter's HDRIs
   // and sounds in the background), then after the build restyle Kenney props, add light cones and
@@ -194,7 +199,13 @@ async function boot() {
         Promise.race([Promise.all([env.preload(lk?.hdris || []), assets.preload(lk?.props || [])]), engine.wait(6)]),
       ]);
       env.preload(next); // background
-      audio.preload([...chapterSounds(ch), ...chapterSounds(CHAPTERS[i + 1]), ...(i === CHAPTERS.length - 1 ? ['piano'] : [])]);
+      // Decode this chapter's sounds; only fetch the next chapter's (decoded at its own build: the long
+      // stereo beds are ~20 MB each decoded).
+      const sounds = [...chapterSounds(ch), ...(i === CHAPTERS.length - 1 ? ['piano'] : [])];
+      const nextSounds = chapterSounds(CHAPTERS[i + 1]).filter((n) => !sounds.includes(n));
+      audio.releaseChapter(sounds, { prefetch: nextSounds }); // the previous chapter's sfx loops, beds and decoded buffers
+      audio.preload(sounds);
+      audio.prefetch(nextSounds);
       const r = await orig.call(ch, c);
       if (r?.group && lk) {
         r.group.traverse((o) => {
@@ -276,14 +287,19 @@ async function boot() {
   const rig = new CameraRig({ cam, canvas: engine.renderer.domElement, input, ui, engine, world, player, getDirector: () => director, onLockLost: () => setPaused(true) });
   const pointer = new ObjectivePointer({ root: document.getElementById('ui'), camera: engine.camera, hotspots, player, rig, getDirector: () => director, ctx });
   engine.add(rig);
+  engine.add({ update: () => audio.updateListener(engine.camera, player.root) }); // positional sfx
   engine.add(pointer);
   input.onKey((code, e) => {
     if (code === 'Escape' && !rig.swallowEscape()) setPaused(!engine.paused);
-    // e.key too: the M on AZERTY is code Semicolon (KeyM is its comma).
+    // e.key too: the M on AZERTY is code Semicolon (KeyM is its comma). Labelled by KeyLabels ('{KeyM}').
     else if (code === 'KeyM' || e?.key?.toLowerCase() === 'm') ui.hint(audio.toggleMute() ? L.ui.muted : L.ui.soundOn, 1.6);
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && !flags.debug) setPaused(true);
+    if (flags.debug) return;
+    // The opening and end cards have no pause menu: a hidden tab still silences them (the piano).
+    if (director.state === 'boot' || director.state === 'end') audio.setPaused(document.hidden);
+    else if (document.hidden) setPaused(true);
+    else if (audio._paused && !engine.paused) audio.setPaused(false); // hidden on a card, back in play
   });
 
   if (flags.debug) {
@@ -338,10 +354,21 @@ async function boot() {
         view: () => rig.view(),
         pointer: () => ({ ...pointer.state }),
         trigger: (id) => hotspots.trigger(id),
+        mem: () => memSnapshot(), // cross-chapter flags (story/memory.js)
         // Language: lang() reads it, lang('fr') switches (as the Options panel does). textLog: every
         // string the UI has shown (dialogue, thoughts, objectives, prompts, cards, menus, HUD), last 2000.
         lang: (code) => (code ? setLang(code) : null, getLang()),
         textLog: ui.textLog,
+        // Audio (core/AudioDebug.js): audioLog = every sound started {t, at, kind, name, file, bus, gain, ...};
+        // meter() = RMS/peak dBFS per tap (bus, fx, master, + voice), meter(secs) = RMS history (50 ms).
+        audioLog: audio.audioLog,
+        meter: (secs) => audio.meter(secs),
+        // Voices (core/Voice.js): voiceLog = request/start/end/stop/miss/skip per line; voiceMeter() = meter()
+        // + duck gain; autoAdvance(true) lets dialogue lines advance alone (after their clip + 250 ms).
+        voice,
+        voiceLog: voice.log,
+        voiceMeter: (secs) => voice.meter(secs),
+        autoAdvance: (on = true) => (ui.autoAdvance = !!on),
         // Autoplay for `ms`: presses E whenever a dialogue is open, picks choice `choose` in menus,
         // and (in 'play') triggers the first required hotspot unless `spots: false`. Otherwise it
         // can tap a steady A/D rhythm (`rhythm: true`) or a `key`. Resolves to the lines seen.
@@ -353,7 +380,7 @@ async function boot() {
             const dl = document.getElementById('dialogue');
             const ch = document.getElementById('choices');
             if (dl?.classList.contains('show')) {
-              const t = dl.innerText.replace(/\s+/g, ' ').replace(/E ▸$/, '').trim();
+              const t = dl.innerText.replace(/\s+/g, ' ').replace(/\S+ ▸$/, '').trim();
               if (t && seen[seen.length - 1] !== t) seen.push(t);
               input.press('KeyE');
             } else if (choose != null && ch?.classList.contains('show')) {
@@ -432,6 +459,7 @@ async function boot() {
   }
 
   await minigames.restoreMemory(); // Ch4's OPEN sign, after a Restart chapter reload
+  restoreMem(); // cross-chapter flags (door grey, panel, jobs...)
   if (flags.chapter === 0) await director.card(L.opening, { lineDelay: 1.9, hold: 2.6 });
   director.start(flags.chapter);
 }
