@@ -12,25 +12,35 @@ import { retext } from './i18n.js';
 /** Cross-chapter hand-offs, e.g. memory.openSign = the OPEN sign canvas from Ch4 (shown in Ch5). */
 export const memory = {};
 
-// The OPEN sign survives Pause > Restart chapter (a page reload) via sessionStorage.
+// The OPEN sign survives a reload (Continue, Pause > Restart chapter) via localStorage.
 const SIGN_KEY = 'hairline.openSign';
 
-/** Keep Hugo's lettered OPEN sign (a canvas) for Ch5, in memory and in sessionStorage. */
+/** Keep Hugo's lettered OPEN sign (a canvas) for Ch5, in memory and in localStorage. */
 export function rememberOpenSign(canvas) {
   memory.openSign = canvas;
   try {
-    sessionStorage.setItem(SIGN_KEY, canvas.toDataURL('image/png'));
+    localStorage.setItem(SIGN_KEY, canvas.toDataURL('image/png'));
   } catch {
     // Private window / storage blocked / quota: the in-memory copy still works this session.
   }
 }
 
-/** At boot: restore memory.openSign from sessionStorage (an Image), if there is one. Never throws. */
+/** New game: forget the last playthrough's sign. */
+export function forgetOpenSign() {
+  delete memory.openSign;
+  try {
+    localStorage.removeItem(SIGN_KEY);
+  } catch {
+    /* storage blocked */
+  }
+}
+
+/** At boot: restore memory.openSign from localStorage (an Image), if there is one. Never throws. */
 export async function restoreMemory() {
   if (memory.openSign) return;
   let url = null;
   try {
-    url = sessionStorage.getItem(SIGN_KEY);
+    url = localStorage.getItem(SIGN_KEY);
   } catch {
     return;
   }

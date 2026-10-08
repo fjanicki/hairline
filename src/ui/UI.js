@@ -207,47 +207,63 @@ export class UI {
    * Title screen with the language switch and an Options button. Resolves on click / E / Enter
    * (not on its buttons, nor while Options is open). onBegin runs inside the gesture (audio resume).
    * quality: as for showPause (the Options panel's graphics row).
+   * resume: { num, name() } when there is saved progress: the begin line becomes Continue (click / E /
+   * Enter) and a New game button joins the foot. Resolves 'continue', 'new' or 'begin'.
    */
-  title({ onBegin, quality } = {}) {
-    this._title = { quality };
+  title({ onBegin, quality, resume = null } = {}) {
+    this._title = { quality, resume };
     this._renderTitle();
     this.titleEl.classList.remove('hidden');
     requestAnimationFrame(() => this.titleEl.classList.add('show'));
     return new Promise((resolve) => {
-      const go = (e) => {
+      const go = (e, choice = resume ? 'continue' : 'begin') => {
+        if (e.type === 'newgame') return finish('new');
         if (e.type === 'keydown' && e.code === 'Escape' && this._optionsEl) return this._closeOptions();
         if (e.type === 'keydown' && !['Enter', 'KeyE', 'Space'].includes(e.code)) return;
         if (this._optionsEl || (e.type === 'pointerdown' && e.target.closest?.('button'))) return;
         if (e.type === 'keydown' && e.code !== 'KeyE' && document.activeElement?.closest?.('.title button')) return; // Enter/Space press a focused button
+        finish(choice);
+      };
+      const finish = (choice) => {
         this.titleEl.removeEventListener('pointerdown', go);
+        this.titleEl.removeEventListener('newgame', go);
         window.removeEventListener('keydown', go);
         this._title = null;
         onBegin?.();
         this.titleEl.classList.remove('show');
         setTimeout(() => this.titleEl.classList.add('hidden'), 1300);
-        resolve();
+        resolve(choice);
       };
       this.titleEl.addEventListener('pointerdown', go);
+      this.titleEl.addEventListener('newgame', go); // the New game button (see _renderTitle)
       window.addEventListener('keydown', go);
     });
   }
 
   _renderTitle() {
     const T = this.L.title;
+    const resume = this._title?.resume;
+    const begin = resume ? T.continue.replace('{n}', resume.num).replace('{name}', resume.name() || '') : T.begin;
     this.titleEl.innerHTML = `
       <h1>${esc(T.name)}</h1>
       <div class="hairline-rule"></div>
       <div class="tagline">${esc(T.tagline)}</div>
       <div class="controls">${T.controls.map(([k, v]) => `<div><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</div>
-      <div class="begin">${esc(T.begin)}</div>
+      <div class="begin">${esc(begin)}</div>
       <div class="title-foot"></div>`;
     if (this.titleEl.classList.contains('show')) this.titleEl.querySelector('.hairline-rule').style.transition = 'none';
     const foot = this.titleEl.querySelector('.title-foot');
     this._langButtons(foot);
     const opts = el('button', 'quality-opt title-options', foot, esc(this.L.options.title));
     opts.addEventListener('click', () => this._openOptions({ quality: this._title?.quality }));
+    if (resume) {
+      const fresh = el('button', 'quality-opt title-new', foot, esc(T.newGame));
+      fresh.addEventListener('click', () => {
+        if (!this._optionsEl) this.titleEl.dispatchEvent(new Event('newgame'));
+      });
+    }
     this._log(T.tagline);
-    this._log(T.begin);
+    this._log(begin);
   }
 
   /** English / Français buttons (native names), the current one highlighted. */

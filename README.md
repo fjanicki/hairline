@@ -113,14 +113,21 @@ touch-only screens.
 **Options and language.** The game is in English or French (Français). Pick the language on the title
 screen (the two buttons at the bottom), or later in **Options** (title screen, or Esc > Options), which
 also holds the graphics quality. A switch applies at once, mid-chapter too (a line already on screen
-finishes in the old language). The choice is remembered per browser; the first visit follows the
-browser language. `?lang=en|fr` forces one.
+finishes in the old language). The choice is remembered per browser; until the player picks one, the
+game is in French. `?lang=en|fr` forces one.
 
 **Voices.** In French, the lines are spoken (dialogue, Hugo's thoughts, barks, the voicemail, the TV
 and the radio). **Options > Voices / Voix** turns them on or off (on by default, remembered per
 browser). Voices exist only in French: in English the row is greyed with the note "French only" and
 nothing plays. A spoken line waits for E as before; E stops the voice and moves on. Mute (M) and
 pause (Esc) silence the voices too. Clips are streamed per chapter (about 6 MB in all).
+
+**Saving.** Progress is saved in the browser (localStorage, no server) at the start of every chapter.
+After a reload the title screen offers **Continue** at that chapter (click, E or Enter) and a **New game**
+button; a chapter always resumes from its start. Earlier chapters' choices (the grey you mixed, the
+OPEN sign, your panel, the jobs done) are kept. Options (language, voices, graphics) and mute (M) are
+remembered too. Pause > Restart chapter goes back to the title with Continue at the current chapter.
+Finishing the game clears the save. `?chapter=N` and `autostart` ignore it; `src/story/save.js`.
 
 The camera only answers the mouse while you are walking freely. In dialogue, menus, minigames
 and cut-scenes the mouse is released and look input is ignored. When the next required spot is
@@ -147,7 +154,7 @@ Add these as URL query parameters, for example
 | `autostart=1` | Skip the title screen. Audio stays silent until a real click or key press. |
 | `skipcards=1` | Text cards close on their own, and chapter titles are not shown. |
 | `quality=low\|medium\|high` | Force a quality tier (otherwise auto, or the pause-menu choice). |
-| `lang=en\|fr` | Force the language (otherwise the Options choice, else the browser language). |
+| `lang=en\|fr` | Force the language (otherwise the Options choice, else French). |
 
 With `debug=1`, `__game.debug` provides:
 - `skip()`: resolves whatever the story is waiting on.

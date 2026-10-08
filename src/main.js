@@ -22,7 +22,8 @@ import { UI } from './ui/UI.js';
 import { L } from './story/script.js';
 import { getLang, setLang } from './story/i18n.js';
 import * as minigames from './story/minigames.js';
-import { restoreMem, memSnapshot } from './story/memory.js';
+import { restoreMem, memSnapshot, beginChapter } from './story/memory.js';
+import { savedChapter, clearSave } from './story/save.js';
 import ch1 from './story/ch1.js';
 import ch2 from './story/ch2.js';
 import ch3 from './story/ch3.js';
@@ -40,6 +41,10 @@ const flags = {
   autostart: params.get('autostart') === '1',
   skipcards: params.get('skipcards') === '1',
 };
+// Saved progress (story/save.js): offered as Continue on the title screen. ?chapter= and autostart
+// (tests, debug) ignore it. The loading bar preloads the saved chapter, the likely choice.
+const resumeAt = params.has('chapter') || flags.autostart ? null : savedChapter(CHAPTERS.length);
+if (resumeAt !== null) flags.chapter = resumeAt;
 
 // window.__game.ready exists from the very first tick so tests can await it.
 let resolveReady;
@@ -248,12 +253,14 @@ async function boot() {
   engine.add(ui);
 
   // Pause (Esc / tab hidden) and mute (M).
+  // Restart chapter: reload to the title, whose Continue resumes at this chapter (saved when it began).
+  // The title click also unlocks audio again. Debug runs keep the ?chapter= reload.
   const restart = () => {
     const q = new URLSearchParams();
     if (flags.debug) q.set('debug', '1');
-    q.set('chapter', String(Math.max(0, director.index)));
+    if (flags.debug) q.set('chapter', String(Math.max(0, director.index)));
     if (params.get('lang')) q.set('lang', getLang()); // ?lang= outranks the remembered choice
-    location.href = `${location.pathname}?${q}`;
+    location.href = location.pathname + (q.toString() ? `?${q}` : '');
   };
   reloadHere = restart;
   // Graphics quality (pause menu, __game.quality): src/render/Quality.js tiers.
@@ -445,7 +452,19 @@ async function boot() {
   if (!flags.autostart && (coarse || window.innerWidth < 640)) await ui.mobileWarning();
 
   if (!flags.autostart) {
-    await ui.title({ onBegin: () => audio.resume(), quality });
+    const choice = await ui.title({
+      onBegin: () => audio.resume(),
+      quality,
+      resume: resumeAt === null ? null : { num: resumeAt + 1, name: () => CHAPTERS[resumeAt].title },
+    });
+    if (choice === 'new') {
+      // New game: forget the saved chapter, the story flags and the OPEN sign. Options stay.
+      flags.chapter = 0;
+      clearSave();
+      beginChapter(0);
+      minigames.forgetOpenSign();
+    }
+    if (audio.muted) ui.hint(L.ui.muted, 2.5); // M from an earlier visit is remembered
   } else {
     // Audio stays silent until a real gesture.
     const unlock = (e) => {

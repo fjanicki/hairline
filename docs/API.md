@@ -1083,7 +1083,8 @@ Hugo's panel and the wet line are `src/story/ch5panel.js` (`hugoPanelBeat`, `lin
 ### Story memory (`src/story/memory.js`) and the ending
 
 What the player did, carried across chapters (docs/DESIGN.md R3.0), saved in
-`sessionStorage['hairline.mem']` so a reload keeps it. `Director.start(i)` calls `beginChapter(i)`, which
+`localStorage['hairline.mem']` so a reload keeps it (the saved chapter is `localStorage['hairline.save']`,
+`src/story/save.js`: written by `Director.start` at each chapter, cleared at the end card and by New game). `Director.start(i)` calls `beginChapter(i)`, which
 resets chapter i's flags and every later one (jumping to or restarting a chapter replays it clean).
 
 ```js

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ground } from '../world/build.js';
 import { releaseChapterListeners } from './i18n.js';
 import { beginChapter } from './memory.js';
+import { saveChapter, clearSave } from './save.js';
 import { endingLines } from './ending.js';
 
 /** True for a light CSS hex colour ('#fff', '#f4efe6', ...). */
@@ -318,6 +319,7 @@ export class Director {
       await ui.fade(1, 0.8);
       this._resetBetweenChapters();
       beginChapter(this.index); // replaying a chapter clears its own flags and later ones
+      saveChapter(this.index); // a reload resumes here (Continue on the title screen)
       // The title's pale ink needs a dark screen: over a white cut (Ch2 -> Ch3) show it after the fade-in.
       const showTitle = ch.title && !this.skipCards ? () => ui.chapterTitle(this.index + 1, ch.title) : null;
       const lightFade = isLightColor(ui.fadeColor);
@@ -365,6 +367,7 @@ export class Director {
     ctx.assets?.releaseProps([]);
     audio.music('piano', { volume: 0.4, fade: 3 });
     this.state = 'end';
+    clearSave(); // finished: the next visit starts from the beginning
     await ui.endCard({ ...ui.L.ending, lines: endingLines() });
   }
 

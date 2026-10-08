@@ -16,6 +16,8 @@ export default {
     name: 'HAIRLINE',
     tagline: 'La fêlure était plus fine qu’un cheveu. Elle allait jusqu’au bout.',
     begin: 'Cliquer pour commencer',
+    continue: 'Cliquer pour reprendre · Chapitre {n} : {name}',
+    newGame: 'Nouvelle partie',
     controls: [
       [
         '{KeyW}{KeyA}{KeyS}{KeyD} / {Arrows}',

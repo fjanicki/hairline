@@ -52,6 +52,9 @@ export const common = {
     name: 'HAIRLINE',
     tagline: 'The crack was thinner than a hair. It went all the way through.',
     begin: 'Click to begin',
+    // Shown instead of `begin` when there is saved progress ({n} chapter number, {name} its title).
+    continue: 'Click to continue · Chapter {n}: {name}',
+    newGame: 'New game',
     // Keys are tokens ({KeyW}, {Space}...), resolved for the player's layout (docs/API.md, i18n).
     controls: [
       ['{KeyW}{KeyA}{KeyS}{KeyD} / {Arrows}', 'Move / steady a brush'],

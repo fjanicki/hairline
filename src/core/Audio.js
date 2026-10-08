@@ -29,6 +29,7 @@ for (const name of SFX_BEDS) FILES[name] = `sfx/${name}.ogg`;
 const SFX_BED_SET = new Set(SFX_BEDS);
 // Public procedural cues logged as kind 'proc' under ?debug=1 (nested calls are not logged twice).
 const PROC = ['hammer', 'tick', 'thud', 'tone', 'noise', 'scrape', 'ping', 'rip', 'buzz', 'snap', 'gun', 'heartbeat'];
+const MUTE_KEY = 'hairline.muted';
 const STEP_SURFACES = ['concrete']; // the boot's clump is procedural
 
 export class AudioSys {
@@ -45,6 +46,12 @@ export class AudioSys {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new Ctx();
       this.master = this.ctx.createGain();
+      try {
+        this.muted = localStorage.getItem(MUTE_KEY) === '1'; // remembered from the last visit
+      } catch {
+        /* storage blocked */
+      }
+      this.master.gain.value = this.muted ? 0 : 1;
       // Safety limiter after the master (voice peaks reach -1 dBFS with a hammer blow under them):
       // transparent below -3 dBFS, so the mix is unchanged; mute still acts on master.gain.
       this.limiter = this.ctx.createDynamicsCompressor();
@@ -199,8 +206,14 @@ export class AudioSys {
     return this.muted;
   }
 
+  /** Mute (M) is remembered per browser. */
   setMuted(m) {
     this.muted = !!m;
+    try {
+      localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0');
+    } catch {
+      /* storage blocked */
+    }
     if (!this.ok) return;
     this.master.gain.cancelScheduledValues(this.t);
     this.master.gain.setTargetAtTime(this.muted ? 0 : 1, this.t, 0.03);

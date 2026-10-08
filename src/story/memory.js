@@ -1,5 +1,6 @@
 // Cross-chapter flags (DESIGN R3.1). Read `mem` directly; write through remember().
-// Persists to sessionStorage so Pause > Restart chapter (a reload) and ?chapter=N keep earlier chapters' choices.
+// Persists to localStorage so a reload, Continue on the title screen, Pause > Restart chapter and ?chapter=N
+// keep earlier chapters' choices.
 
 const KEY = 'hairline.mem';
 
@@ -40,7 +41,7 @@ function setAt(o, parts, v) {
 }
 
 function persist() {
-  try { sessionStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* private window / blocked: in-memory still works */ }
+  try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* private window / blocked: in-memory still works */ }
 }
 
 /** Set a top-level key or a dotted path ('jobs.radio'). Object values replace the old value. Never throws. */
@@ -77,7 +78,7 @@ function merge(def, src, path) {
 /** At boot: merge the stored JSON over DEFAULTS. Unknown keys and bad types are ignored. Never throws. */
 export function restoreMem() {
   let raw = null;
-  try { raw = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch { raw = null; }
+  try { raw = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { raw = null; }
   const m = merge(DEFAULTS, raw, '');
   for (const k of Object.keys(m)) mem[k] = m[k];
 }

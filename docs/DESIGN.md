@@ -1155,7 +1155,7 @@ This section is **binding**. Where it disagrees with anything above, this sectio
 - **Exports:**
   - `DEFAULTS`: the shape and the defaults below. It is frozen.
   - `mem`: the live object. Read it directly (`mem.doorGrey`, `mem.jobs.radio`).
-  - `remember(path, value)`: `path` is a top-level key or a dotted path (`'jobs.radio'`, `'seeds.table'`). Object values replace the old value. It persists to `sessionStorage['hairline.mem']` in a try/catch, and it never throws.
+  - `remember(path, value)`: `path` is a top-level key or a dotted path (`'jobs.radio'`, `'seeds.table'`). Object values replace the old value. It persists to `localStorage['hairline.mem']` in a try/catch, and it never throws.
   - `beginChapter(index)`: resets to `DEFAULTS` every key whose owner chapter is ≥ `index`, then persists.
   - `restoreMem()`: at boot, merges the stored JSON over `DEFAULTS`. Unknown keys and bad types are ignored.
   - `memSnapshot()`: a deep copy, for debug and tests.
