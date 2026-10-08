@@ -26,7 +26,7 @@ const DEBUG = (() => {
   }
 })();
 
-/** ?lang=, else the remembered choice, else the browser language (fr*), else English. */
+/** ?lang=, else the remembered choice, else French (the default until the player picks a language). */
 function initialLang() {
   try {
     const q = new URLSearchParams(location.search).get('lang');
@@ -40,12 +40,7 @@ function initialLang() {
   } catch {
     /* storage blocked */
   }
-  try {
-    if (String(navigator.language || '').toLowerCase().startsWith('fr')) return 'fr';
-  } catch {
-    /* no navigator */
-  }
-  return 'en';
+  return 'fr';
 }
 
 let lang = 'en';
