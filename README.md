@@ -24,17 +24,34 @@ Requires Node 20.19+ or 22.12+, plus `curl` and `unzip` for the asset fetch.
 
 ```bash
 npm install
-npm run setup:assets   # fetches the CC0 characters, props, materials, HDRIs and audio into public/assets/
 npm run dev            # http://localhost:5173
 ```
 
-`public/assets/` is not in git. `npm run setup:assets` (`scripts/fetch-assets.sh`, which also runs
-`scripts/assets/*.sh`) downloads every source once into `.cache/dl/`, then copies or rebuilds only
-the files the game uses (about 92 MB). It is safe to re-run: cached downloads are skipped and
-anything no longer used is removed. The game still plays if a file is missing (grey boxes, flat
-colours, no IBL), just uglier.
+`public/assets/` (about 95 MB) is committed, so a clone plays straight away. The French voices and
+the generated sound effects can't be downloaded again, so they have to live in the repo.
+`npm run setup:assets` (`scripts/fetch-assets.sh`, which also runs `scripts/assets/*.sh`) rebuilds
+the downloadable assets from their sources via `.cache/dl/`. It is safe to re-run: cached downloads
+are skipped and anything no longer used is removed. The game still plays if a file is missing (grey
+boxes, flat colours, no IBL), just uglier.
 
-`npm run build` writes a static production build to `dist/`. `npm run preview` serves that build.
+`npm run build` writes a static production build to `dist/` with relative paths, so it works from
+any folder of any static server. `npm run preview` serves that build.
+
+## Publishing
+
+- **Play online:** https://fjanicki.github.io/hairline/ (GitHub Pages).
+- **Releases:** push a version tag to publish one:
+
+  ```bash
+  git tag v0.2.0 && git push origin v0.2.0
+  ```
+
+  `.github/workflows/release.yml` builds the game once, creates the GitHub Release for the tag with
+  `hairline-<tag>.zip` (the playable build) attached, and deploys that same build to Pages. The
+  online link therefore always shows the latest release, never a work-in-progress push.
+- **Redeploy without a release:** Actions → Release → Run workflow (deploys the current `main`).
+- **Every push to `main`:** `.github/workflows/ci.yml` builds the game and checks the French text
+  and voice clips. It deploys nothing.
 
 ## Visuals
 
@@ -82,13 +99,14 @@ touch-only screens.
 |---|---|
 | WASD / Arrow keys | Move, relative to the camera (W walks away from it); also steady a brush (lettering, the line) |
 | Mouse | Click the 3D view to capture the mouse, then move it to look around Hugo. Without capture, hold the left or right button and drag |
-| Mouse wheel | Zoom the camera in or out |
+| Mouse wheel | Zoom the camera in or out; in a craft, a quarter turn on a spoke or the radio dial |
 | R (or middle click) | Re-centre the camera behind Hugo |
 | Shift | Try to jog (in the boot the pain meter fills; at full you stumble) |
 | E (or Enter, or click) | Interact, advance dialogue and cards |
-| Space | Timing prompts (truing a wheel) |
+| Space | Hold to pull the tape measure; pluck a spoke when truing a wheel by ear |
 | A / D alternating | A steady rhythm (running in the flashback, sanding) |
-| 1 – 3 | Choices |
+| 1 – 5 | Choices; a drop from a paint tin in the colour toy (T tips the pot out, E shows Odile) |
+| Mouse in a craft | Drag back and forth to sand or scrub, drag to turn a wheel or dial, click to pluck, hold the button to pull the tape, click a tin for a drop |
 | M | Mute |
 | Esc | Pause (resume, restart the chapter, or Options). It also releases the captured mouse, in the same press |
 
@@ -97,6 +115,12 @@ screen (the two buttons at the bottom), or later in **Options** (title screen, o
 also holds the graphics quality. A switch applies at once, mid-chapter too (a line already on screen
 finishes in the old language). The choice is remembered per browser; the first visit follows the
 browser language. `?lang=en|fr` forces one.
+
+**Voices.** In French, the lines are spoken (dialogue, Hugo's thoughts, barks, the voicemail, the TV
+and the radio). **Options > Voices / Voix** turns them on or off (on by default, remembered per
+browser). Voices exist only in French: in English the row is greyed with the note "French only" and
+nothing plays. A spoken line waits for E as before; E stops the voice and moves on. Mute (M) and
+pause (Esc) silence the voices too. Clips are streamed per chapter (about 6 MB in all).
 
 The camera only answers the mouse while you are walking freely. In dialogue, menus, minigames
 and cut-scenes the mouse is released and look input is ignored. When the next required spot is

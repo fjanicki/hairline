@@ -1,0 +1,26 @@
+# Check build on every push to main and on pull requests. Deploys nothing; see release.yml.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: French text is complete
+        run: node scripts/i18n-check.mjs fr
+      - name: Every French line has a voice clip
+        run: node scripts/voice/extract-lines.mjs --check

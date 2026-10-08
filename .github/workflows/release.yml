@@ -1,0 +1,74 @@
+# Publish a release: push a version tag (git tag v0.2.0 && git push origin v0.2.0).
+#  1. builds the game once,
+#  2. creates the GitHub Release for the tag with the playable build attached as hairline-<tag>.zip,
+#  3. deploys the same build to GitHub Pages: https://<owner>.github.io/<repo>/
+# "Run workflow" on the Actions tab redeploys the current main to Pages without making a release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/i18n-check.mjs fr
+      - run: node scripts/voice/extract-lines.mjs --check
+      - name: Zip the build
+        run: cd dist && zip -qr "../hairline-${GITHUB_REF_NAME}.zip" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-zip
+          path: hairline-*.zip
+          retention-days: 7
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-zip
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" hairline-*.zip \
+            --repo "$GITHUB_REPOSITORY" --title "HAIRLINE $GITHUB_REF_NAME" --generate-notes \
+            --notes "Play online: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/
+
+          Offline: unzip, then serve the folder with any static server (for example \`npx serve\`) and open it in a browser. Opening index.html directly from disk does not work."
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
