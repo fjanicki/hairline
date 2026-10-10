@@ -10,9 +10,11 @@ the hammering through the floor at night belongs to Odile, a retired sign painte
 workshop downstairs.
 
 The game is about expanding what he is able to do: sanding a door, mixing a grey that isn't sad,
-truing a kid's wheel, lettering a sign, painting one line under a street mural. A "WHAT I CAN DO"
-notebook grows with every skill. Colour is hope, and the colour comes back first on the things he
+truing a kid's wheel, lettering a sign, painting one line under a street mural. A « CE QUE JE SAIS
+FAIRE » notebook grows with every skill. Colour is hope, and the colour comes back first on the things he
 makes. The look is grimy on purpose: film grain, lens dirt, rust, stains and wet streets.
+
+The game is in French only (text and voices). This README and the docs stay in English.
 
 Built with Three.js r186 and Vite 8, as plain JavaScript ES modules (no framework). The story
 text, chapter beats and mood values come from `docs/DESIGN.md`. The internal APIs are documented
@@ -51,7 +53,8 @@ any folder of any static server. `npm run preview` serves that build.
   online link therefore always shows the latest release, never a work-in-progress push.
 - **Redeploy without a release:** Actions → Release → Run workflow (deploys the current `main`).
 - **Every push to `main`:** `.github/workflows/ci.yml` builds the game and checks the French text
-  and voice clips. It deploys nothing.
+  (`node scripts/text-check.mjs`) and voice clips (`node scripts/voice/extract-lines.mjs --check`). It
+  deploys nothing.
 
 ## Visuals
 
@@ -110,22 +113,18 @@ touch-only screens.
 | M | Mute |
 | Esc | Pause (resume, restart the chapter, or Options). It also releases the captured mouse, in the same press |
 
-**Options and language.** The game is in English or French (Français). Pick the language on the title
-screen (the two buttons at the bottom), or later in **Options** (title screen, or Esc > Options), which
-also holds the graphics quality. A switch applies at once, mid-chapter too (a line already on screen
-finishes in the old language). The choice is remembered per browser; until the player picks one, the
-game is in French. `?lang=en|fr` forces one.
+**Options.** **Options** (title screen, or Esc > Options) holds **Voix** (voices) and **Graphismes**
+(graphics quality). Key names on screen follow the player's keyboard layout (ZQSD on AZERTY).
 
-**Voices.** In French, the lines are spoken (dialogue, Hugo's thoughts, barks, the voicemail, the TV
-and the radio). **Options > Voices / Voix** turns them on or off (on by default, remembered per
-browser). Voices exist only in French: in English the row is greyed with the note "French only" and
-nothing plays. A spoken line waits for E as before; E stops the voice and moves on. Mute (M) and
-pause (Esc) silence the voices too. Clips are streamed per chapter (about 6 MB in all).
+**Voices.** The lines are spoken (dialogue, Hugo's thoughts, barks, the voicemail, the TV and the
+radio). **Options > Voix** turns them on or off (on by default, remembered per browser). A spoken line
+waits for E as before; E stops the voice and moves on. Mute (M) and pause (Esc) silence the voices
+too. Clips are streamed per chapter (about 6 MB in all).
 
 **Saving.** Progress is saved in the browser (localStorage, no server) at the start of every chapter.
 After a reload the title screen offers **Continue** at that chapter (click, E or Enter) and a **New game**
 button; a chapter always resumes from its start. Earlier chapters' choices (the grey you mixed, the
-OPEN sign, your panel, the jobs done) are kept. Options (language, voices, graphics) and mute (M) are
+OPEN sign, your panel, the jobs done) are kept. Options (voices, graphics) and mute (M) are
 remembered too. Pause > Restart chapter goes back to the title with Continue at the current chapter.
 Finishing the game clears the save. `?chapter=N` and `autostart` ignore it; `src/story/save.js`.
 
@@ -136,11 +135,11 @@ shows the distance.
 
 ## Chapters
 
-1. **No Impact.** Hugo's flat at night, boot day four. The watch on its charger, the X-ray, the rusting race bike, 38 race bibs, and the hammering through the floor.
-2. **Never Stop.** Once round the block in the rain on Rue des Tanneurs. The run club jogs past. Odile on her scaffold: "Can you stand still?"
-3. **The Long Run.** Flashback: training blocks at dawn, a steady cadence, STRIDE's "Rest" that is never real, and the marathon where the shin goes at KM 31.
-4. **Measure Twice.** Odile's workshop, Day 5 to Week 7. Sanding, measuring, a grey that isn't sad, Sami's wheel, the OPEN sign. The notebook grows.
-5. **The Wall.** Week 12. The neighbourhood paints a mural over the billboard; Hugo paints the line. The boot comes off; the watch goes on a nail.
+1. **Sans impact** (No Impact). Hugo's flat at night, boot day four. The watch on its charger, the X-ray, the rusting race bike, 38 race bibs, and the hammering through the floor.
+2. **Ne t’arrête jamais** (Never Stop). Once round the block in the rain on Rue des Tanneurs. The run club jogs past. Odile on her scaffold: "Can you stand still?"
+3. **À la longue** (The Long Run). Flashback: training blocks at dawn, a steady cadence, STRIDE's "Rest" that is never real, and the marathon where the shin goes at KM 31.
+4. **Mesurer deux fois** (Measure Twice). Odile's workshop, Day 5 to Week 7. Sanding, measuring, a grey that isn't sad, Sami's wheel, the OPEN sign. The notebook grows.
+5. **Le Mur** (The Wall). Week 12. The neighbourhood paints a mural over the billboard; Hugo paints the line. The boot comes off; the watch goes on a nail.
 
 ## Debug flags
 
@@ -154,14 +153,13 @@ Add these as URL query parameters, for example
 | `autostart=1` | Skip the title screen. Audio stays silent until a real click or key press. |
 | `skipcards=1` | Text cards close on their own, and chapter titles are not shown. |
 | `quality=low\|medium\|high` | Force a quality tier (otherwise auto, or the pause-menu choice). |
-| `lang=en\|fr` | Force the language (otherwise the Options choice, else French). |
 
 With `debug=1`, `__game.debug` provides:
 - `skip()`: resolves whatever the story is waiting on.
 - `goto(i)`: reloads at chapter `i`.
 - `hold(code, ms)` and `press(code)`: simulate keys.
 - `setHope(h)`, `teleport(x, z)` and `trigger(id)`.
-- `lang(code?)`: reads or switches the language; `textLog`: every string the UI has shown (last 2000).
+- `textLog`: every string the UI has shown (last 2000); `voiceLog`: every voice clip request, start and miss.
 - `state()`: returns state, chapter, hope, position, pain, hotspots and draw calls.
 - `advance(ms, {choose, step, spots, rhythm, key})`: autoplays for `ms` (advances dialogue, picks
   choice `choose`, triggers the next required hotspot, or taps a steady A/D rhythm or `key`).
@@ -192,12 +190,13 @@ src/
                      build helpers (bicycle, grimeTexture, rain...), Hotspots, Runner,
                      scenes/scene1-5.js (+ a folder per scene for its kit, textures, fx)
   story/             Director (chapter flow), ch1-ch5.js, minigames.js (rhythm, timing, steer),
-                     script.js + text/ (all player-facing text, one file per chapter)
+                     script.js + text/ (all player-facing text, French, one file per chapter)
   ui/                UI.js (all DOM overlays: watch, notebook, gauge, dialogue...), style.css,
                      ObjectivePointer.js (+ objective-pointer.css)
 docs/                DESIGN.md (spec), API.md (internal API), CREDITS.md (every asset source),
                      assets/ (catalogues: characters, materials, props), asset-bounds.txt
-scripts/             fetch-assets.sh, assets/<group>.sh (characters, materials, props)
+scripts/             fetch-assets.sh, assets/<group>.sh (characters, materials, props), text-check.mjs
+                     (French text), voice/ (voice-over pipeline), sfx/ (sound effects)
 ```
 
 ## Credits and licences

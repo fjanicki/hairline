@@ -8,11 +8,12 @@ import { Mood } from './render/Mood.js';
 import { Environment } from './render/Environment.js';
 import { TIER_NAMES } from './render/Quality.js';
 import { Materials } from './core/Materials.js';
-import { look, CHAPTER_LOOKS } from './world/look.js';
+import { look, resolveLook } from './world/look.js';
 import { Player, HUGO_TINT } from './player/Player.js';
 import { FollowCam } from './player/FollowCam.js';
 import { CameraRig } from './player/CameraRig.js';
 import { ObjectivePointer } from './ui/ObjectivePointer.js';
+import { Inventory } from './ui/Inventory.js';
 import { Hotspots } from './world/Hotspots.js';
 import { Runner } from './world/Runner.js';
 import { World } from './world/World.js';
@@ -20,17 +21,23 @@ import * as build from './world/build.js';
 import { Director } from './story/Director.js';
 import { UI } from './ui/UI.js';
 import { L } from './story/script.js';
-import { getLang, setLang } from './story/i18n.js';
 import * as minigames from './story/minigames.js';
 import { restoreMem, memSnapshot, beginChapter } from './story/memory.js';
 import { savedChapter, clearSave } from './story/save.js';
+import { GAMES, playGame } from './story/games/index.js';
+import { itemDebug } from './story/items.js';
 import ch1 from './story/ch1.js';
 import ch2 from './story/ch2.js';
 import ch3 from './story/ch3.js';
 import ch4 from './story/ch4.js';
 import ch5 from './story/ch5.js';
+import ch6 from './story/ch6.js';
+import ch7 from './story/ch7.js';
 
-const CHAPTERS = [ch1, ch2, ch3, ch4, ch5];
+// Revision 4 order (docs/SCRIPT-R4.md §0.3): Ch5 and Ch6 are new, Ch7 « Le Mur » was Ch5.
+const CHAPTERS = [ch1, ch2, ch3, ch4, ch5, ch6, ch7];
+/** The look of chapter i's own build: its `look` name, else CHAPTER_LOOKS[i] (world/look.js). */
+const chapterLook = (i) => (CHAPTERS[i] ? resolveLook(CHAPTERS[i].look ?? i) : null);
 /** Audio files a chapter plays: its music bed, its ambience and any extra `sounds`. */
 const chapterSounds = (ch) => (ch ? [ch.music?.name ?? ch.music, ...(ch.ambience || []), ...(ch.sounds || [])].filter((n) => typeof n === 'string') : []);
 
@@ -116,7 +123,7 @@ async function boot() {
   // Music and ambience never hold it: they fade in when they arrive.
   ui.loading(0.02);
   audio.preload(chapterSounds(CHAPTERS[flags.chapter])); // the rest load with their chapters
-  const first = CHAPTER_LOOKS[flags.chapter] || {};
+  const first = chapterLook(flags.chapter) || {};
   const parts = new Map(); // key -> [weight MB, progress 0..1]
   const report = () => {
     let w = 0;
@@ -134,7 +141,7 @@ async function boot() {
       report();
     });
   };
-  const firstIds = look.materialIds(flags.chapter);
+  const firstIds = look.materialIds(first);
   const jobs = [
     ...firstIds.map((id) => part('mat:' + id, 2, () => materials.preload([id], { timeout: 30000 }))),
     ...(first.hdris || []).map((id) => part('hdri:' + id, 1.6, () => env.preload([id]))),
@@ -182,49 +189,58 @@ async function boot() {
     env,
   };
   ctx.voice = voice;
-  // Render first pass around every chapter build (the chapter modules stay untouched): activate the
-  // chapter look, preload its materials, props and HDRIs in parallel (and the next chapter's HDRIs
-  // and sounds in the background), then after the build restyle Kenney props, add light cones and
-  // fit the sun's shadow box to the playable area.
+  // Render first pass around every scene build: activate the scene's look, free the GPU sets it does not
+  // list, preload its materials, props and HDRIs in parallel (and the next look's HDRIs in the background),
+  // then after the build restyle Kenney props, add light cones, fit the sun's shadow box to the playable
+  // area and weather the boot. Chapter builds go through it (wrapped below); so do mid-chapter scene swaps
+  // (Director.scene -> ctx.loadSet). lk: a chapter index, a LOOKS name or a look object.
+  const loadSet = async (lkRef, buildFn, { nextLook = null, bounds = null, beforeBuild = null } = {}) => {
+    const lk = look.begin(lkRef);
+    env.retain([...(lk?.hdris || []), ...(nextLook?.hdris || [])]);
+    // GPU memory: the previous scene is unloaded by now. Free the material sets and prop scenes this one
+    // does not list (a later scene uploads them again behind its own fade).
+    const ids = look.materialIds(lk);
+    const evicted = materials.retain(ids);
+    const released = assets.releaseProps(lk?.props || []);
+    if (flags.debug && (evicted || released)) console.info(`[hairline] ${lk?.key ?? 'scene'}: freed ${evicted} material sets, ${released} props from the GPU`);
+    await Promise.all([
+      materials.preload(ids),
+      Promise.race([Promise.all([env.preload(lk?.hdris || []), assets.preload(lk?.props || [])]), engine.wait(6)]),
+    ]);
+    env.preload(nextLook?.hdris || []); // background
+    beforeBuild?.();
+    const r = await buildFn(ctx);
+    if (r?.group && lk) {
+      r.group.traverse((o) => {
+        if (o.name?.startsWith('prop:kenney/') && !o.userData.noRestyle) materials.restyleKenney(o, lk.kenney);
+      });
+      if (lk.cones) r.lightCones = build.addLightCones(r.group);
+    }
+    mood.fitShadows(r?.bounds ?? bounds);
+    if (lk) player.weatherBoot(materials, { grime: lk.grime ?? 0.6, wet: lk.wet ?? 0 }); // the boot weathers with the street
+    return r;
+  };
+  ctx.loadSet = loadSet;
   CHAPTERS.forEach((ch, i) => {
     const orig = ch.build;
     if (!orig || orig._lookWrapped) return;
     const wrapped = async (c) => {
-      const lk = look.begin(i);
-      const nextLook = CHAPTER_LOOKS[i + 1] || {};
-      const next = nextLook.hdris || [];
-      env.retain([...(lk?.hdris || []), ...next]);
-      // GPU memory: the previous chapter is unloaded by now. Free the material sets and prop scenes
-      // this chapter does not list (a later chapter uploads them again behind its own fade).
-      const evicted = materials.retain(look.materialIds(i));
-      const released = assets.releaseProps(lk?.props || []);
-      if (flags.debug && (evicted || released)) console.info(`[hairline] chapter ${i + 1}: freed ${evicted} material sets, ${released} props from the GPU`);
-      await Promise.all([
-        materials.preload(look.materialIds(i)),
-        Promise.race([Promise.all([env.preload(lk?.hdris || []), assets.preload(lk?.props || [])]), engine.wait(6)]),
-      ]);
-      env.preload(next); // background
-      // Decode this chapter's sounds; only fetch the next chapter's (decoded at its own build: the long
-      // stereo beds are ~20 MB each decoded).
+      const nextLook = chapterLook(i + 1) || {};
+      // Decode this chapter's sounds (every scene's: list them all in `sounds`); only fetch the next
+      // chapter's (decoded at its own build: the long stereo beds are ~20 MB each decoded).
       const sounds = [...chapterSounds(ch), ...(i === CHAPTERS.length - 1 ? ['piano'] : [])];
       const nextSounds = chapterSounds(CHAPTERS[i + 1]).filter((n) => !sounds.includes(n));
-      audio.releaseChapter(sounds, { prefetch: nextSounds }); // the previous chapter's sfx loops, beds and decoded buffers
-      audio.preload(sounds);
-      audio.prefetch(nextSounds);
-      const r = await orig.call(ch, c);
-      if (r?.group && lk) {
-        r.group.traverse((o) => {
-          if (o.name?.startsWith('prop:kenney/') && !o.userData.noRestyle) materials.restyleKenney(o, lk.kenney);
-        });
-        if (lk.cones) r.lightCones = build.addLightCones(r.group);
-      }
-      mood.fitShadows(r?.bounds ?? ch.player?.bounds);
-      if (lk) player.weatherBoot(materials, { grime: lk.grime ?? 0.6, wet: lk.wet ?? 0 }); // the boot weathers with the street
+      const beforeBuild = () => {
+        audio.releaseChapter(sounds, { prefetch: nextSounds }); // the previous chapter's sfx loops, beds and decoded buffers
+        audio.preload(sounds);
+        audio.prefetch(nextSounds);
+      };
+      const r = await loadSet(ch.look ?? i, (cx) => orig.call(ch, cx ?? c), { nextLook, bounds: ch.player?.bounds, beforeBuild });
       // Download (not upload) the next chapter's material sets and props in the background once this
       // one is playing, so its build only waits on GPU uploads (Ch1 -> Ch2 is about 38 MB).
-      if (CHAPTER_LOOKS[i + 1]) {
+      if (CHAPTERS[i + 1]) {
         engine.wait(3).then(() => {
-          materials.preload(look.materialIds(i + 1), { upload: false, timeout: 120000 });
+          materials.preload(look.materialIds(nextLook), { upload: false, timeout: 120000 });
           assets.preload(nextLook.props || []);
         });
       }
@@ -259,7 +275,6 @@ async function boot() {
     const q = new URLSearchParams();
     if (flags.debug) q.set('debug', '1');
     if (flags.debug) q.set('chapter', String(Math.max(0, director.index)));
-    if (params.get('lang')) q.set('lang', getLang()); // ?lang= outranks the remembered choice
     location.href = location.pathname + (q.toString() ? `?${q}` : '');
   };
   reloadHere = restart;
@@ -296,6 +311,7 @@ async function boot() {
   engine.add(rig);
   engine.add({ update: () => audio.updateListener(engine.camera, player.root) }); // positional sfx
   engine.add(pointer);
+  engine.add(new Inventory({ ui, input, rig, getDirector: () => director })); // the pocket (story/items.js)
   input.onKey((code, e) => {
     if (code === 'Escape' && !rig.swallowEscape()) setPaused(!engine.paused);
     // e.key too: the M on AZERTY is code Semicolon (KeyM is its comma). Labelled by KeyLabels ('{KeyM}').
@@ -350,6 +366,10 @@ async function boot() {
       quality,
       debug: {
         goto: (i) => director.goto(i),
+        // Revision 4 minigames (story/games/): games() lists them, game(id, opts) runs one on the current scene.
+        games: () => Object.keys(GAMES),
+        game: (id, opts) => playGame(id, ctx, director, opts),
+        items: itemDebug(), // the pocket and the case file: list(), give(id), take(id), select(id), state()
         skip: () => director.skip(),
         hold: (code, ms) => input.hold(code, ms),
         press: (code) => input.press(code),
@@ -362,9 +382,8 @@ async function boot() {
         pointer: () => ({ ...pointer.state }),
         trigger: (id) => hotspots.trigger(id),
         mem: () => memSnapshot(), // cross-chapter flags (story/memory.js)
-        // Language: lang() reads it, lang('fr') switches (as the Options panel does). textLog: every
-        // string the UI has shown (dialogue, thoughts, objectives, prompts, cards, menus, HUD), last 2000.
-        lang: (code) => (code ? setLang(code) : null, getLang()),
+        // textLog: every string the UI has shown (dialogue, thoughts, objectives, prompts, cards, menus,
+        // HUD), last 2000.
         textLog: ui.textLog,
         // Audio (core/AudioDebug.js): audioLog = every sound started {t, at, kind, name, file, bus, gain, ...};
         // meter() = RMS/peak dBFS per tap (bus, fx, master, + voice), meter(secs) = RMS history (50 ms).

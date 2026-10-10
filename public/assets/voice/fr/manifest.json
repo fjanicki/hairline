@@ -1,8 +1,22 @@
 {
  "version": 1,
- "model": "kyutai/tts-1.6b-en_fr (moshi-mlx bf16; cfg 2.0, temp 0.6)",
- "generatedAt": "2026-10-07T22:13:22+00:00",
+ "model": "kyutai/tts-1.6b-en_fr (moshi-mlx bf16 on the Mac / PyTorch-ROCm on auriga; cfg 2.0, temp 0.6); jo: ResembleAI/chatterbox (Chatterbox Multilingual, T3 t3_mtl23ls_v3) (cloned voice, auriga)",
+ "generatedAt": "2026-10-09T23:57:35+00:00",
  "lines": {
+  "001752e0da16": {
+   "file": "001752e0da16.ogg",
+   "dur": 2.48,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "La soupe. La planque. Pis parce que."
+  },
+  "004f14aff577": {
+   "file": "004f14aff577.ogg",
+   "dur": 1.13,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Elle a une place."
+  },
   "009f05ada8c0": {
    "file": "009f05ada8c0.ogg",
    "dur": 3.23,
@@ -10,12 +24,47 @@
    "delivery": "spoken",
    "text": "Tiens le vélo. Les deux mains. N’aide pas."
   },
+  "00a6b64e7187": {
+   "file": "00a6b64e7187.ogg",
+   "dur": 4.48,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Écris pas ça sur ta liste. C’est mon métier, pas ton loisir."
+  },
   "00b90eb110ab": {
    "file": "00b90eb110ab.ogg",
    "dur": 4.36,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Je n’ai jamais pris le mur. Pas une fois. J’en étais très fier."
+  },
+  "00edcff82938": {
+   "file": "00edcff82938.ogg",
+   "dur": 3.16,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Posez-le là, Josianne. Pas là. Là."
+  },
+  "01de67f03ce0": {
+   "file": "01de67f03ce0.ogg",
+   "dur": 3.37,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Non. Ça ne tient pas. Je n’ai jamais su m’arrêter."
+  },
+  "02b2eda8a880": {
+   "file": "02b2eda8a880.ogg",
+   "dur": 5.68,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Ils sont à moi. Je les avais pliés en quatre. Odile les plie en trois."
+  },
+  "02fe913db481": {
+   "file": "02fe913db481.ogg",
+   "dur": 6.17,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un vieux monsieur dort au bout du banc, la casquette sur les yeux. De la sciure sur les manches de son gilet."
   },
   "033ae00b4e91": {
    "file": "033ae00b4e91.ogg",
@@ -37,6 +86,20 @@
    "speaker": "benali",
    "delivery": "spoken",
    "text": "Je voulais peindre un croissant. Ça a donné un croissant de lune. J’ai décidé que c’était la lune."
+  },
+  "035f5153b684": {
+   "file": "035f5153b684.ogg",
+   "dur": 3.96,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "C’est tout croche. C’est parfait. J’adore."
+  },
+  "037de7045c37": {
+   "file": "037de7045c37.ogg",
+   "dur": 2.15,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Reviens quand tu veux. Pas pour l’enquête."
   },
   "03d8c623f55a": {
    "file": "03d8c623f55a.ogg",
@@ -98,12 +161,26 @@
     }
    }
   },
+  "06a6e4461866": {
+   "file": "06a6e4461866.ogg",
+   "dur": 3.71,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Des silhouettes de vélos peintes au mur. Toutes vides."
+  },
   "06c127b2cb79": {
    "file": "06c127b2cb79.ogg",
    "dur": 0.58,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "En petit ?"
+  },
+  "0707a7e70c52": {
+   "file": "0707a7e70c52.ogg",
+   "dur": 2.82,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Vous la réchauffez avec les mains. Elle n’aime pas ça."
   },
   "0707e92f15aa": {
    "file": "0707e92f15aa.ogg",
@@ -126,12 +203,68 @@
    "delivery": "radio",
    "text": "…deux à zéro, et personne ici n’arrive vraiment à y croire…"
   },
-  "087b9940a502": {
-   "file": "087b9940a502.ogg",
-   "dur": 3.08,
+  "076347ac917f": {
+   "file": "076347ac917f.ogg",
+   "dur": 4.69,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Alibi : un cerf-volant encore rouge. On ne fait pas plus frais."
+  },
+  "076b6fc1a493": {
+   "file": "076b6fc1a493.ogg",
+   "dur": 1.03,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "T’as signé en petit."
+  },
+  "0780eebfa772": {
+   "file": "0780eebfa772.ogg",
+   "dur": 3.75,
    "speaker": "sami",
-   "delivery": "bark",
-   "text": "Ines ! Ta roue chante, maintenant !"
+   "delivery": "spoken",
+   "text": "Ça sent le vélo. Trop bien. Je vais les sentir tout le temps."
+  },
+  "08c2745895c0": {
+   "file": "08c2745895c0.ogg",
+   "dur": 4.61,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Huit suspects, dont moi. Je n’ai jamais eu autant de punaises."
+  },
+  "08c53039bdb8": {
+   "file": "08c53039bdb8.ogg",
+   "dur": 2.86,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Si tu veux. Mais ici, personne te chronomètre."
+  },
+  "095b5c680e52": {
+   "file": "095b5c680e52.ogg",
+   "dur": 4.72,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il chronomètre. Quarante-quatre ans de plus que moi, et pas un jour de repos."
+  },
+  "09d831893880": {
+   "file": "09d831893880.ogg",
+   "dur": 3.27,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Il se repose. Tu cours à quelle heure, le matin ?"
+  },
+  "09e99a7c76c7": {
+   "file": "09e99a7c76c7.ogg",
+   "dur": 12.05,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "La nuit du rideau ? Jeudi, départ cinq heures zéro deux. Fréquence cardiaque, cent quarante-deux. Cadence, cent quatre-vingt-quatre. Dénivelé, huit mètres. Pas une seule pause. Les données, ça ment pas, mon pote."
+  },
+  "0a3e2295bedb": {
+   "file": "0a3e2295bedb.ogg",
+   "dur": 4.21,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il fait le tour de la rue toutes les nuits, et il répare ce qu’il trouve."
   },
   "0a6e7046c127": {
    "file": "0a6e7046c127.ogg",
@@ -140,12 +273,40 @@
    "delivery": "spoken",
    "text": "Cinq de blanc, une de noir. Deux d’ocre. Une de bleu, pour le calmer."
   },
+  "0bd0448a2a4e": {
+   "file": "0bd0448a2a4e.ogg",
+   "dur": 5.71,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Odile ! Je viens t’emprunter ton pinceau à filet. Le mien a perdu un poil. Le poil important."
+  },
+  "0bf7e75a1feb": {
+   "file": "0bf7e75a1feb.ogg",
+   "dur": 2.8,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Sami a besoin d’un monsieur des roues."
+  },
+  "0c2ffe6f167b": {
+   "file": "0c2ffe6f167b.ogg",
+   "dur": 2.97,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Elle ne reconnaît rien de ce que je fais, maintenant."
+  },
   "0c30ce87b94b": {
    "file": "0c30ce87b94b.ogg",
    "dur": 4.1,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Ça, c’est pas une chose à faire. C’est une chose à compter."
+  },
+  "0d19be975070": {
+   "file": "0d19be975070.ogg",
+   "dur": 3.7,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Floue. J’ai bougé. Je ne bouge jamais, d’habitude."
   },
   "0d9e96c6102a": {
    "file": "0d9e96c6102a.ogg",
@@ -161,6 +322,13 @@
    "delivery": "inner",
    "text": "La dernière personne qui m’a dit ça tenait une radio de ma jambe."
   },
+  "0e70b0a8e37c": {
+   "file": "0e70b0a8e37c.ogg",
+   "dur": 3.19,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Même le monsieur de la pêche a une théorie."
+  },
   "0e8dcb46d2e4": {
    "file": "0e8dcb46d2e4.ogg",
    "dur": 1.1,
@@ -174,6 +342,13 @@
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Plus fin qu’un cheveu. Et c’est lui qui gagne."
+  },
+  "0f1de55c6ca8": {
+   "file": "0f1de55c6ca8.ogg",
+   "dur": 2.03,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ben non. C’est parfait."
   },
   "0f41b0d7e795": {
    "file": "0f41b0d7e795.ogg",
@@ -189,12 +364,117 @@
    "delivery": "inner",
    "text": "Elle avait déjà peint la silhouette."
   },
+  "0fab74e1195f": {
+   "file": "0fab74e1195f.ogg",
+   "dur": 2.71,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Wo. C’est une hirondelle, pas un sprint."
+  },
+  "0fbc92fcec8c": {
+   "file": "0fbc92fcec8c.ogg",
+   "dur": 4.13,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Je lui ai donné un vélo pour ça. Je lui ai dit d’en trouver un."
+  },
+  "0ff0da124b78": {
+   "file": "0ff0da124b78.ogg",
+   "dur": 3.86,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "HUGO ! La légende ! Alors, ce tibia ?"
+  },
+  "10107e9f1f30": {
+   "file": "10107e9f1f30.ogg",
+   "dur": 3.59,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Ça fait des bulles ! Non. C’est toi qui fais des bulles."
+  },
+  "10ffa5e702a9": {
+   "file": "10ffa5e702a9.ogg",
+   "dur": 2.39,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Lou. Le flou, c’est toi."
+  },
+  "1104df2d4cb0": {
+   "file": "1104df2d4cb0.ogg",
+   "dur": 3.33,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Il clignotait *exprès*. C’était de l’ambiance."
+  },
+  "11c6eb01d849": {
+   "file": "11c6eb01d849.ogg",
+   "dur": 0.98,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Entendu quoi ?"
+  },
+  "11e8f91b8e53": {
+   "file": "11e8f91b8e53.ogg",
+   "dur": 2.31,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Superbe photo du trottoir."
+  },
+  "12cc1d3c4f34": {
+   "file": "12cc1d3c4f34.ogg",
+   "dur": 3.83,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Je peux le garder ? Non ? Alors pourquoi tu me le montres ?"
+  },
+  "12d5db92766d": {
+   "file": "12d5db92766d.ogg",
+   "dur": 0.98,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Ça, je le crois."
+  },
   "12d7432d2aa5": {
    "file": "12d7432d2aa5.ogg",
    "dur": 6.3,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Tout le monde a peint ce qu’il sait faire. Ton trait passe sous tout ça. De la boulangerie au kebab."
+  },
+  "151a9b3dab72": {
+   "file": "151a9b3dab72.ogg",
+   "dur": 1.65,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Ça, c’est un croissant."
+  },
+  "157cdf64e85b": {
+   "file": "157cdf64e85b.ogg",
+   "dur": 4.18,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "La nuit du rideau, vers trois heures, t’étais où ?"
+  },
+  "15ee938a7240": {
+   "file": "15ee938a7240.ogg",
+   "dur": 1.28,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "C’est quoi, hot ?"
+  },
+  "16283fda3b1e": {
+   "file": "16283fda3b1e.ogg",
+   "dur": 0.75,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Cinquante-deux."
+  },
+  "168e94dafdac": {
+   "file": "168e94dafdac.ogg",
+   "dur": 1.49,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Ça ne répond pas à la question."
   },
   "17f08cca9c16": {
    "file": "17f08cca9c16.ogg",
@@ -210,6 +490,27 @@
    "delivery": "spoken",
    "text": "Elle capte une station. Un monsieur qui parle de pêche. J’ai beaucoup appris sur la pêche."
   },
+  "188ae4f9f3ab": {
+   "file": "188ae4f9f3ab.ogg",
+   "dur": 3.97,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Si c’est un cadeau, c’est raté. Si c’est un outil, c’est pire."
+  },
+  "19761a8bf305": {
+   "file": "19761a8bf305.ogg",
+   "dur": 4.06,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Hier, trois heures du matin. Je ne dormais pas, évidemment."
+  },
+  "1a5b944b713c": {
+   "file": "1a5b944b713c.ogg",
+   "dur": 3.11,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Je rapporte les clés au proprio. Il saura jamais."
+  },
   "1a76a122f94d": {
    "file": "1a76a122f94d.ogg",
    "dur": 2.77,
@@ -223,6 +524,20 @@
    "speaker": "benali",
    "delivery": "spoken",
    "text": "Il est monté. Me voilà obligée d’être aimable toute la matinée."
+  },
+  "1ad64b7913e4": {
+   "file": "1ad64b7913e4.ogg",
+   "dur": 1.9,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Ça fait des grosses bulles, là. Même moi je vois."
+  },
+  "1b3158e5c2b2": {
+   "file": "1b3158e5c2b2.ogg",
+   "dur": 4.41,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Cinquante-deux centimètres. Le gabarit de l’établi de la boutique."
   },
   "1b6b5a3cf760": {
    "file": "1b6b5a3cf760.ogg",
@@ -238,6 +553,20 @@
    "delivery": "bark",
    "text": "Hugo ! Elle a encore sauté !"
   },
+  "1c089f51b671": {
+   "file": "1c089f51b671.ogg",
+   "dur": 1.89,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Je fais une sorte d’enquête."
+  },
+  "1cbf9e1b2535": {
+   "file": "1cbf9e1b2535.ogg",
+   "dur": 6.55,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Il en a trouvé un. Moi. Mais je ne sais pas tout. Venez le jour. Apprenez-lui le reste."
+  },
   "1cda1018b1f5": {
    "file": "1cda1018b1f5.ogg",
    "dur": 4.95,
@@ -251,6 +580,13 @@
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Marchez, si vous y tenez, il a dit."
+  },
+  "1f5787d90a01": {
+   "file": "1f5787d90a01.ogg",
+   "dur": 1.48,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "…Deux sur trois."
   },
   "1f824cb655c5": {
    "file": "1f824cb655c5.ogg",
@@ -269,9 +605,30 @@
   "1ffdc546f1e6": {
    "file": "1ffdc546f1e6.ogg",
    "dur": 4.22,
-   "speaker": "ines",
+   "speaker": "lou",
    "delivery": "spoken",
    "text": "J’ai tagué ce mur huit fois. C’est la première fois qu’on me *tend* la peinture."
+  },
+  "208138a71458": {
+   "file": "208138a71458.ogg",
+   "dur": 4.0,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Ça sent la graisse de chaîne. Je connais cette odeur mieux que celle du café."
+  },
+  "20a25478d533": {
+   "file": "20a25478d533.ogg",
+   "dur": 2.17,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Plie ! Serré !"
+  },
+  "20f419490941": {
+   "file": "20f419490941.ogg",
+   "dur": 5.03,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Il clignote plus. Quelqu’un me l’a recâblé la nuit dernière. Sans demander."
   },
   "215dd694252c": {
    "file": "215dd694252c.ogg",
@@ -279,6 +636,20 @@
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Le médecin dit que j’ai droit à celui-là. Sans impact. Je lui ai dit que j’avais déjà purgé mes douze ans."
+  },
+  "21674a383250": {
+   "file": "21674a383250.ogg",
+   "dur": 2.04,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Hugo Revel, je vous arrête."
+  },
+  "22034e40228f": {
+   "file": "22034e40228f.ogg",
+   "dur": 4.44,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un pot de peinture, ouvert. Le bleu des lattes du banc."
   },
   "2232fdf710db": {
    "file": "2232fdf710db.ogg",
@@ -301,6 +672,13 @@
    "delivery": "inner",
    "text": "À quinze ans, je montais mes roues moi-même. J’entendais un rayon détendu depuis la cuisine."
   },
+  "235ff7fee0b3": {
+   "file": "235ff7fee0b3.ogg",
+   "dur": 2.0,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Trois heures dix. Clic."
+  },
   "2368b9ff8777": {
    "file": "2368b9ff8777.ogg",
    "dur": 0.85,
@@ -322,6 +700,27 @@
    "delivery": "inner",
    "text": "Mentir à une montre, ce n’est pas mentir."
   },
+  "246a19344c59": {
+   "file": "246a19344c59.ogg",
+   "dur": 0.89,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Il clignote."
+  },
+  "24ae181405c0": {
+   "file": "24ae181405c0.ogg",
+   "dur": 2.09,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Fermée, oui. Barrée, non."
+  },
+  "24be82502419": {
+   "file": "24be82502419.ogg",
+   "dur": 4.61,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Un kebab froid. Personne ne m’en avait jamais apporté. Pose-le là."
+  },
   "2594ff269563": {
    "file": "2594ff269563.ogg",
    "dur": 1.39,
@@ -329,12 +728,12 @@
    "delivery": "spoken",
    "text": "Marchal et Fille."
   },
-  "2637299a4e38": {
-   "file": "2637299a4e38.ogg",
-   "dur": 5.65,
-   "speaker": "sami",
-   "delivery": "bark",
-   "text": "Ines s’est pris un trottoir. Les crevaisons, c’est moi. Les roues tordues, c’est toi."
+  "27115bc7cf3b": {
+   "file": "27115bc7cf3b.ogg",
+   "dur": 2.41,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Jo. Tu as les clés de la boutique."
   },
   "272fbe7ee547": {
    "file": "272fbe7ee547.ogg",
@@ -364,6 +763,13 @@
    "delivery": "spoken",
    "text": "…Tu veux le peindre."
   },
+  "28a6b08e8a77": {
+   "file": "28a6b08e8a77.ogg",
+   "dur": 6.89,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Clé de l’appart. Clé de la boîte aux lettres. Et une troisième, dont personne ne se souvient."
+  },
   "28c68d8e2bbf": {
    "file": "28c68d8e2bbf.ogg",
    "dur": 0.97,
@@ -378,6 +784,13 @@
    "delivery": "inner",
    "text": "J’aurais pu m’arrêter. Je veux que ce soit noté. J’aurais pu m’arrêter."
   },
+  "29c700155ddb": {
+   "file": "29c700155ddb.ogg",
+   "dur": 0.76,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Très droites."
+  },
   "29cbfa1110ba": {
    "file": "29cbfa1110ba.ogg",
    "dur": 3.7,
@@ -385,12 +798,61 @@
    "delivery": "inner",
    "text": "Sympa. J’ai dit « sympa » à propos d’une balade. À voix haute."
   },
+  "29e792fd929f": {
+   "file": "29e792fd929f.ogg",
+   "dur": 2.74,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Écris-le. C’est la règle, hein ? Odile me l’a dit."
+  },
+  "29f12ee83c0f": {
+   "file": "29f12ee83c0f.ogg",
+   "dur": 3.16,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "On peut tout réparer avec n’importe quoi. Une fois."
+  },
+  "29f61d7c1981": {
+   "file": "29f61d7c1981.ogg",
+   "dur": 3.65,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Celle-là ouvre rien. Le proprio la garde pour l’ambiance."
+  },
+  "2abf1e7e265b": {
+   "file": "2abf1e7e265b.ogg",
+   "dur": 3.79,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Ta clé, Odile. Je l’ai faite pour ton père."
+  },
+  "2b3706fab10c": {
+   "file": "2b3706fab10c.ogg",
+   "dur": 1.3,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Ça ne marche pas comme ça."
+  },
   "2b38ec8ee1e7": {
    "file": "2b38ec8ee1e7.ogg",
    "dur": 3.73,
    "speaker": "sami",
    "delivery": "spoken",
    "text": "C’est toujours toi qui le fais. Après, elle saute quand t’es pas là."
+  },
+  "2b6c31b92479": {
+   "file": "2b6c31b92479.ogg",
+   "dur": 2.84,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Je pourrais l’appeler. Il est juste là."
+  },
+  "2be5c48bdbc0": {
+   "file": "2be5c48bdbc0.ogg",
+   "dur": 6.58,
+   "speaker": "odile",
+   "delivery": "voicemail",
+   "text": "Ta botte fait les cent pas depuis une heure. Je l’entends d’en bas. Tu accuses toute la rue, je parie."
   },
   "2bffbc15188a": {
    "file": "2bffbc15188a.ogg",
@@ -406,12 +868,47 @@
    "delivery": "inner",
    "text": "Voilà. C’est ça."
   },
+  "2ce5b3627c79": {
+   "file": "2ce5b3627c79.ogg",
+   "dur": 4.12,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Tu. On est pas à la banque. Lundi."
+  },
+  "2d34718c333b": {
+   "file": "2d34718c333b.ogg",
+   "dur": 7.58,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Odile a dit de peindre ce qu’on sait faire. Je sais faire une clé. Une seule. Il y a cinquante-cinq ans."
+  },
+  "2d59be130c11": {
+   "file": "2d59be130c11.ogg",
+   "dur": 4.21,
+   "speaker": "durand",
+   "delivery": "bark",
+   "text": "Bien. Je lui aurais dit la même chose. Plus lentement."
+  },
   "2dcd0ef70c7d": {
    "file": "2dcd0ef70c7d.ogg",
    "dur": 2.03,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "…Non. Repos."
+  },
+  "2ee02dba6b3c": {
+   "file": "2ee02dba6b3c.ogg",
+   "dur": 2.57,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "La prochaine fois, je peux le faire tout seul ?"
+  },
+  "2f2b14800f7e": {
+   "file": "2f2b14800f7e.ogg",
+   "dur": 7.65,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Une complète ! Salade, tomate, oignons… non, pas d’oignons ! Viande, sauce blanche."
   },
   "30441a87bf44": {
    "file": "30441a87bf44.ogg",
@@ -420,6 +917,13 @@
    "delivery": "spoken",
    "text": "…Quatre-vingt-un et demi."
   },
+  "306e92b7777d": {
+   "file": "306e92b7777d.ogg",
+   "dur": 1.42,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Faque ton enquête avance."
+  },
   "308dad4c3cb5": {
    "file": "308dad4c3cb5.ogg",
    "dur": 3.0,
@@ -427,10 +931,52 @@
    "delivery": "flashback",
    "text": "Vous voyez, là ? Non. Là."
   },
+  "3151dc9a6286": {
+   "file": "3151dc9a6286.ogg",
+   "dur": 2.64,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Hey, le grand avec la botte ! C’est-tu droit ?"
+  },
+  "316a27805f5b": {
+   "file": "316a27805f5b.ogg",
+   "dur": 6.7,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Ça, c’est une vieille rustine. C’est monsieur Durand qui l’a mise. Il les coupe en ovale, à la main."
+  },
+  "31b916da3485": {
+   "file": "31b916da3485.ogg",
+   "dur": 6.3,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Et madame Benali a appelé trois fois. Son rideau ne crie plus. Elle dit que la rue ne sait plus l’heure."
+  },
+  "31fddefbc921": {
+   "file": "31fddefbc921.ogg",
+   "dur": 2.07,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "…Ok. Ça, c’était pas cute. C’était beau."
+  },
+  "32879f6a1613": {
+   "file": "32879f6a1613.ogg",
+   "dur": 2.25,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Et tu m’as laissé chercher six semaines."
+  },
+  "32b3911ee962": {
+   "file": "32b3911ee962.ogg",
+   "dur": 5.25,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Gardez-le, jeune homme. À mon âge, on ne prend plus. On rend."
+  },
   "32c5ada8228e": {
    "file": "32c5ada8228e.ogg",
    "dur": 3.08,
-   "speaker": "ines",
+   "speaker": "lou",
    "delivery": "spoken",
    "text": "De vous. Devant le mur. C’est le principe d’une photo."
   },
@@ -440,6 +986,27 @@
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Les portes mentent. Les encadrements, c’est pire. Celui-là dit la vérité, apparemment. On la pose telle quelle."
+  },
+  "330fe8e930fa": {
+   "file": "330fe8e930fa.ogg",
+   "dur": 3.15,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Pour que seuls les gens du métier le trouvent."
+  },
+  "3323d43a1532": {
+   "file": "3323d43a1532.ogg",
+   "dur": 6.13,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Quelqu’un poussait un vélo dans la rue. Clic. Clic. Clic. Pas pressé du tout."
+  },
+  "334913db5959": {
+   "file": "334913db5959.ogg",
+   "dur": 5.43,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "La seule autre lumière allumée, c’est la boulangerie. Avant, je la battais tous les matins."
   },
   "3361a4917e40": {
    "file": "3361a4917e40.ogg",
@@ -455,6 +1022,34 @@
    "delivery": "spoken",
    "text": "Facile."
   },
+  "33dd3a8cd7e6": {
+   "file": "33dd3a8cd7e6.ogg",
+   "dur": 1.6,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "La lumière ! Recule."
+  },
+  "343d37b13de8": {
+   "file": "343d37b13de8.ogg",
+   "dur": 3.87,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "L’établi est propre. Le seul endroit propre de la boutique."
+  },
+  "344ebca925da": {
+   "file": "344ebca925da.ogg",
+   "dur": 2.71,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Non merci. Je collectionne que les murs."
+  },
+  "34a65f8b7bb6": {
+   "file": "34a65f8b7bb6.ogg",
+   "dur": 3.82,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Hugo ! T’as une face de gars qui a roulé des kebabs jusqu’à deux heures."
+  },
   "34eea22f585d": {
    "file": "34eea22f585d.ogg",
    "dur": 3.3,
@@ -466,8 +1061,43 @@
    "file": "35954f3e9f0b.ogg",
    "dur": 0.94,
    "speaker": "hugo",
-   "delivery": "inner",
+   "delivery": "spoken",
    "text": "Pas maintenant."
+  },
+  "36d64c229c37": {
+   "file": "36d64c229c37.ogg",
+   "dur": 2.68,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Ta ligne avance comme un gars qui pense à sa ligne."
+  },
+  "36e16533403f": {
+   "file": "36e16533403f.ogg",
+   "dur": 5.71,
+   "speaker": "odile",
+   "delivery": "voicemail",
+   "text": "Cinquante-deux ans. Cinquante-deux centimètres. Ça fait beaucoup de cinquante-deux pour un hasard."
+  },
+  "370be9885ef8": {
+   "file": "370be9885ef8.ogg",
+   "dur": 4.51,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "« Faire un gris pas triste. » Câline. T’es cute."
+  },
+  "37297871dde7": {
+   "file": "37297871dde7.ogg",
+   "dur": 5.22,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Poncer à mains nues. J’ai connu des stages de préparation plus doux."
+  },
+  "37303cb1578d": {
+   "file": "37303cb1578d.ogg",
+   "dur": 5.45,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "J’ai dit tomate. Ça, c’est un oignon. Je connais mes légumes."
   },
   "37f142aec5ad": {
    "file": "37f142aec5ad.ogg",
@@ -475,6 +1105,13 @@
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Moi ?"
+  },
+  "3818c1e61f12": {
+   "file": "3818c1e61f12.ogg",
+   "dur": 1.12,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ben moi, je l’ai trouvé."
   },
   "38d3560b874e": {
    "file": "38d3560b874e.ogg",
@@ -490,12 +1127,40 @@
    "delivery": "inner",
    "text": "Je me souviens avoir pensé : plus que onze."
   },
+  "3a3800c8fb9f": {
+   "file": "3a3800c8fb9f.ogg",
+   "dur": 3.15,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Et puisque vous êtes là, vous allez m’aider. Lavez-vous les mains."
+  },
+  "3a4127c7143f": {
+   "file": "3a4127c7143f.ogg",
+   "dur": 4.6,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Garde ça. Si tu veux me faire un cadeau, apprends de quoi."
+  },
+  "3b18eae0affd": {
+   "file": "3b18eae0affd.ogg",
+   "dur": 7.65,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Quelqu’un m’a emprunté ma clé à rayons. Personne n’emprunte chez moi. Les gens ont peur de moi. J’y ai beaucoup travaillé."
+  },
   "3c1ec26919d1": {
    "file": "3c1ec26919d1.ogg",
    "dur": 1.83,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Alors ? Jusqu’où ?"
+  },
+  "3c4e8ba85970": {
+   "file": "3c4e8ba85970.ogg",
+   "dur": 1.33,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Une empreinte de quoi ?"
   },
   "3caa1dd3867c": {
    "file": "3caa1dd3867c.ogg",
@@ -504,12 +1169,33 @@
    "delivery": "spoken",
    "text": "Un gris pas triste."
   },
+  "3cefcaa9bdf3": {
+   "file": "3cefcaa9bdf3.ogg",
+   "dur": 1.0,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Comme une allure."
+  },
   "3d15c22924ac": {
    "file": "3d15c22924ac.ogg",
    "dur": 1.45,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Elle les a comptés pareil."
+  },
+  "3d2b8e6871c7": {
+   "file": "3d2b8e6871c7.ogg",
+   "dur": 7.35,
+   "speaker": "radio_fishing",
+   "delivery": "radio",
+   "text": "…car le poisson, mes amis, fait des boucles. Le pêcheur patient n’a qu’à attendre qu’il repasse…"
+  },
+  "3d3e1c72ad04": {
+   "file": "3d3e1c72ad04.ogg",
+   "dur": 4.83,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il manque quelque chose. Je sais exactement quoi. Je ne l’ai pas sur moi."
   },
   "3d8c10c414b8": {
    "file": "3d8c10c414b8.ogg",
@@ -518,12 +1204,54 @@
    "delivery": "spoken",
    "text": "Écris-le. Si tu sais le faire, ça va sur la liste. C’est la seule règle."
   },
+  "3e538743e24a": {
+   "file": "3e538743e24a.ogg",
+   "dur": 4.04,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un clic par tour de roue. Le même que le vélo du vieux monsieur du banc."
+  },
+  "3eb53e5dfe1e": {
+   "file": "3eb53e5dfe1e.ogg",
+   "dur": 7.59,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Un : salade-tomate-oignons. Deux : sans oignons, il ment, il en reprend toujours. Trois : une assiette. Quatre…"
+  },
+  "3f137b5d891e": {
+   "file": "3f137b5d891e.ogg",
+   "dur": 0.88,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Écris-le."
+  },
+  "3f27bceb41a0": {
+   "file": "3f27bceb41a0.ogg",
+   "dur": 2.65,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Enfin un bon conseil. Je ne vais pas le suivre."
+  },
   "3f327c741faf": {
    "file": "3f327c741faf.ogg",
    "dur": 3.16,
    "speaker": "bastien",
    "delivery": "spoken",
    "text": "Hugo ! Mon pote ! Et cette jambe ?"
+  },
+  "3f652b702a1c": {
+   "file": "3f652b702a1c.ogg",
+   "dur": 3.37,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "…Qui m’envoie des bravos à trois heures du matin ?"
+  },
+  "3f8dd3a89f63": {
+   "file": "3f8dd3a89f63.ogg",
+   "dur": 7.05,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Une silhouette vide. Ce soir-là, je n’ai pas dormi. Rien de nouveau. Mais pour une fois, je ne pensais pas à ma jambe."
   },
   "3ff7573fb272": {
    "file": "3ff7573fb272.ogg",
@@ -532,12 +1260,54 @@
    "delivery": "bark",
    "text": "Plus lent. Ce bois était là bien avant toi."
   },
+  "402959dafcec": {
+   "file": "402959dafcec.ogg",
+   "dur": 2.99,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "T’es fin. Je l’ai pas mérité, mais je le mange pareil."
+  },
   "4029627d1292": {
    "file": "4029627d1292.ogg",
    "dur": 2.83,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Une roue. Sami va dire que c’est la sienne."
+  },
+  "4094585097c9": {
+   "file": "4094585097c9.ogg",
+   "dur": 3.63,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Bastien. Tu cours à cinq heures. Tu pourrais réparer à trois."
+  },
+  "40d6b8e28026": {
+   "file": "40d6b8e28026.ogg",
+   "dur": 1.7,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Je préfère ne pas le dire."
+  },
+  "4108cbced9fa": {
+   "file": "4108cbced9fa.ogg",
+   "dur": 6.28,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Moi ? Je dors. Je dors très bien, le matin. C’est la nuit que ça se gâte."
+  },
+  "41458b3fd718": {
+   "file": "41458b3fd718.ogg",
+   "dur": 3.75,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Huit heures et demie. J’ai cru que j’étais mort."
+  },
+  "4193117abde4": {
+   "file": "4193117abde4.ogg",
+   "dur": 4.14,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Mes chiffons. Pliés par quelqu’un d’autre. C’est presque vexant."
   },
   "41b1ca72da9c": {
    "file": "41b1ca72da9c.ogg",
@@ -553,12 +1323,82 @@
    "delivery": "inner",
    "text": "Douze non lus. J’y répondrai quand j’aurai quelque chose à signaler."
   },
+  "4212fc81d0f7": {
+   "file": "4212fc81d0f7.ogg",
+   "dur": 2.28,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Trente-six. Son seul défaut."
+  },
+  "4244ce148195": {
+   "file": "4244ce148195.ogg",
+   "dur": 5.67,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Trente-huit dossards au mur. Et maintenant, à côté, un tableau en liège."
+  },
+  "429465cea429": {
+   "file": "429465cea429.ogg",
+   "dur": 1.71,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Albert. Ma clé."
+  },
+  "4369169f24ec": {
+   "file": "4369169f24ec.ogg",
+   "dur": 6.12,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Une hirondelle, ça revient toujours. Ça a pas besoin de beaucoup de place. Juste d’une place."
+  },
+  "43a7e394713a": {
+   "file": "43a7e394713a.ogg",
+   "dur": 5.19,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il faut une clé à rayons. Je sais exactement à quoi ça ressemble. Pour une fois, elle est au tableau."
+  },
+  "43c903a09df8": {
+   "file": "43c903a09df8.ogg",
+   "dur": 4.75,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "C’est la soupe d’Odile. Jo me tuerait. Gentiment, mais elle me tuerait."
+  },
+  "43cc8256259b": {
+   "file": "43cc8256259b.ogg",
+   "dur": 0.82,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "On ne bouge pas."
+  },
+  "44010350cc2e": {
+   "file": "44010350cc2e.ogg",
+   "dur": 2.16,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "On dirait une banane. Merci."
+  },
+  "4444818e96d6": {
+   "file": "4444818e96d6.ogg",
+   "dur": 4.57,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Je suis derrière l’appareil. Je peux pas être dans la photo. C’est le principe d’une photo."
+  },
   "4503674b3ff2": {
    "file": "4503674b3ff2.ogg",
    "dur": 1.98,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "…Quatre-vingts et demi."
+  },
+  "4515a913b0fb": {
+   "file": "4515a913b0fb.ogg",
+   "dur": 0.77,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Qui ?"
   },
   "451ded672153": {
    "file": "451ded672153.ogg",
@@ -581,6 +1421,20 @@
    "delivery": "spoken",
    "text": "C’est une botte médicale. Je me suis cassé la jambe en courant."
   },
+  "46f271d8986a": {
+   "file": "46f271d8986a.ogg",
+   "dur": 3.53,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Le pinceau est à gauche. La porte, à droite."
+  },
+  "47538faf6662": {
+   "file": "47538faf6662.ogg",
+   "dur": 2.76,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Un croissant de lune. Elle progresse."
+  },
   "4796221499e9": {
    "file": "4796221499e9.ogg",
    "dur": 3.42,
@@ -602,12 +1456,33 @@
    "delivery": "inner",
    "text": "Quatre ans au crochet. Il a suffi d’un après-midi et d’une brosse à dents."
   },
+  "4926d4835214": {
+   "file": "4926d4835214.ogg",
+   "dur": 3.19,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Prenez celui-là. Le plus lunaire. Il est à vous."
+  },
+  "4a2bc855f194": {
+   "file": "4a2bc855f194.ogg",
+   "dur": 3.14,
+   "speaker": "lou",
+   "delivery": "bark",
+   "text": "Le néon clignote plus. Mes photos sont moins bien."
+  },
   "4ab64cb128f7": {
    "file": "4ab64cb128f7.ogg",
    "dur": 4.57,
    "speaker": "radio_forecast",
    "delivery": "radio",
    "text": "…Pas-de-Calais, ouest quatre à cinq, pluie ensuite, visibilité bonne…"
+  },
+  "4ae4228f39bf": {
+   "file": "4ae4228f39bf.ogg",
+   "dur": 2.72,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Je ne vais pas offrir ça à une porte. Même grise."
   },
   "4cbef2cd8787": {
    "file": "4cbef2cd8787.ogg",
@@ -616,12 +1491,47 @@
    "delivery": "spoken",
    "text": "Peut-être vingt."
   },
+  "4ce2e134cda2": {
+   "file": "4ce2e134cda2.ogg",
+   "dur": 1.85,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Tu vois. Lui, il avance."
+  },
   "4d5aec345d39": {
    "file": "4d5aec345d39.ogg",
    "dur": 3.17,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Ça, c’est pas du gris. C’est du flan."
+  },
+  "4d700351cdd3": {
+   "file": "4d700351cdd3.ogg",
+   "dur": 5.96,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Ma fille m’a offert une montre pour savoir si je dors. Maintenant, elle sait."
+  },
+  "4e2e58d7d4b5": {
+   "file": "4e2e58d7d4b5.ogg",
+   "dur": 4.39,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Bon. Si c’est pas toi, trouve qui c’est. Tu comptes tout. Compte ça."
+  },
+  "4e50da0fbc9f": {
+   "file": "4e50da0fbc9f.ogg",
+   "dur": 5.29,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Appuie ! Monsieur Durand compte jusqu’à trente. Moi, je compte vite."
+  },
+  "4e59daa9e7d8": {
+   "file": "4e59daa9e7d8.ogg",
+   "dur": 1.27,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "C’était quoi, ça ?"
   },
   "4e643fa43750": {
    "file": "4e643fa43750.ogg",
@@ -630,12 +1540,61 @@
    "delivery": "spoken",
    "text": "Fracture de fatigue."
   },
+  "4f4bdd6d86e6": {
+   "file": "4f4bdd6d86e6.ogg",
+   "dur": 1.88,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Doucement, tu vas la noyer."
+  },
+  "4fe0c210f81d": {
+   "file": "4fe0c210f81d.ogg",
+   "dur": 5.06,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Un thé ! Sans sucre ! Au bout du comptoir !"
+  },
+  "500ac722f803": {
+   "file": "500ac722f803.ogg",
+   "dur": 2.61,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Les kilomètres, ça ne t’a jamais impressionnée."
+  },
   "5017790c16a6": {
    "file": "5017790c16a6.ogg",
    "dur": 2.85,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Deux ibuprofènes. L’escalier. Le chemin le plus long."
+  },
+  "5024addc9125": {
+   "file": "5024addc9125.ogg",
+   "dur": 2.68,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Je cours, la légende. J’ai pas de poches."
+  },
+  "50c6adefe29d": {
+   "file": "50c6adefe29d.ogg",
+   "dur": 3.52,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Garde-le. Quelqu’un qui mesure deux fois a droit à son mètre."
+  },
+  "51037ad4c542": {
+   "file": "51037ad4c542.ogg",
+   "dur": 2.04,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Trouvé. Le seau a eu peur."
+  },
+  "516850d1a72f": {
+   "file": "516850d1a72f.ogg",
+   "dur": 3.05,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "C’est bien entretenu. Rangez-le quand même."
   },
   "51e5991dff1c": {
    "file": "51e5991dff1c.ogg",
@@ -644,12 +1603,33 @@
    "delivery": "inner",
    "text": "Ignoré."
   },
+  "51ec0d80ec81": {
+   "file": "51ec0d80ec81.ogg",
+   "dur": 5.41,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Nette. Une pantoufle en gros plan. Ma carrière d’enquêteur démarre fort."
+  },
+  "51f126ccff36": {
+   "file": "51f126ccff36.ogg",
+   "dur": 2.11,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Évidemment qu’il chronomètre."
+  },
   "52a1a670ca29": {
    "file": "52a1a670ca29.ogg",
    "dur": 4.43,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Deux cent douze virgule quatre kilomètres. Je ne me souviens pas d’un seul mètre."
+  },
+  "52a5a9294bcf": {
+   "file": "52a5a9294bcf.ogg",
+   "dur": 0.92,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Une hypothèse."
   },
   "5312554fc2e0": {
    "file": "5312554fc2e0.ogg",
@@ -686,6 +1666,13 @@
    "delivery": "spoken",
    "text": "Maintenant, la porte. Neuf couches de peinture. Je veux voir le bois avant midi. Le papier de verre est au tableau."
   },
+  "560c32cace4a": {
+   "file": "560c32cace4a.ogg",
+   "dur": 1.31,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Écris-le dans ton carnet."
+  },
   "5631563a0458": {
    "file": "5631563a0458.ogg",
    "dur": 3.85,
@@ -693,12 +1680,26 @@
    "delivery": "spoken",
    "text": "Tu sais ne pas bouger. Je t’ai vu faire. Écris-le."
   },
+  "568fda627ad8": {
+   "file": "568fda627ad8.ogg",
+   "dur": 3.48,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "La craie d’abord. Odile y tient. La télé aussi."
+  },
   "569c6306d804": {
    "file": "569c6306d804.ogg",
    "dur": 0.95,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Par semaine."
+  },
+  "56aabebaa1d3": {
+   "file": "56aabebaa1d3.ogg",
+   "dur": 5.67,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Voilà. Alibi. J’ai pas le temps de huiler quoi que ce soit. J’ai à peine le temps de dormir."
   },
   "576fe625e69d": {
    "file": "576fe625e69d.ogg",
@@ -724,9 +1725,44 @@
   "582ff7b91876": {
    "file": "582ff7b91876.ogg",
    "dur": 4.43,
-   "speaker": "marco",
+   "speaker": "gerard",
    "delivery": "spoken",
    "text": "Il est un peu pompette. Comme la moitié de mes clients, après minuit."
+  },
+  "583377e2f573": {
+   "file": "583377e2f573.ogg",
+   "dur": 3.91,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Odile ! J’ai crevé. Encore. C’est la troisième fois."
+  },
+  "585c1c9595ec": {
+   "file": "585c1c9595ec.ogg",
+   "dur": 4.84,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Dix heures. Apportez votre café. Celui d’Odile est un crime."
+  },
+  "58affe8a94b4": {
+   "file": "58affe8a94b4.ogg",
+   "dur": 1.7,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Vous pouvez vous abonner. C’est gratuit."
+  },
+  "5903a60aed85": {
+   "file": "5903a60aed85.ogg",
+   "dur": 1.97,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "C’est plutôt une bonne nouvelle."
+  },
+  "59a9fba404a4": {
+   "file": "59a9fba404a4.ogg",
+   "dur": 3.47,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Les clés. Douze ans de vestiaires, et j’oublie encore les clés."
   },
   "59c647cf6eb1": {
    "file": "59c647cf6eb1.ogg",
@@ -735,12 +1771,33 @@
    "delivery": "bark",
    "text": "Les mains sur le guidon !"
   },
+  "5a86bfd7c20b": {
+   "file": "5a86bfd7c20b.ogg",
+   "dur": 3.01,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Je voulais voir si elle tenait encore. Elle tient."
+  },
   "5c642135416b": {
    "file": "5c642135416b.ogg",
    "dur": 0.89,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Une liste."
+  },
+  "5c84bd39b139": {
+   "file": "5c84bd39b139.ogg",
+   "dur": 5.07,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Attends que ça sèche. Monsieur Durand dit que c’est là que tout le monde rate."
+  },
+  "5cb2447a98a1": {
+   "file": "5cb2447a98a1.ogg",
+   "dur": 3.43,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Il a dit sans oignons. Il ment, mais il l’a dit."
   },
   "5e3d2cd7a7ee": {
    "file": "5e3d2cd7a7ee.ogg",
@@ -756,12 +1813,47 @@
    "delivery": "spoken",
    "text": "Le gris y est. Maintenant, une goutte d’ocre. Chaud, pas jaune."
   },
+  "5f29c34bba0d": {
+   "file": "5f29c34bba0d.ogg",
+   "dur": 6.69,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Quelqu’un remonte cette rue à pied à trois heures du matin, à l’allure d’un frigo fatigué. Toutes les nuits."
+  },
+  "5f934caf7662": {
+   "file": "5f934caf7662.ogg",
+   "dur": 1.31,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "De la soupe."
+  },
+  "5fb6a8dd9e07": {
+   "file": "5fb6a8dd9e07.ogg",
+   "dur": 3.33,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Voilà. Maintenant, j’ai une preuve. De quoi, je ne sais pas."
+  },
   "606c9fbab1e3": {
    "file": "606c9fbab1e3.ogg",
    "dur": 5.01,
    "speaker": "odile",
    "delivery": "bark",
    "text": "Dans le sens du fil. Un chat, ça se caresse dans le sens du poil."
+  },
+  "60c4b1baf48b": {
+   "file": "60c4b1baf48b.ogg",
+   "dur": 3.83,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Moitié croissants, moitié lunes. Ça fait un beau ciel."
+  },
+  "60c71bb43d5a": {
+   "file": "60c71bb43d5a.ogg",
+   "dur": 4.3,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Un gars qui apprend de quoi à trente-sept ans ? C’est rare. C’est hot."
   },
   "617bb7a46820": {
    "file": "617bb7a46820.ogg",
@@ -770,12 +1862,40 @@
    "delivery": "spoken",
    "text": "La pêche ?"
   },
+  "623d07662b11": {
+   "file": "623d07662b11.ogg",
+   "dur": 0.67,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Pousse-toi."
+  },
+  "6259a4f74b65": {
+   "file": "6259a4f74b65.ogg",
+   "dur": 2.02,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Moi non plus. Ça s’apprend."
+  },
   "626ce36e16f7": {
    "file": "626ce36e16f7.ogg",
    "dur": 2.75,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Deux mesures. L’encadrement n’en a qu’une."
+  },
+  "635586503bca": {
+   "file": "635586503bca.ogg",
+   "dur": 1.91,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Ok. Respire un peu."
+  },
+  "638aa53097ed": {
+   "file": "638aa53097ed.ogg",
+   "dur": 0.94,
+   "speaker": "odile",
+   "delivery": "voicemail",
+   "text": "Je monte."
   },
   "639ce2bb2f53": {
    "file": "639ce2bb2f53.ogg",
@@ -791,12 +1911,26 @@
    "delivery": "spoken",
    "text": "Donne-moi ça."
   },
+  "63e8e2c9abc5": {
+   "file": "63e8e2c9abc5.ogg",
+   "dur": 4.96,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ta ligne, faut qu’elle avance toute seule. Trop lent, ça tremble. Trop vite, ça saute."
+  },
   "6422b8b06ad6": {
    "file": "6422b8b06ad6.ogg",
    "dur": 1.53,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "J’ai plein de choses à faire."
+  },
+  "6456e2fdd65f": {
+   "file": "6456e2fdd65f.ogg",
+   "dur": 2.49,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ça, tu sais faire. C’est écrit dans ton carnet."
   },
   "649a69ec43da": {
    "file": "649a69ec43da.ogg",
@@ -826,6 +1960,13 @@
    "delivery": "spoken",
    "text": "Tous ceux qui travaillent ici écrivent ce qu’ils savent faire. Le premier jour. Pour qu’on voie, plus tard, que ça n’a pas toujours été là."
   },
+  "64c7b1c73202": {
+   "file": "64c7b1c73202.ogg",
+   "dur": 0.98,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Tiens le vélo."
+  },
   "65e6722b39dc": {
    "file": "65e6722b39dc.ogg",
    "dur": 1.37,
@@ -833,12 +1974,51 @@
    "delivery": "spoken",
    "text": "Signe-le."
   },
-  "669b51c6d2da": {
-   "file": "669b51c6d2da.ogg",
-   "dur": 0.43,
+  "65e6b24948a1": {
+   "file": "65e6b24948a1.ogg",
+   "dur": 4.43,
    "speaker": "hugo",
    "delivery": "inner",
-   "text": "Non."
+   "text": "Je la garde. Un jour, une porte quelque part va se sentir bête."
+  },
+  "65ee0b0eb0b2": {
+   "file": "65ee0b0eb0b2.ogg",
+   "dur": 5.68,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un clic par tour de roue. Un cliquet de roue libre fatigué. Je ne sais pas pourquoi je sais ça."
+  },
+  "65f2fe7da62b": {
+   "file": "65f2fe7da62b.ogg",
+   "dur": 3.07,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ben là. C’est gentil, mais non."
+  },
+  "6660b749df03": {
+   "file": "6660b749df03.ogg",
+   "dur": 1.58,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "De kebab."
+  },
+  "669b51c6d2da": {
+   "variants": {
+    "Hugo": {
+     "file": "669b51c6d2da-hugo.ogg",
+     "dur": 0.43,
+     "speaker": "hugo",
+     "delivery": "spoken",
+     "text": "Non."
+    },
+    "Jo": {
+     "file": "669b51c6d2da-jo.ogg",
+     "dur": 0.47,
+     "speaker": "jo",
+     "delivery": "bark",
+     "text": "Non."
+    }
+   }
   },
   "66cc9eecb04e": {
    "file": "66cc9eecb04e.ogg",
@@ -846,6 +2026,13 @@
    "speaker": "sami",
    "delivery": "bark",
    "text": "Ça a fait ping. C’est bien, ping ?"
+  },
+  "672279ca6de5": {
+   "file": "672279ca6de5.ogg",
+   "dur": 5.1,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "C’est ce qu’il y a de plus sexy dans la rue. Pis la rue a Gérard."
   },
   "674f04ac6d74": {
    "file": "674f04ac6d74.ogg",
@@ -861,6 +2048,13 @@
    "delivery": "inner",
    "text": "Douze semaines. On en est au jour quatre."
   },
+  "67b5ed946cf1": {
+   "file": "67b5ed946cf1.ogg",
+   "dur": 4.76,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Ma mère dit de rien prendre aux inconnus. T’es plus un inconnu, mais quand même."
+  },
   "6822b88f30b9": {
    "file": "6822b88f30b9.ogg",
    "dur": 4.44,
@@ -875,12 +2069,54 @@
    "delivery": "inner",
    "text": "J’y tiens."
   },
+  "686221abc5f3": {
+   "file": "686221abc5f3.ogg",
+   "dur": 7.09,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Les anciennes font cinquante. Quelqu’un a coupé les neuves à cinquante-deux, pour qu’elles dépassent d’un centimètre de chaque côté. Exprès. Proprement."
+  },
+  "68a1bd5e42e3": {
+   "file": "68a1bd5e42e3.ogg",
+   "dur": 11.19,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Chaque tattoo, c’est quelque chose que j’ai appris. Le fouet, c’est l’année où j’ai réussi la tourtière de ma grand-mère. L’engrenage, c’est le char manuel. La règle, c’est le premier pochoir que j’ai pas recommencé."
+  },
+  "69703eed86a8": {
+   "file": "69703eed86a8.ogg",
+   "dur": 2.97,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Albert Durand. Cinquante-deux ans de boutique."
+  },
+  "6b7aad29678e": {
+   "file": "6b7aad29678e.ogg",
+   "dur": 1.02,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Il a tourné au coin."
+  },
   "6b852ec37d82": {
    "file": "6b852ec37d82.ogg",
    "dur": 7.61,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Les portes mentent. Les encadrements, c’est pire. Donc on enlève un demi-centimètre côté charnières. Le rabot est au mur."
+  },
+  "6c09038039c8": {
+   "file": "6c09038039c8.ogg",
+   "dur": 4.12,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Albert Durand. Quatre-vingt-un ans. Cinquante-deux ans de boutique."
+  },
+  "6c4feea9f9ed": {
+   "file": "6c4feea9f9ed.ogg",
+   "dur": 1.91,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "…Non. Mais j’y ai pensé."
   },
   "6c5dab660000": {
    "file": "6c5dab660000.ogg",
@@ -892,9 +2128,30 @@
   "6d791ef7598a": {
    "file": "6d791ef7598a.ogg",
    "dur": 2.0,
-   "speaker": "marco",
+   "speaker": "gerard",
    "delivery": "spoken",
    "text": "Ça, c’est un excellent chevalet."
+  },
+  "6d9890a647c6": {
+   "file": "6d9890a647c6.ogg",
+   "dur": 0.8,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "…À quelle heure ?"
+  },
+  "6e377942d810": {
+   "file": "6e377942d810.ogg",
+   "dur": 6.87,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Des glucides ? Mec, c’est pas un jour de sortie longue ! …Bon. Je le mange en courant."
+  },
+  "6e54929e1a5b": {
+   "file": "6e54929e1a5b.ogg",
+   "dur": 2.21,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Clic. Clic. Clic."
   },
   "6ee19f140969": {
    "file": "6ee19f140969.ogg",
@@ -910,12 +2167,47 @@
    "delivery": "spoken",
    "text": "En une semaine."
   },
+  "6f1459d4e315": {
+   "file": "6f1459d4e315.ogg",
+   "dur": 1.69,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Alors les crevaisons, c’est moi."
+  },
   "6f630ab87203": {
    "file": "6f630ab87203.ogg",
    "dur": 5.18,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Il a dit que je pouvais nager, si j’avais besoin de bouger. J’ai dit que je coule. Il l’a noté."
+  },
+  "6fb183604efe": {
+   "file": "6fb183604efe.ogg",
+   "dur": 4.08,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Tu avais besoin d’une enquête. Lui avait besoin qu’on le trouve."
+  },
+  "6fb29b226109": {
+   "file": "6fb29b226109.ogg",
+   "dur": 5.44,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Quelqu’un l’a huilé pendant la nuit. Je ne sais pas si je dois dire merci ou appeler la police."
+  },
+  "70328e44b6e8": {
+   "file": "70328e44b6e8.ogg",
+   "dur": 2.16,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Éteins-le. Non. Laisse."
+  },
+  "70a12d671aef": {
+   "file": "70a12d671aef.ogg",
+   "dur": 2.48,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "T’as trouvé en deux secondes. Comment t’as fait ?"
   },
   "70bed3e248c3": {
    "file": "70bed3e248c3.ogg",
@@ -938,6 +2230,20 @@
    "delivery": "spoken",
    "text": "J’ai une porte, là-dedans, à décaper. Et vous, à vous voir, vous n’avez rien à faire."
   },
+  "718b81c200b3": {
+   "file": "718b81c200b3.ogg",
+   "dur": 6.8,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Semaine huit. Le banc tient. Le néon ne clignote plus. Gérard le débranche deux fois par soir, pour l’ambiance."
+  },
+  "719ca888d052": {
+   "file": "719ca888d052.ogg",
+   "dur": 5.12,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Ha ! Si tu le trouves, dis-lui que c’est pas une allure, ça. C’est une sieste."
+  },
   "71fe5285dfa6": {
    "file": "71fe5285dfa6.ogg",
    "dur": 1.0,
@@ -952,6 +2258,20 @@
    "delivery": "inner",
    "text": "Un tour de pâté de maisons. Quarante et une minutes. Retour à la case départ."
   },
+  "732c7599b160": {
+   "file": "732c7599b160.ogg",
+   "dur": 6.53,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Semaine cinq. Rien de réparé. J’ai vérifié tous les matins, avant le café. C’est grave, je crois."
+  },
+  "737082a1d35d": {
+   "file": "737082a1d35d.ogg",
+   "dur": 5.94,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il le trouvera en se réveillant. Il ne saura jamais d’où il vient. Moi non plus, pour ses lattes."
+  },
   "73f626c95afa": {
    "file": "73f626c95afa.ogg",
    "dur": 1.38,
@@ -959,12 +2279,82 @@
    "delivery": "spoken",
    "text": "C’est un trait fait main."
   },
+  "742335b4466c": {
+   "file": "742335b4466c.ogg",
+   "dur": 3.19,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Commence par madame Benali. Avant qu’elle rappelle."
+  },
+  "74300cf2c5b9": {
+   "file": "74300cf2c5b9.ogg",
+   "dur": 4.01,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "J’ai des tickets. Quarante-trois. Je peux te les lire. Dans l’ordre."
+  },
+  "748225c93548": {
+   "file": "748225c93548.ogg",
+   "dur": 5.77,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Trois heures quatre. Publiée de chez moi. Quatre cent douze vues. Dont ma mère, onze fois."
+  },
+  "74c65d1b9224": {
+   "file": "74c65d1b9224.ogg",
+   "dur": 8.79,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Une hirondelle. Ma toute première. Je me l’étais faite sur la cheville, à seize ans. Elle est toute croche. C’est celle que j’aime le plus."
+  },
+  "74d10951bf2c": {
+   "file": "74d10951bf2c.ogg",
+   "dur": 2.93,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Si c’est pour le néon, il marche très bien."
+  },
+  "74e0cca56275": {
+   "file": "74e0cca56275.ogg",
+   "dur": 0.76,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "…Cinquante-deux."
+  },
   "752838896973": {
    "file": "752838896973.ogg",
    "dur": 5.1,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Assieds-toi. J’ai une scie à métaux si le scratch fait des histoires."
+  },
+  "755aa07f4f6c": {
+   "file": "755aa07f4f6c.ogg",
+   "dur": 3.26,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Samedi, le grand ! C’est moi qui fais le dessert !"
+  },
+  "7570fe704686": {
+   "file": "7570fe704686.ogg",
+   "dur": 2.84,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ici. Avec Karim. Un chum."
+  },
+  "7607de440c41": {
+   "file": "7607de440c41.ogg",
+   "dur": 0.79,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Par contre."
+  },
+  "760dcc262ae4": {
+   "file": "760dcc262ae4.ogg",
+   "dur": 2.24,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Monsieur Revel ! Vous avez entendu ?"
   },
   "76367423931c": {
    "file": "76367423931c.ogg",
@@ -980,10 +2370,31 @@
    "delivery": "spoken",
    "text": "Alors écris-le."
   },
+  "77121aa1962b": {
+   "file": "77121aa1962b.ogg",
+   "dur": 1.64,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Belle botte. Très mode."
+  },
+  "77779f8bcdd1": {
+   "file": "77779f8bcdd1.ogg",
+   "dur": 2.61,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Gérard. Ton néon, c’est une couverture."
+  },
+  "77b988a3104d": {
+   "file": "77b988a3104d.ogg",
+   "dur": 2.02,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Quarante-trois ? Ok. Pis, y étaient bons ?"
+  },
   "77d444415de6": {
    "file": "77d444415de6.ogg",
    "dur": 2.17,
-   "speaker": "marco",
+   "speaker": "gerard",
    "delivery": "spoken",
    "text": "Il a du caractère. Comme le kebab."
   },
@@ -994,12 +2405,75 @@
    "delivery": "bark",
    "text": "Bougez pas."
   },
+  "78bde4b3fc56": {
+   "file": "78bde4b3fc56.ogg",
+   "dur": 2.78,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Nette. La glissière brille comme une chaîne neuve."
+  },
+  "797d231f8ff8": {
+   "file": "797d231f8ff8.ogg",
+   "dur": 2.35,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Je sais. Ça fait cinquante ans."
+  },
+  "79ca481cd85e": {
+   "file": "79ca481cd85e.ogg",
+   "dur": 0.72,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Quarante-trois."
+  },
+  "7a1fa296c6b4": {
+   "file": "7a1fa296c6b4.ogg",
+   "dur": 8.13,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Ici. Je ferme à deux heures, je nettoie, je dors. Quatre heures. De cinq à neuf."
+  },
+  "7a916b1bb15a": {
+   "file": "7a916b1bb15a.ogg",
+   "dur": 2.06,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Le quarante-troisième était un thé."
+  },
+  "7ad3670cd9a4": {
+   "file": "7ad3670cd9a4.ogg",
+   "dur": 3.22,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "J’ai photographié le ciel. Il n’a rien huilé, lui."
+  },
   "7ae025728155": {
    "file": "7ae025728155.ogg",
    "dur": 5.19,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Avec cette botte ? C’est quoi, le plan ? Du fractionné assis ?"
+  },
+  "7ae30de49587": {
+   "file": "7ae30de49587.ogg",
+   "dur": 5.05,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Vingt-sept : des frites. Juste des frites. Un drame."
+  },
+  "7b5c1fad0cb4": {
+   "file": "7b5c1fad0cb4.ogg",
+   "dur": 3.38,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Ben là. C’est propre. J’aime pas ça, je voulais rire."
+  },
+  "7b5c482aa4fa": {
+   "file": "7b5c482aa4fa.ogg",
+   "dur": 9.76,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Le rideau de madame Benali : neuf minutes quarante. Le banc : une heure douze. Le néon : trois nuits. J’ai tout noté."
   },
   "7bd8c80c3e2d": {
    "file": "7bd8c80c3e2d.ogg",
@@ -1015,12 +2489,40 @@
    "delivery": "spoken",
    "text": "Vous êtes au troisième. Tous les matins à quatre heures, dans l’escalier comme une armoire qu’on aurait lâchée."
   },
+  "7c2c1b5d22ac": {
+   "file": "7c2c1b5d22ac.ogg",
+   "dur": 7.25,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Le proprio, c’est le même que le mien. Il m’a laissé ses clés pour faire visiter. Personne visite. Quatorze clés, aucune étiquette. Bonne chance."
+  },
+  "7c65b4da4ba8": {
+   "file": "7c65b4da4ba8.ogg",
+   "dur": 1.46,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Qu’est-ce que j’en ferais ?"
+  },
+  "7cad8bb6da70": {
+   "file": "7cad8bb6da70.ogg",
+   "dur": 3.81,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Je le prends en photo d’abord. Ensuite, je le mange. C’est l’ordre."
+  },
   "7d59fb82588f": {
    "file": "7d59fb82588f.ogg",
    "dur": 4.98,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Dans le sens du fil, dans la longueur. Appuie pas. Laisse faire le papier."
+  },
+  "7db2180e83d8": {
+   "file": "7db2180e83d8.ogg",
+   "dur": 2.08,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Tabarnouche. Y dort jamais, lui ?"
   },
   "7e624cff6374": {
    "file": "7e624cff6374.ogg",
@@ -1036,6 +2538,41 @@
    "delivery": "inner",
    "text": "Il y a un point sur le tibia, grand comme une pièce. Je n’appuie pas dessus. Si je n’appuie pas, il n’existe pas."
   },
+  "7ec19a3d75c9": {
+   "file": "7ec19a3d75c9.ogg",
+   "dur": 6.77,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Le banc mouillé, au bout de la rue. Trois lattes neuves, cette nuit. Va mesurer. Deux fois."
+  },
+  "7ef563e29e1d": {
+   "file": "7ef563e29e1d.ogg",
+   "dur": 3.3,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "D comme Durand. Cinquante-deux ans de boutique."
+  },
+  "7f0c639a32a5": {
+   "file": "7f0c639a32a5.ogg",
+   "dur": 0.8,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "J’ai compris."
+  },
+  "7f563f82c397": {
+   "file": "7f563f82c397.ogg",
+   "dur": 5.58,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Viande, frites dedans, samouraï. Pas de salade, il est allergique. À la salade."
+  },
+  "7f8f75c17674": {
+   "file": "7f8f75c17674.ogg",
+   "dur": 3.33,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Ça, sur sa silhouette. Pas sous mon nez."
+  },
   "80283c721ba7": {
    "file": "80283c721ba7.ogg",
    "dur": 2.73,
@@ -1043,12 +2580,103 @@
    "delivery": "spoken",
    "text": "Plus fin qu’un cheveu. À un cheveu près."
   },
+  "808ecacd4663": {
+   "file": "808ecacd4663.ogg",
+   "dur": 3.76,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Ça va pas dans un kebab. Alors je veux pas."
+  },
   "80da0ff3a233": {
    "file": "80da0ff3a233.ogg",
    "dur": 4.46,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Un tour de pâté de maisons, puis tu rentres. Ta jambe se débrouillera."
+  },
+  "811e4f30e349": {
+   "file": "811e4f30e349.ogg",
+   "dur": 5.87,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Attends. Tu répares sa roue en l’*écoutant* ? Ok. C’est hot."
+  },
+  "81415eb59eac": {
+   "file": "81415eb59eac.ogg",
+   "dur": 2.25,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "C’est pas là. Là, c’est de l’eau."
+  },
+  "818423f17254": {
+   "file": "818423f17254.ogg",
+   "dur": 7.53,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ben oui. Pis un cerf-volant encore rouge à trois heures sept. Tu m’accuses pour me revoir, ou quoi ?"
+  },
+  "81b3ff23d5a0": {
+   "file": "81b3ff23d5a0.ogg",
+   "dur": 3.75,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "En quarante-quatre ? Monsieur Revel. Regardez mes pieds."
+  },
+  "827c933f8230": {
+   "file": "827c933f8230.ogg",
+   "dur": 5.29,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Soupe aux pois. Celle de ma grand-mère. Chu pas venue pour l’enquête, chu venue pour la soupe."
+  },
+  "82c964378f11": {
+   "file": "82c964378f11.ogg",
+   "dur": 2.55,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Odile n’a besoin de rien. Va."
+  },
+  "82ff84369117": {
+   "file": "82ff84369117.ogg",
+   "dur": 2.97,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Ce n’est pas le bon outil. Mes mains le savent avant moi."
+  },
+  "831ad17c2010": {
+   "file": "831ad17c2010.ogg",
+   "dur": 2.01,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "…Je cherchais la tomate."
+  },
+  "835b3cd2cb0e": {
+   "file": "835b3cd2cb0e.ogg",
+   "dur": 5.82,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Une charentaise. Pointure quarante-quatre, au moins. Quelqu’un a traversé la rue en pantoufles, cette nuit."
+  },
+  "8364cdd95efa": {
+   "file": "8364cdd95efa.ogg",
+   "dur": 4.19,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Quatre heures. La boulangerie s’allume. Pour une fois, je ne l’ai pas battue."
+  },
+  "83a7876f9c6c": {
+   "file": "83a7876f9c6c.ogg",
+   "dur": 3.76,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Cinq heures pile. Pourquoi ? Tu reviens ?!"
+  },
+  "83a8e0169210": {
+   "file": "83a8e0169210.ogg",
+   "dur": 2.05,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Regarde mon néon."
   },
   "8433dba4c074": {
    "file": "8433dba4c074.ogg",
@@ -1064,12 +2692,54 @@
    "delivery": "spoken",
    "text": "…Tiens-moi cette planche."
   },
+  "84e8ccad9702": {
+   "file": "84e8ccad9702.ogg",
+   "dur": 2.21,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "C’est une lune. Encore une."
+  },
+  "850dda69d8c2": {
+   "file": "850dda69d8c2.ogg",
+   "dur": 7.12,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Le rideau de madame Benali, quelqu’un l’a huilé. Mon néon, personne y touche. Il clignote, c’est voulu."
+  },
+  "853828566537": {
+   "file": "853828566537.ogg",
+   "dur": 11.5,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Tu te lèves à quatre heures. Tu descends l’escalier comme une armoire, et maintenant l’armoire a une botte. Et tu as la tête d’un homme qui répare des choses pour éviter les sentiments."
+  },
+  "8583afab44c9": {
+   "file": "8583afab44c9.ogg",
+   "dur": 4.98,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un clic par tour. Un vélo noir, depuis 1974."
+  },
+  "85a290189979": {
+   "file": "85a290189979.ogg",
+   "dur": 3.86,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ah, pis apporte ça à Odile. Dis-y que c’est pas de la pitié. C’est de la soupe."
+  },
   "8633cdd776b3": {
    "file": "8633cdd776b3.ogg",
    "dur": 4.4,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "C’est un peu pompette. Des lettres pompettes, ça dit quand même OPEN."
+  },
+  "8659d2b897c5": {
+   "file": "8659d2b897c5.ogg",
+   "dur": 3.73,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Pas une lune. Vous êtes sûr de n’avoir jamais fait ça ?"
   },
   "879ceab8426c": {
    "file": "879ceab8426c.ogg",
@@ -1085,10 +2755,38 @@
    "delivery": "spoken",
    "text": "Il y en a une qui ment. Peut-être les deux."
   },
+  "88340f3a5885": {
+   "file": "88340f3a5885.ogg",
+   "dur": 0.87,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Surtout pas."
+  },
+  "888b71a19429": {
+   "file": "888b71a19429.ogg",
+   "dur": 3.86,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Si c’est pour le rideau, c’est pas moi. Je suis pas du genre à réparer."
+  },
+  "889051ff452a": {
+   "file": "889051ff452a.ogg",
+   "dur": 3.37,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Non. Mesurer deux fois, essayer une seule."
+  },
+  "89aa32c28f62": {
+   "file": "89aa32c28f62.ogg",
+   "dur": 5.03,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Galette, viande. Après, tu fais ce que je dis, quand je le dis."
+  },
   "89c76d780231": {
    "file": "89c76d780231.ogg",
    "dur": 4.42,
-   "speaker": "marco",
+   "speaker": "gerard",
    "delivery": "bark",
    "text": "Mon chevalet est si passé qu’on nous croit fermés."
   },
@@ -1099,12 +2797,47 @@
    "delivery": "inner",
    "text": "Un petit dix tranquille. Tranquille, c’est un état d’esprit."
   },
+  "89dac60ad6d3": {
+   "file": "89dac60ad6d3.ogg",
+   "dur": 2.89,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Il tient. C’est un kebab honnête."
+  },
   "8a1f87062975": {
    "file": "8a1f87062975.ogg",
    "dur": 1.05,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "…Trois heures ?"
+  },
+  "8a2b4c3c2ee8": {
+   "file": "8a2b4c3c2ee8.ogg",
+   "dur": 0.86,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Je sais."
+  },
+  "8a8dfbdef623": {
+   "file": "8a8dfbdef623.ogg",
+   "dur": 2.48,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "C’est un indice. Pas pour cette question-là."
+  },
+  "8aa31efc9abd": {
+   "file": "8aa31efc9abd.ogg",
+   "dur": 3.99,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Je sors pas. Je photographie la rue depuis ma fenêtre. Pour mon compte."
+  },
+  "8c2fc2935e9a": {
+   "file": "8c2fc2935e9a.ogg",
+   "dur": 2.31,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Mes jambes n’ont pas lu l’ordonnance."
   },
   "8d0632429887": {
    "file": "8d0632429887.ogg",
@@ -1119,6 +2852,13 @@
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Vous. Avec la botte."
+  },
+  "8d0ff8325a70": {
+   "file": "8d0ff8325a70.ogg",
+   "dur": 1.85,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Je ne sais pas apprendre aux enfants."
   },
   "8d5fdf76ffdb": {
    "file": "8d5fdf76ffdb.ogg",
@@ -1141,12 +2881,33 @@
    "delivery": "spoken",
    "text": "Il y en a d’autres ?"
   },
+  "8de8d50eca91": {
+   "file": "8de8d50eca91.ogg",
+   "dur": 1.77,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Quelqu’un répare des choses la nuit."
+  },
+  "8de9e2147459": {
+   "file": "8de9e2147459.ogg",
+   "dur": 2.54,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "La prochaine fois, c’est toi qui le fais."
+  },
   "8df03a1b1bdf": {
    "file": "8df03a1b1bdf.ogg",
    "dur": 0.77,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "…Quatre-vingt-un."
+  },
+  "8df635f74ada": {
+   "file": "8df635f74ada.ogg",
+   "dur": 3.79,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "La nuit où le rideau de madame Benali a été huilé, t’étais où ?"
   },
   "8e0399db859b": {
    "file": "8e0399db859b.ogg",
@@ -1155,12 +2916,40 @@
    "delivery": "inner",
    "text": "Le docteur Okafor l’a entourée au Bic. J’ai quand même dû demander où."
   },
+  "8e1b6fa0a5d0": {
+   "file": "8e1b6fa0a5d0.ogg",
+   "dur": 8.54,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Un pochoir, c’est le dessin qu’on décalque sur la peau. Si le pochoir tremble, le tattoo tremble pour la vie. Pas de pression."
+  },
+  "8ee35f8d4591": {
+   "file": "8ee35f8d4591.ogg",
+   "dur": 1.27,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Elles sont droites, hein."
+  },
   "8f78f2a66173": {
    "file": "8f78f2a66173.ogg",
    "dur": 5.7,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Personne ne les filme, après. Ils redescendent entre les voitures suiveuses et rentrent au bus tout seuls."
+  },
+  "8f7e4542b33f": {
+   "file": "8f7e4542b33f.ogg",
+   "dur": 5.17,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Reviens un soir, alors. Tu verras si j’ai le temps de huiler des rideaux."
+  },
+  "904c841f948f": {
+   "file": "904c841f948f.ogg",
+   "dur": 3.35,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Prenez-le en photo. Personne ne va me croire."
   },
   "909b08ffbff5": {
    "file": "909b08ffbff5.ogg",
@@ -1169,12 +2958,47 @@
    "delivery": "spoken",
    "text": "Odile ! Il refait le bruit. Le *zhhh, zhhh*. C’est monsieur Durand qui me l’a donné quand il a fermé. Il a dit de trouver un monsieur des roues."
   },
+  "90c0dec9934a": {
+   "file": "90c0dec9934a.ogg",
+   "dur": 5.27,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Odile m’a appris à mesurer deux fois. Pas les gens."
+  },
+  "90f4fc5514a7": {
+   "file": "90f4fc5514a7.ogg",
+   "dur": 6.57,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Pliés en quatre. Quelqu’un a plié des chiffons pour s’excuser. Je ne sais pas si c’est inquiétant ou très bien élevé."
+  },
+  "91231d7bee52": {
+   "file": "91231d7bee52.ogg",
+   "dur": 3.43,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "C’est le flou. Le flou, c’est artistique."
+  },
   "912797ae3b1f": {
    "file": "912797ae3b1f.ogg",
    "dur": 2.6,
-   "speaker": "marco",
+   "speaker": "gerard",
    "delivery": "spoken",
    "text": "C’est un *excellent* kebab."
+  },
+  "919a91ffea0d": {
+   "file": "919a91ffea0d.ogg",
+   "dur": 3.4,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Non. Mesurer deux fois. Punaiser une fois."
+  },
+  "91f818620e97": {
+   "file": "91f818620e97.ogg",
+   "dur": 1.04,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Tu sais cuisiner ?"
   },
   "9223b58e147d": {
    "file": "9223b58e147d.ogg",
@@ -1182,6 +3006,13 @@
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "…Quatre-vingt-deux et demi."
+  },
+  "923abda710ca": {
+   "file": "923abda710ca.ogg",
+   "dur": 3.51,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Floue. Le téléphone a fait la mise au point sur mon pouce."
   },
   "92648a561aa6": {
    "file": "92648a561aa6.ogg",
@@ -1225,12 +3056,47 @@
    "delivery": "spoken",
    "text": "Vingt mètres. J’ai mesuré deux fois. Ne t’arrête pas au milieu pour l’admirer."
   },
+  "9386ee80f088": {
+   "file": "9386ee80f088.ogg",
+   "dur": 9.76,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Je sais pas son nom. Il vient tous les soirs avant la fermeture. Un thé sans sucre, en pièces de dix centimes. Il dit que c’est pour tenir jusqu’au matin."
+  },
+  "93f69294ca39": {
+   "file": "93f69294ca39.ogg",
+   "dur": 4.84,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Moi ? Je casse. Je te l’ai dit. Et ma mère dort en travers."
+  },
+  "9443749395dc": {
+   "file": "9443749395dc.ogg",
+   "dur": 5.68,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Le grand avec la botte ! Entre. Touche à rien, sauf au café."
+  },
   "94744b140f5f": {
    "file": "94744b140f5f.ogg",
    "dur": 4.3,
    "speaker": "okafor",
    "delivery": "flashback",
    "text": "Le trait est plus fin qu’un cheveu, monsieur Revel. Mais il va jusqu’au bout."
+  },
+  "9479dc613bb1": {
+   "file": "9479dc613bb1.ogg",
+   "dur": 4.1,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Tiens. Pour la route. C’est un très bon kebab."
+  },
+  "947c697a7f7c": {
+   "file": "947c697a7f7c.ogg",
+   "dur": 7.65,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Il passe me dire bonsoir tous les soirs à neuf heures. Il m’appelle « mademoiselle ». Personne m’a appelée mademoiselle depuis le cégep."
   },
   "94a3458c339e": {
    "file": "94a3458c339e.ogg",
@@ -1246,6 +3112,20 @@
    "delivery": "spoken",
    "text": "Plus fin qu’un cheveu. Et tu le tires jusqu’au bout. Sans t’arrêter au milieu pour l’admirer."
   },
+  "956b8852e403": {
+   "file": "956b8852e403.ogg",
+   "dur": 1.01,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Je n’ai pas dit non."
+  },
+  "962fdd1f5180": {
+   "file": "962fdd1f5180.ogg",
+   "dur": 5.39,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Je me retourne. Personne. La rue, et un clic qui s’éloigne, à l’allure d’un frigo fatigué."
+  },
   "96475747b9cf": {
    "file": "96475747b9cf.ogg",
    "dur": 4.82,
@@ -1259,6 +3139,41 @@
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Quatre-vingt-un."
+  },
+  "96f96d8b0bea": {
+   "file": "96f96d8b0bea.ogg",
+   "dur": 5.57,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Y a une étiquette. « Bleu Durand, 1979, O. M. »"
+  },
+  "9755e96c979e": {
+   "file": "9755e96c979e.ogg",
+   "dur": 4.26,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Monsieur Revel. À quatre heures. Vous ne courez plus, pourtant."
+  },
+  "97aa0d1b0305": {
+   "file": "97aa0d1b0305.ogg",
+   "dur": 0.8,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ça empêche pas."
+  },
+  "97aac60e3490": {
+   "file": "97aac60e3490.ogg",
+   "dur": 5.53,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Lou s’est pris un trottoir. Les crevaisons, c’est moi. Les roues tordues, c’est toi."
+  },
+  "9928c1abded8": {
+   "file": "9928c1abded8.ogg",
+   "dur": 1.24,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Il marche, maintenant."
   },
   "9933245b2073": {
    "file": "9933245b2073.ogg",
@@ -1288,6 +3203,59 @@
    "delivery": "inner",
    "text": "Chaque outil a sa silhouette peinte sur le tableau. Comme ça, on voit ce qui manque."
   },
+  "9a63e3f92b8e": {
+   "file": "9a63e3f92b8e.ogg",
+   "dur": 1.76,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Elle me félicite pour tout."
+  },
+  "9b4e2ceca5dd": {
+   "file": "9b4e2ceca5dd.ogg",
+   "dur": 5.46,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Le néon, je regrette. Il clignotait exprès, paraît-il."
+  },
+  "9be8b9da2fd8": {
+   "variants": {
+    "Hugo": {
+     "file": "9be8b9da2fd8-hugo.ogg",
+     "dur": 0.62,
+     "speaker": "hugo",
+     "delivery": "spoken",
+     "text": "Elle tient."
+    },
+    "M. Durand": {
+     "file": "9be8b9da2fd8-durand.ogg",
+     "dur": 0.71,
+     "speaker": "durand",
+     "delivery": "spoken",
+     "text": "Elle tient."
+    }
+   }
+  },
+  "9c4aed107111": {
+   "file": "9c4aed107111.ogg",
+   "dur": 0.91,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il chronomètre."
+  },
+  "9c644c843537": {
+   "file": "9c644c843537.ogg",
+   "dur": 2.77,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "La clé mystère. Il fallait essayer."
+  },
+  "9c89f1f77a3a": {
+   "file": "9c89f1f77a3a.ogg",
+   "dur": 5.01,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Voilà mon alibi. Six fournées par nuit. Vous voudriez, en plus, que j’huile des rideaux ?"
+  },
   "9cd5cfd42106": {
    "file": "9cd5cfd42106.ogg",
    "dur": 3.75,
@@ -1302,12 +3270,47 @@
    "delivery": "inner",
    "text": "Deux cent douze virgule quatre. Dont onze virgule deux sur une jambe cassée."
   },
+  "9db9e60c25da": {
+   "file": "9db9e60c25da.ogg",
+   "dur": 2.77,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Câline, c’est quoi, ça ? Une demande en mariage ?"
+  },
+  "9e2a8cab9f29": {
+   "file": "9e2a8cab9f29.ogg",
+   "dur": 3.02,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Trois questions. Si je réponds aux trois, je sais qui."
+  },
+  "9e2ac3755408": {
+   "file": "9e2ac3755408.ogg",
+   "dur": 3.15,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Vous faites un bruit d’armoire, jeune homme."
+  },
   "9e3253cb8641": {
    "file": "9e3253cb8641.ogg",
    "dur": 5.97,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Un truc du genre. Dans les cinquante millions de fois. J’ai fait le calcul, un jour. Un jour de repos."
+  },
+  "9e7c5514e357": {
+   "file": "9e7c5514e357.ogg",
+   "dur": 3.18,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Sur sa silhouette. Qu’elle y reste, cette fois."
+  },
+  "9e859e0558eb": {
+   "file": "9e859e0558eb.ogg",
+   "dur": 2.24,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il a raison. Il casse."
   },
   "9ea8a8d39ddb": {
    "file": "9ea8a8d39ddb.ogg",
@@ -1316,12 +3319,40 @@
    "delivery": "spoken",
    "text": "Par jour ?"
   },
+  "9ed05ce89526": {
+   "file": "9ed05ce89526.ogg",
+   "dur": 5.7,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "T’as trouvé tout seul. J’avais mis un ruban dessus, pis t’as même pas regardé le ruban. Ok. Respect."
+  },
+  "9ef01a7e2ca1": {
+   "file": "9ef01a7e2ca1.ogg",
+   "dur": 4.88,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Je sais. Il me l’a dit en 1971."
+  },
+  "9f7f60888cca": {
+   "file": "9f7f60888cca.ogg",
+   "dur": 1.35,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "C’est une botte médicale."
+  },
   "a08d6fff4ee6": {
    "file": "a08d6fff4ee6.ogg",
    "dur": 1.33,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Quatre-vingt-deux et demi."
+  },
+  "a0b8eabda5f4": {
+   "file": "a0b8eabda5f4.ogg",
+   "dur": 3.66,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Albert Durand. Tu tires tes fils, ou je le fais ?"
   },
   "a0d71960741b": {
    "file": "a0d71960741b.ogg",
@@ -1337,12 +3368,33 @@
    "delivery": "spoken",
    "text": "Ça tourne droit ! Comment t’as su où ?"
   },
+  "a212661bcc4a": {
+   "file": "a212661bcc4a.ogg",
+   "dur": 7.72,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un banc à cinquante-deux. Un inconnu qui marche à un virgule huit. Et un monsieur qui dort sur les bancs. J’ai connu des samedis moins remplis."
+  },
   "a230324fc72f": {
    "file": "a230324fc72f.ogg",
    "dur": 2.75,
    "speaker": "sami",
    "delivery": "bark",
    "text": "Clonk, c’est pas bon. Je connais clonk."
+  },
+  "a32fbbe82b0d": {
+   "file": "a32fbbe82b0d.ogg",
+   "dur": 4.35,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "La dernière ligne est d’une autre écriture. Penchée, à l’ancienne."
+  },
+  "a340f48ec7f5": {
+   "file": "a340f48ec7f5.ogg",
+   "dur": 3.11,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "C’est vrai. Sa mère fait plus peur que moi."
   },
   "a36d94fd243b": {
    "file": "a36d94fd243b.ogg",
@@ -1351,12 +3403,68 @@
    "delivery": "spoken",
    "text": "Tenir, c’est pas aider ?"
   },
+  "a378d80a27f9": {
+   "file": "a378d80a27f9.ogg",
+   "dur": 3.54,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "C’est quoi ? Ça sert à quoi ? Ça se mange ?"
+  },
+  "a41cfe9f965b": {
+   "file": "a41cfe9f965b.ogg",
+   "dur": 0.92,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Vous ouvrez quand ?"
+  },
+  "a4d2ebf76d03": {
+   "file": "a4d2ebf76d03.ogg",
+   "dur": 3.62,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "La clé mystère. Non. Pas celle-là non plus."
+  },
+  "a4d9929db34e": {
+   "file": "a4d9929db34e.ogg",
+   "dur": 3.64,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Pleine lune, celle-là. Elle n’est même plus croissante."
+  },
+  "a4ebb9b727af": {
+   "file": "a4ebb9b727af.ogg",
+   "dur": 5.66,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Mon néon, c’est de l’ambiance. Et j’ai quarante-trois tickets. Je te les relis ?"
+  },
+  "a51a5adba861": {
+   "file": "a51a5adba861.ogg",
+   "dur": 1.77,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ta montre te félicite d’être assis."
+  },
   "a5635d2f79a7": {
    "file": "a5635d2f79a7.ogg",
    "dur": 5.55,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "La porte retourne sur ses gonds. Elle fait quatre-vingt-deux de large. Mesure l’encadrement."
+  },
+  "a61752b2bf4b": {
+   "file": "a61752b2bf4b.ogg",
+   "dur": 2.37,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Là ! Le petit chapelet !"
+  },
+  "a6795b600fcb": {
+   "file": "a6795b600fcb.ogg",
+   "dur": 8.13,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Et prends ma craie. Il y a une empreinte sur mon seuil. Une empreinte, ça se cerne à la craie. Je l’ai vu à la télé."
   },
   "a6f4bc32da26": {
    "file": "a6f4bc32da26.ogg",
@@ -1365,12 +3473,33 @@
    "delivery": "spoken",
    "text": "Et s’il tremble ?"
   },
+  "a6fdbeb7f5e9": {
+   "file": "a6fdbeb7f5e9.ogg",
+   "dur": 8.89,
+   "speaker": "radio_fishing",
+   "delivery": "radio",
+   "text": "…la vieille carpe, elle, ne dort plus. Elle fait le tour de l’étang toute la nuit, et elle range les cailloux…"
+  },
   "a7792aeb694c": {
    "file": "a7792aeb694c.ogg",
    "dur": 2.05,
    "speaker": "sami",
    "delivery": "bark",
    "text": "…Réparé. Je dirai que j’ai aidé."
+  },
+  "a785a9560ddb": {
+   "file": "a785a9560ddb.ogg",
+   "dur": 6.61,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un calendrier. Chaque nuit est cochée au crayon, avec une heure. Trois heures douze. Trois heures neuf. Trois heures quinze."
+  },
+  "a79e0dcfc18b": {
+   "file": "a79e0dcfc18b.ogg",
+   "dur": 2.22,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ben voyons. Faut l’encourager."
   },
   "a7b6ad865b0a": {
    "file": "a7b6ad865b0a.ogg",
@@ -1379,12 +3508,40 @@
    "delivery": "spoken",
    "text": "Bouge pas. Je tiens le bout."
   },
+  "a801ffa1a606": {
+   "file": "a801ffa1a606.ogg",
+   "dur": 0.98,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Lesquels ?"
+  },
+  "a823d4199ade": {
+   "file": "a823d4199ade.ogg",
+   "dur": 5.25,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Je n’ai pas de preuve. J’ai un plan d’entraînement. Il passe à trois heures douze."
+  },
+  "a84b12ea14ca": {
+   "file": "a84b12ea14ca.ogg",
+   "dur": 3.18,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Un kebab d’hier ? …Donne."
+  },
   "a8e755d83138": {
    "file": "a8e755d83138.ogg",
    "dur": 4.96,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "À cette heure-là, la seule autre lumière allumée, c’est la boulangerie. Je la bats tous les matins."
+  },
+  "a90f98bd860e": {
+   "file": "a90f98bd860e.ogg",
+   "dur": 6.42,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Trente secondes. Mon premier mécano disait pareil. Les vieux mécanos comptent tous."
   },
   "aa451d972583": {
    "file": "aa451d972583.ogg",
@@ -1400,6 +3557,13 @@
    "delivery": "spoken",
    "text": "J’allais courir. Et deux fois le dimanche."
   },
+  "aaf6b437afbc": {
+   "file": "aaf6b437afbc.ogg",
+   "dur": 1.32,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "…Pas complètement faux."
+  },
   "ab6bcdd8134d": {
    "file": "ab6bcdd8134d.ogg",
    "dur": 0.98,
@@ -1413,6 +3577,13 @@
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Ça, c’est pas un gris. C’est une salle d’attente."
+  },
+  "ac83836d8368": {
+   "file": "ac83836d8368.ogg",
+   "dur": 3.25,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Deux cent douze ? Ok. Pis ? Tu sais faire quoi d’autre ?"
   },
   "ad16425ea225": {
    "file": "ad16425ea225.ogg",
@@ -1428,10 +3599,24 @@
    "delivery": "inner",
    "text": "J’aurais fait pareil. J’aurais fait exactement pareil."
   },
+  "ae17205be7c5": {
+   "file": "ae17205be7c5.ogg",
+   "dur": 1.15,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Pas ça !"
+  },
+  "ae991f032a76": {
+   "file": "ae991f032a76.ogg",
+   "dur": 1.14,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Tu me dois un souper."
+  },
   "af4723ee519e": {
    "file": "af4723ee519e.ogg",
    "dur": 6.39,
-   "speaker": "marco",
+   "speaker": "gerard",
    "delivery": "spoken",
    "text": "Odile a dit de peindre ce qu’on sait faire. Moi, je fais un très bon kebab. Donc."
   },
@@ -1449,12 +3634,75 @@
    "delivery": "inner",
    "text": "Tout le monde a le tibia un peu bavard. C’est Bastien qui le dit."
   },
+  "b008501b2217": {
+   "file": "b008501b2217.ogg",
+   "dur": 2.81,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Trouvé. Moi aussi j’aurais trouvé. Après."
+  },
+  "b058823f1797": {
+   "file": "b058823f1797.ogg",
+   "dur": 1.96,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Que des lunes. C’est un calendrier."
+  },
+  "b06583a607e1": {
+   "file": "b06583a607e1.ogg",
+   "dur": 4.39,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un cliquet de roue libre usé. Je pourrais le réparer les yeux fermés."
+  },
+  "b0ab77f9fcad": {
+   "file": "b0ab77f9fcad.ogg",
+   "dur": 1.24,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Montre-moi ça."
+  },
+  "b0c2001f9f0a": {
+   "file": "b0c2001f9f0a.ogg",
+   "dur": 5.79,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Les lattes, la peinture, le clic. Tout tourne autour de la boutique de vélos. Elle est fermée."
+  },
+  "b100200f598b": {
+   "file": "b100200f598b.ogg",
+   "dur": 3.42,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "J’ai essayé dans ma tête. Ça ne marchait pas non plus."
+  },
   "b18a27caf944": {
    "file": "b18a27caf944.ogg",
    "dur": 5.01,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Douze semaines, ça fait quatre-vingt-quatre jours. J’ai fait le calcul. Deux fois."
+  },
+  "b1a0c16d2d58": {
+   "file": "b1a0c16d2d58.ogg",
+   "dur": 2.24,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Moi, j’avais besoin de rien."
+  },
+  "b1aacb87d8f6": {
+   "file": "b1aacb87d8f6.ogg",
+   "dur": 5.58,
+   "speaker": "durand",
+   "delivery": "bark",
+   "text": "Bonsoir, jeune homme. Je ferme à neuf heures, maintenant. Comme tout le monde."
+  },
+  "b23cc90fecba": {
+   "file": "b23cc90fecba.ogg",
+   "dur": 1.82,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Si. Je sais pourquoi."
   },
   "b2793f9b5e7f": {
    "file": "b2793f9b5e7f.ogg",
@@ -1463,12 +3711,61 @@
    "delivery": "spoken",
    "text": "Les portes mentent. Les encadrements, c’est pire. Un demi-centimètre de jour côté charnières. On appellera ça l’aération."
   },
-  "b6233e63436b": {
-   "file": "b6233e63436b.ogg",
-   "dur": 3.73,
+  "b2e6a9c769d4": {
+   "file": "b2e6a9c769d4.ogg",
+   "dur": 3.79,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "D.52. Quelqu’un qui marche à trois heures, et qui compte en cinquante-deux."
+  },
+  "b307c8505c02": {
+   "file": "b307c8505c02.ogg",
+   "dur": 5.11,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "À mon âge, on remarque ce qui est droit. Le reste, on a renoncé."
+  },
+  "b310225ddd18": {
+   "file": "b310225ddd18.ogg",
+   "dur": 2.65,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Le bonhomme, là. Il s’ennuie."
+  },
+  "b34a9b318aea": {
+   "file": "b34a9b318aea.ogg",
+   "dur": 2.58,
    "speaker": "benali",
-   "delivery": "bark",
-   "text": "Il se bloque à mi-hauteur tous les matins. J’ouvre une demi-boulangerie."
+   "delivery": "spoken",
+   "text": "Et écrivez-le. Odile m’a parlé de votre cahier."
+  },
+  "b384f550aa5f": {
+   "file": "b384f550aa5f.ogg",
+   "dur": 1.68,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Volontiers, mademoiselle."
+  },
+  "b3f9d8d75134": {
+   "file": "b3f9d8d75134.ogg",
+   "dur": 4.17,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Il a quatre-vingt-un ans. Il me l’a dit trois fois."
+  },
+  "b4c00eec4fa0": {
+   "file": "b4c00eec4fa0.ogg",
+   "dur": 2.66,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Il y a quelqu’un, au bord. Flou."
+  },
+  "b51dd5d95e34": {
+   "file": "b51dd5d95e34.ogg",
+   "dur": 5.15,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Laisse-moi deviner. Le rideau de madame Benali ? Toute la rue en jase."
   },
   "b6ed33a8307f": {
    "file": "b6ed33a8307f.ogg",
@@ -1484,12 +3781,33 @@
    "delivery": "spoken",
    "text": "Ha ! Repose-toi, la légende. Le classement s’ennuie sans toi."
   },
+  "b72bafd7d732": {
+   "file": "b72bafd7d732.ogg",
+   "dur": 1.51,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "…C’est une clé à rayons."
+  },
   "b824ac46699b": {
    "file": "b824ac46699b.ogg",
    "dur": 1.55,
    "speaker": "sami",
    "delivery": "bark",
    "text": "C’était censé faire clonk ?"
+  },
+  "b894d15542f4": {
+   "file": "b894d15542f4.ogg",
+   "dur": 5.33,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Bon. Tu voulais savoir si j’ai le temps de huiler des rideaux la nuit ? Regarde."
+  },
+  "b8b09c53149f": {
+   "file": "b8b09c53149f.ogg",
+   "dur": 3.12,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Celle avec le ruban rouge. Ben là. Je l’ai mis moi-même."
   },
   "b8f513b31cc7": {
    "file": "b8f513b31cc7.ogg",
@@ -1519,6 +3837,20 @@
    "delivery": "spoken",
    "text": "Laisse-la sur la musique. Les poissons attendront."
   },
+  "bab48e1329ef": {
+   "file": "bab48e1329ef.ogg",
+   "dur": 3.16,
+   "speaker": "lou",
+   "delivery": "spoken",
+   "text": "Je peux le prendre en photo. C’est tout ce que je peux faire pour vous."
+  },
+  "bb06ced3d972": {
+   "file": "bb06ced3d972.ogg",
+   "dur": 2.41,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Voyons donc. C’est tout croche."
+  },
   "bb9e78f642f8": {
    "file": "bb9e78f642f8.ogg",
    "dur": 2.4,
@@ -1532,6 +3864,13 @@
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Je sais. Je *sais*."
+  },
+  "bcbf883c88d9": {
+   "file": "bcbf883c88d9.ogg",
+   "dur": 3.6,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Gardez-le, monsieur Revel. Vous en aurez plus besoin que moi."
   },
   "bdd2d9017455": {
    "file": "bdd2d9017455.ogg",
@@ -1554,6 +3893,34 @@
    "delivery": "spoken",
    "text": "Votre chaussure."
   },
+  "bfb4a4f0fdde": {
+   "file": "bfb4a4f0fdde.ogg",
+   "dur": 1.89,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Ta montre trouve que t’as le cœur qui bat vite."
+  },
+  "bfec03d8280c": {
+   "file": "bfec03d8280c.ogg",
+   "dur": 1.64,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Alors, l’inspecteur ?"
+  },
+  "c03b3efe3bdf": {
+   "file": "c03b3efe3bdf.ogg",
+   "dur": 5.4,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Le rideau de madame Benali. Le banc. Le néon de Gérard. La clé d’Odile."
+  },
+  "c060744ba612": {
+   "file": "c060744ba612.ogg",
+   "dur": 4.08,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Bonjour, jeune homme. J’ai dormi jusqu’à huit heures et demie."
+  },
   "c076bb51d01b": {
    "file": "c076bb51d01b.ogg",
    "dur": 4.94,
@@ -1561,12 +3928,26 @@
    "delivery": "bark",
    "text": "Je fais un S, là-haut. Les S, c’est personnel."
   },
+  "c0a52d9d9590": {
+   "file": "c0a52d9d9590.ogg",
+   "dur": 7.57,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Tu connais le segment de la rue des Tanneurs ? Je suis deuxième. DEUXIÈME. Derrière un type qui le fait à un virgule huit kilomètre-heure."
+  },
   "c0e85b84420e": {
    "file": "c0e85b84420e.ogg",
    "dur": 0.39,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "…Non."
+  },
+  "c1333535661b": {
+   "file": "c1333535661b.ogg",
+   "dur": 3.48,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Ça tremble. T’as peur du papier ?"
   },
   "c13390a66266": {
    "file": "c13390a66266.ogg",
@@ -1589,6 +3970,20 @@
    "delivery": "spoken",
    "text": "…Voilà. Ça, c’est un gris qui a vécu."
   },
+  "c1f2655db4f9": {
+   "file": "c1f2655db4f9.ogg",
+   "dur": 1.76,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Allez, allez !"
+  },
+  "c239a6fd9817": {
+   "file": "c239a6fd9817.ogg",
+   "dur": 3.09,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Il nous a vus ? Non. Ok."
+  },
   "c27a7c7556c0": {
    "file": "c27a7c7556c0.ogg",
    "dur": 0.81,
@@ -1609,6 +4004,13 @@
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Quel trait ?"
+  },
+  "c3361470ea8c": {
+   "file": "c3361470ea8c.ogg",
+   "dur": 3.25,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Mesurer à l’œil. Odile me tuerait. Deux fois."
   },
   "c3a8b9eb7560": {
    "file": "c3a8b9eb7560.ogg",
@@ -1631,6 +4033,27 @@
    "delivery": "inner",
    "text": "La jambe était légère. Comme si elle ne savait pas encore à quoi elle servait."
   },
+  "c4cf27bf108f": {
+   "file": "c4cf27bf108f.ogg",
+   "dur": 2.11,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ah ben ! C’est le monsieur du banc !"
+  },
+  "c4ddf92a2842": {
+   "file": "c4ddf92a2842.ogg",
+   "dur": 3.56,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Le médecin m’a dit de marcher. Il n’a pas dit quand."
+  },
+  "c53655103a25": {
+   "file": "c53655103a25.ogg",
+   "dur": 6.89,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un rideau huilé. Une clé rendue propre. Quelqu’un répare la rue la nuit. Et le pire, c’est que je suis jaloux."
+  },
   "c61567daa050": {
    "file": "c61567daa050.ogg",
    "dur": 4.5,
@@ -1638,12 +4061,47 @@
    "delivery": "spoken",
    "text": "Debout à quatre heures. J’avais mis mes chaussures avant de m’en souvenir."
   },
+  "c6438bb59c45": {
+   "file": "c6438bb59c45.ogg",
+   "dur": 7.51,
+   "speaker": "radio_fishing",
+   "delivery": "radio",
+   "text": "…le brochet, voyez-vous, ne vole jamais rien. Il emprunte. Et il rapporte, quand il a fini…"
+  },
+  "c6c0d3a5ba73": {
+   "file": "c6c0d3a5ba73.ogg",
+   "dur": 4.89,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Fermé à clé. Le genre de serrure qui attend quelqu’un avec un trousseau."
+  },
+  "c6eee14258cf": {
+   "file": "c6eee14258cf.ogg",
+   "dur": 4.05,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Ça se connecte à STRIDE ? Non ? Alors je vois pas, mec."
+  },
+  "c73b32877670": {
+   "file": "c73b32877670.ogg",
+   "dur": 3.0,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Sami. C’est toi qui répares la rue la nuit."
+  },
   "c7978c61d039": {
    "file": "c7978c61d039.ogg",
    "dur": 2.49,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Tu écoutes. La roue te dit où ça frotte."
+  },
+  "c7b53df1ca75": {
+   "file": "c7b53df1ca75.ogg",
+   "dur": 4.97,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un gabarit de coupe, réglé à cinquante-deux. De la sciure fraîche dessous."
   },
   "c83112a9390a": {
    "file": "c83112a9390a.ogg",
@@ -1659,6 +4117,27 @@
    "delivery": "spoken",
    "text": "En courant après quoi ?"
   },
+  "c890068d0de8": {
+   "file": "c890068d0de8.ogg",
+   "dur": 3.61,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "C’est une pièce à conviction. On ne bricole pas avec."
+  },
+  "c89b5042403f": {
+   "file": "c89b5042403f.ogg",
+   "dur": 5.38,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Un gris pas triste. Câline. Ça, c’est une affaire."
+  },
+  "c8c371e5aea2": {
+   "file": "c8c371e5aea2.ogg",
+   "dur": 1.71,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Laissez. Regardez mes mains."
+  },
   "c959c9f57f13": {
    "file": "c959c9f57f13.ogg",
    "dur": 2.77,
@@ -1673,6 +4152,27 @@
    "delivery": "spoken",
    "text": "Vous êtes en avance."
   },
+  "ca19228a5c02": {
+   "file": "ca19228a5c02.ogg",
+   "dur": 1.99,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Il manque la clé à rayons."
+  },
+  "cac8d908cb88": {
+   "file": "cac8d908cb88.ogg",
+   "dur": 4.0,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Et tu me soupçonnes ? Ha ! Mec. Regarde."
+  },
+  "caf6a216580f": {
+   "file": "caf6a216580f.ogg",
+   "dur": 1.93,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Pis la soupe, là, elle refroidit."
+  },
   "cb18348c8d4e": {
    "file": "cb18348c8d4e.ogg",
    "dur": 2.19,
@@ -1686,6 +4186,20 @@
    "speaker": "hugo",
    "delivery": "inner",
    "text": "L’os ne négocie pas."
+  },
+  "cc1f91f97158": {
+   "file": "cc1f91f97158.ogg",
+   "dur": 4.1,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Vous ne m’avez jamais vu. Vous regardiez votre montre."
+  },
+  "cc3462aab734": {
+   "file": "cc3462aab734.ogg",
+   "dur": 5.88,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Une photo nette. Ça ne va pas sur la liste. C’est le téléphone qui sait faire, pas moi."
   },
   "cc53ce1641f0": {
    "file": "cc53ce1641f0.ogg",
@@ -1708,12 +4222,47 @@
    "delivery": "inner",
    "text": "Tranquille. Tranquille, c’est une allure."
   },
+  "ccffc0f776f2": {
+   "file": "ccffc0f776f2.ogg",
+   "dur": 2.19,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Tu l’as servi toi-même, tout à l’heure."
+  },
+  "cd061b899681": {
+   "file": "cd061b899681.ogg",
+   "dur": 4.03,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Vas-y, interroge-moi. On m’a jamais interrogée. C’est le fun."
+  },
   "cde1617e13ad": {
    "file": "cde1617e13ad.ogg",
    "dur": 4.21,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Je me suis arrêté. Personne ne m’y a obligé. Que ce soit noté aussi."
+  },
+  "ce96ceb20e33": {
+   "file": "ce96ceb20e33.ogg",
+   "dur": 2.18,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Pas mal. T’as des mains de kebab."
+  },
+  "ceff97f56341": {
+   "file": "ceff97f56341.ogg",
+   "dur": 8.99,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Monsieur Durand apprend à Sami à monter une roue. Sami lui apprend à éteindre sa montre. Chacun trouve l’autre très lent."
+  },
+  "cf23fed68b45": {
+   "file": "cf23fed68b45.ogg",
+   "dur": 5.58,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Pantoute. N’importe qui peut faire plus de la même affaire. Toi, tu fais des affaires *nouvelles*. Avec une botte."
   },
   "cfaf0ef68b80": {
    "file": "cfaf0ef68b80.ogg",
@@ -1722,12 +4271,33 @@
    "delivery": "spoken",
    "text": "…Quatre-vingt-deux."
   },
+  "cfb9959e76d7": {
+   "file": "cfb9959e76d7.ogg",
+   "dur": 7.54,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "T’as fait des croissants avec madame Benali à quatre heures du matin ? Ben là. T’es pas mal plus intéressant que t’en as l’air."
+  },
   "cfe8ee20c8f9": {
    "file": "cfe8ee20c8f9.ogg",
    "dur": 2.05,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Là. Celui-là sonne trop bas."
+  },
+  "d01770ed0b5e": {
+   "file": "d01770ed0b5e.ogg",
+   "dur": 5.84,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Si vous venez me demander où j’étais la nuit du rideau, j’étais ici. Comme toutes les nuits depuis vingt ans."
+  },
+  "d0c120c3d84c": {
+   "file": "d0c120c3d84c.ogg",
+   "dur": 1.64,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "En petit. Dans le coin."
   },
   "d0f6a0819fc6": {
    "file": "d0f6a0819fc6.ogg",
@@ -1736,12 +4306,33 @@
    "delivery": "spoken",
    "text": "Douze semaines depuis le dimanche. J’ai compté. T’es pas le seul dans cette rue à savoir compter."
   },
+  "d1b1a6c444c6": {
+   "file": "d1b1a6c444c6.ogg",
+   "dur": 4.82,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Je voulais te voir chercher. Ça te fait une belle face."
+  },
+  "d21757cbc3aa": {
+   "file": "d21757cbc3aa.ogg",
+   "dur": 5.41,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Une silhouette sous le réverbère. Une casquette plate. Un vélo tenu à la main."
+  },
   "d24495f87a39": {
    "file": "d24495f87a39.ogg",
    "dur": 2.39,
    "speaker": "sami",
    "delivery": "bark",
    "text": "C’est réparé ? C’est pas réparé."
+  },
+  "d288c0503e70": {
+   "file": "d288c0503e70.ogg",
+   "dur": 1.02,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "On me l’a déjà dit."
   },
   "d3185035e884": {
    "file": "d3185035e884.ogg",
@@ -1757,12 +4348,40 @@
    "delivery": "spoken",
    "text": "Tu as déjà fait ça, toi."
   },
+  "d3b0d9c3aac4": {
+   "file": "d3b0d9c3aac4.ogg",
+   "dur": 6.45,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Des alibis. Un banc à cinquante-deux. Un inconnu qui marche à un virgule huit. Et une écaille de bleu."
+  },
+  "d3ba26c4a30a": {
+   "file": "d3ba26c4a30a.ogg",
+   "dur": 3.29,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Un cadeau, ça se donne à quelqu’un. Pas à un meuble."
+  },
+  "d3fdb47e451a": {
+   "file": "d3fdb47e451a.ogg",
+   "dur": 2.07,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Ça, c’est un plan d’entraînement."
+  },
   "d3ff7427feb3": {
    "file": "d3ff7427feb3.ogg",
    "dur": 2.81,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "C’est une pancarte, pas un gâteau d’anniversaire."
+  },
+  "d4157c67d84f": {
+   "file": "d4157c67d84f.ogg",
+   "dur": 5.29,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Je rentrais de mes sorties sur ce cri. Six heures pile. Il me servait de ligne d’arrivée."
   },
   "d458c67fc2e4": {
    "file": "d458c67fc2e4.ogg",
@@ -1784,6 +4403,13 @@
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Non, l’autre bonhomme en botte. Le frein de roue a lâché. Tenez l’échafaudage avant que je descende plus vite que prévu."
+  },
+  "d553440911ed": {
+   "file": "d553440911ed.ogg",
+   "dur": 3.22,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "C’est une belle liste. Fais pas ton modeste, ça te va pas."
   },
   "d58b78b1d127": {
    "file": "d58b78b1d127.ogg",
@@ -1813,12 +4439,47 @@
    "delivery": "spoken",
    "text": "Et vous alliez où, comme ça ?"
   },
+  "d66afd7e73e6": {
+   "file": "d66afd7e73e6.ogg",
+   "dur": 5.34,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Odile ! Ton pinceau. Lavé deux fois. C’est la règle, ici, hein ? Deux fois ?"
+  },
+  "d66c26f552b9": {
+   "file": "d66c26f552b9.ogg",
+   "dur": 4.38,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Trois heures sept. Quatre heures de travail. Il a pleuré deux fois. Moi, zéro."
+  },
   "d70c7c44a995": {
    "file": "d70c7c44a995.ogg",
    "dur": 1.14,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Ne pas laisser tomber."
+  },
+  "d72acfee1fa7": {
+   "file": "d72acfee1fa7.ogg",
+   "dur": 1.23,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Tu sors la nuit."
+  },
+  "d7a954f1c461": {
+   "file": "d7a954f1c461.ogg",
+   "dur": 1.86,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Un… chum."
+  },
+  "d7b273cf5bf3": {
+   "file": "d7b273cf5bf3.ogg",
+   "dur": 6.04,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Rien. Justement. Treize ans qu’il crie, ce rideau. Ce matin, il est monté comme… comme un rideau."
   },
   "d7d29ac7b5a4": {
    "file": "d7d29ac7b5a4.ogg",
@@ -1848,6 +4509,27 @@
    "delivery": "bark",
    "text": "Bougez plus."
   },
+  "d91ebe53e1b8": {
+   "file": "d91ebe53e1b8.ogg",
+   "dur": 8.16,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Je vous connais. Le grand qui partait courir à quatre heures. On s’est croisés cent vingt-trois fois. J’ai compté."
+  },
+  "d926c7025601": {
+   "file": "d926c7025601.ogg",
+   "dur": 4.46,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Je prends les espèces, la carte, et les compliments. Pas ça."
+  },
+  "d95a26ad9c28": {
+   "file": "d95a26ad9c28.ogg",
+   "dur": 1.01,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Respire pas."
+  },
   "d9f675f573ee": {
    "file": "d9f675f573ee.ogg",
    "dur": 3.77,
@@ -1855,12 +4537,40 @@
    "delivery": "spoken",
    "text": "J’ai pris le chemin le plus long. C’était sympa."
   },
+  "da201a36ce25": {
+   "file": "da201a36ce25.ogg",
+   "dur": 3.82,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Les indices, ça va dans le cahier. Pas dans les serrures."
+  },
+  "da7fe2d6ebd5": {
+   "file": "da7fe2d6ebd5.ogg",
+   "dur": 1.34,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Elle exagère. Un peu."
+  },
   "da86a9707c0f": {
    "file": "da86a9707c0f.ogg",
    "dur": 2.56,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Tu peux faire l’un des deux, ce mois-ci ?"
+  },
+  "daa789772ab1": {
+   "file": "daa789772ab1.ogg",
+   "dur": 4.01,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Viens. Je vais te montrer à tracer un pochoir."
+  },
+  "daf246f6e7c4": {
+   "file": "daf246f6e7c4.ogg",
+   "dur": 1.54,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "On fait quoi, exactement ?"
   },
   "db01b1103490": {
    "file": "db01b1103490.ogg",
@@ -1876,6 +4586,20 @@
    "delivery": "bark",
    "text": "…*Ça va !*"
   },
+  "db5e470f2a91": {
+   "file": "db5e470f2a91.ogg",
+   "dur": 1.92,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Exprès. C’est l’ambiance."
+  },
+  "dbec8d369612": {
+   "file": "dbec8d369612.ogg",
+   "dur": 12.25,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Ah. Celle-là, je l’ai gardée trois jours. Je l’ai faite en 1971, pour le père Marchal. J’étais apprenti chez Lemaire, je n’avais pas encore ma boutique."
+  },
   "dc4f5ba47ed9": {
    "file": "dc4f5ba47ed9.ogg",
    "dur": 0.62,
@@ -1883,12 +4607,82 @@
    "delivery": "spoken",
    "text": "Un trait."
   },
+  "dc51fc3962e2": {
+   "file": "dc51fc3962e2.ogg",
+   "dur": 6.53,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Encre fine. Je ne savais même pas qu’il y avait une boutique, là. Je passais devant à quinze kilomètres-heure."
+  },
+  "dc8decec8b6d": {
+   "file": "dc8decec8b6d.ogg",
+   "dur": 4.27,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Au lit. Ma mère dort en travers de ma porte. Genre, en travers."
+  },
+  "dcb10f7622ea": {
+   "file": "dcb10f7622ea.ogg",
+   "dur": 3.4,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Elle me l’expliquera encore. Souvent, je pense."
+  },
+  "dda44058eca7": {
+   "file": "dda44058eca7.ogg",
+   "dur": 1.38,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Une ambiance de quoi ?"
+  },
+  "de4bac9b2a56": {
+   "file": "de4bac9b2a56.ogg",
+   "dur": 1.94,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "Le client, il vieillit."
+  },
+  "de8d203eab1b": {
+   "file": "de8d203eab1b.ogg",
+   "dur": 6.42,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Une lune ? Pour moi ? Câline. Personne m’avait jamais donné la lune."
+  },
+  "dec512eb042e": {
+   "file": "dec512eb042e.ogg",
+   "dur": 1.99,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il coupe comme il a toujours coupé."
+  },
+  "dedfc83bf6f2": {
+   "file": "dedfc83bf6f2.ogg",
+   "dur": 1.91,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Je mange pas la concurrence."
+  },
   "df32ac278f51": {
    "file": "df32ac278f51.ogg",
    "dur": 0.95,
    "speaker": "sami",
    "delivery": "spoken",
    "text": "…C’est moins débile."
+  },
+  "dfee993d2a88": {
+   "file": "dfee993d2a88.ogg",
+   "dur": 4.53,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Comme chez Odile. Comme ça, on voit ce qui manque. Ici, il manque tout."
+  },
+  "e05701ca5b28": {
+   "file": "e05701ca5b28.ogg",
+   "dur": 4.03,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Madame Benali. Des charentaises, à trois heures du matin."
   },
   "e13e59b0a7f1": {
    "file": "e13e59b0a7f1.ogg",
@@ -1904,12 +4698,33 @@
    "delivery": "spoken",
    "text": "D’abord, une chose. Là-haut, où il y avait le panneau. Personne n’en a voulu."
   },
+  "e28065789936": {
+   "file": "e28065789936.ogg",
+   "dur": 3.63,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Non. Dis-lui rien. Je lui dirai moi-même."
+  },
   "e29275cb5ad9": {
    "file": "e29275cb5ad9.ogg",
    "dur": 5.09,
    "speaker": "radio_fishing",
    "delivery": "radio",
    "text": "…et le brochet, voyez-vous, le brochet se moque bien de vos états d’âme…"
+  },
+  "e29c848890bc": {
+   "file": "e29c848890bc.ogg",
+   "dur": 3.79,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Revenue. Propre. Elle sent toujours la graisse de chaîne."
+  },
+  "e392d71ffd62": {
+   "file": "e392d71ffd62.ogg",
+   "dur": 1.62,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "…Dis-lui merci."
   },
   "e4e78c2b81e5": {
    "file": "e4e78c2b81e5.ogg",
@@ -1932,12 +4747,33 @@
    "delivery": "spoken",
    "text": "Jusqu’où ?"
   },
+  "e54986a005ff": {
+   "file": "e54986a005ff.ogg",
+   "dur": 2.74,
+   "speaker": "sami",
+   "delivery": "bark",
+   "text": "Lou ! Ta roue chante, maintenant !"
+  },
+  "e56918a33f36": {
+   "file": "e56918a33f36.ogg",
+   "dur": 1.9,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Là. Là, c’est beau."
+  },
   "e5bbd471974e": {
    "file": "e5bbd471974e.ogg",
    "dur": 4.6,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Quand ça fait mal, je compte. Compter, c’est un antidouleur, à forte dose."
+  },
+  "e5cdcda760dd": {
+   "file": "e5cdcda760dd.ogg",
+   "dur": 2.87,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Une question à la fois. Comme les kilomètres."
   },
   "e6920f1e365f": {
    "file": "e6920f1e365f.ogg",
@@ -1946,12 +4782,89 @@
    "delivery": "spoken",
    "text": "HUGO ! Alors, les loisirs créatifs ? La botte, c’est bientôt fini, hein ? On va te remettre à deux cents par semaine !"
   },
+  "e697553a8ef1": {
+   "file": "e697553a8ef1.ogg",
+   "dur": 5.03,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Un ami. Pas mon chum chum. Relaxe, le grand."
+  },
+  "e6af0b3a8464": {
+   "file": "e6af0b3a8464.ogg",
+   "dur": 2.66,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "O. M. Odile Marchal."
+  },
+  "e6f553df1306": {
+   "file": "e6f553df1306.ogg",
+   "dur": 4.03,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "Trente-six. J’ai de tout petits pieds. C’est mon seul défaut."
+  },
+  "e70c1f442f95": {
+   "file": "e70c1f442f95.ogg",
+   "dur": 2.46,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Trouver un trou, je sais faire."
+  },
+  "e73d7bfd8a74": {
+   "file": "e73d7bfd8a74.ogg",
+   "dur": 2.24,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Tu sautes. C’est pas une course, champion."
+  },
+  "e7b6ba2901e1": {
+   "file": "e7b6ba2901e1.ogg",
+   "dur": 10.33,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Cinquante-deux ans, j’ai ouvert à huit heures. Maintenant, j’ouvre à trois heures, pour personne. Ce sont les mêmes heures. Seulement, il fait nuit."
+  },
+  "e80315a47d24": {
+   "file": "e80315a47d24.ogg",
+   "dur": 3.69,
+   "speaker": "durand",
+   "delivery": "spoken",
+   "text": "Mademoiselle. Vous êtes en retard pour dormir."
+  },
   "e883b6b38858": {
    "file": "e883b6b38858.ogg",
    "dur": 3.15,
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Trop froid. Ce gris-là attend le bus."
+  },
+  "e88f50e608ce": {
+   "file": "e88f50e608ce.ogg",
+   "dur": 1.08,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "Il sait faire, lui ?"
+  },
+  "e937376602b0": {
+   "file": "e937376602b0.ogg",
+   "dur": 7.85,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Depuis le bleu. C’est moi qui l’ai fait, ce bleu. Pour sa devanture. En 1979."
+  },
+  "e980712a5d57": {
+   "file": "e980712a5d57.ogg",
+   "dur": 2.42,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Elle claque les portes. Ça me plaît."
+  },
+  "e9a58ac39292": {
+   "file": "e9a58ac39292.ogg",
+   "dur": 3.69,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Pardon ! Il crie. Treize ans qu’il crie."
   },
   "ea2a170f3dcc": {
    "file": "ea2a170f3dcc.ogg",
@@ -1967,6 +4880,34 @@
    "delivery": "bark",
    "text": "Tu la ponces pas, tu te disputes avec."
   },
+  "eab567c7dd09": {
+   "file": "eab567c7dd09.ogg",
+   "dur": 2.19,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Samedi ! Pis pas de sauce en pot !"
+  },
+  "eb5f650c62a7": {
+   "file": "eb5f650c62a7.ogg",
+   "dur": 2.34,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Comme ça, l’an prochain, tu pourras le rayer."
+  },
+  "eb69c10ef275": {
+   "file": "eb69c10ef275.ogg",
+   "dur": 5.92,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Le mètre a sa silhouette, lui aussi. Si je le prends, ça se verra. C’est le principe."
+  },
+  "eba45c86b66b": {
+   "file": "eba45c86b66b.ogg",
+   "dur": 1.86,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "…Ben là. Fais pas ça en public."
+  },
   "ebd48e198d6c": {
    "file": "ebd48e198d6c.ogg",
    "dur": 3.94,
@@ -1981,12 +4922,26 @@
    "delivery": "spoken",
    "text": "Tu as tenu un échafaudage. Tu peux tenir un pinceau. Même boulot. Tu ne bouges pas, puis tu bouges une fois."
   },
+  "ec659e2bc75e": {
+   "file": "ec659e2bc75e.ogg",
+   "dur": 3.7,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il fait une boucle. Il va repasser. Je connais les boucles."
+  },
   "ed0d6fc27a18": {
    "file": "ed0d6fc27a18.ogg",
    "dur": 4.05,
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Banc mouillé, dans le noir. Si le club repasse, je m’étire."
+  },
+  "ed579f3f78ff": {
+   "file": "ed579f3f78ff.ogg",
+   "dur": 3.04,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Mauvais outil. Je le sais depuis mes quinze ans."
   },
   "ed82b933efe1": {
    "file": "ed82b933efe1.ogg",
@@ -1995,12 +4950,47 @@
    "delivery": "inner",
    "text": "Toujours sur le chargeur. Toujours en train de compter. Elle ne sait pas."
   },
+  "ed833bdb951a": {
+   "file": "ed833bdb951a.ogg",
+   "dur": 2.49,
+   "speaker": "benali",
+   "delivery": "spoken",
+   "text": "C’est gentil, mais j’ai les mains dans la farine."
+  },
   "ed8b5adf35bb": {
    "file": "ed8b5adf35bb.ogg",
    "dur": 1.33,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "Quatre-vingt-un et demi."
+  },
+  "ee48f41596f1": {
+   "file": "ee48f41596f1.ogg",
+   "dur": 4.25,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "On voit la rue. On ne voit pas l’indice. On voit surtout la rue."
+  },
+  "eef968a17573": {
+   "file": "eef968a17573.ogg",
+   "dur": 3.19,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "De pantoufle. Le crime porte des pantoufles."
+  },
+  "efbea4f03894": {
+   "file": "efbea4f03894.ogg",
+   "dur": 5.46,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Quarante-trois : un thé. Une heure cinquante-huit. Le monsieur au vélo qui fait clic."
+  },
+  "f03fc1b570c1": {
+   "file": "f03fc1b570c1.ogg",
+   "dur": 3.35,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Samedi, sept heures. Apporte rien. Surtout pas ta montre."
   },
   "f0589b2fd83c": {
    "file": "f0589b2fd83c.ogg",
@@ -2009,6 +4999,55 @@
    "delivery": "spoken",
    "text": "Vous savez ne pas bouger ?"
   },
+  "f158cfcc9eb0": {
+   "file": "f158cfcc9eb0.ogg",
+   "dur": 5.63,
+   "speaker": "gerard",
+   "delivery": "spoken",
+   "text": "Deux heures. On ferme. Maintenant, mes tickets. Ceux de la nuit du rideau."
+  },
+  "f2383260beec": {
+   "file": "f2383260beec.ogg",
+   "dur": 0.77,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Y s’en vient."
+  },
+  "f27db4720a18": {
+   "file": "f27db4720a18.ogg",
+   "dur": 0.66,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Ça se voit."
+  },
+  "f2e4e1eecdd4": {
+   "file": "f2e4e1eecdd4.ogg",
+   "dur": 0.66,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Tu savais ?"
+  },
+  "f2e4f2eecdd5": {
+   "file": "f2e4f2eecdd5.ogg",
+   "dur": 0.74,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Tu savais."
+  },
+  "f353b4f2f507": {
+   "file": "f353b4f2f507.ogg",
+   "dur": 4.76,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "Ma clé est revenue cette nuit. Avec des chiffons pliés. Comme une excuse."
+  },
+  "f3abe44f6ec9": {
+   "file": "f3abe44f6ec9.ogg",
+   "dur": 4.05,
+   "speaker": "gerard",
+   "delivery": "bark",
+   "text": "On dirait un sac de couchage. Il paiera quand même."
+  },
   "f3e929defbf7": {
    "file": "f3e929defbf7.ogg",
    "dur": 7.41,
@@ -2016,12 +5055,47 @@
    "delivery": "spoken",
    "text": "Quarante ans, j’ai tiré des traits plus fins que ça. Les grandes lettres, je les mate encore. C’est les déliés."
   },
+  "f40695918102": {
+   "file": "f40695918102.ogg",
+   "dur": 2.94,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Le même vélo. Le même clic. Toutes les nuits."
+  },
+  "f4cb8eb2ca89": {
+   "file": "f4cb8eb2ca89.ogg",
+   "dur": 3.51,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Avance. Le papier mord pas."
+  },
+  "f55c50c61d89": {
+   "file": "f55c50c61d89.ogg",
+   "dur": 3.82,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Pas celle-là. Celle-là, c’est mon char."
+  },
   "f5fdea685620": {
    "file": "f5fdea685620.ogg",
    "dur": 1.4,
-   "speaker": "ines",
+   "speaker": "lou",
    "delivery": "spoken",
    "text": "Bizarre. Légal."
+  },
+  "f602a7933fc7": {
+   "file": "f602a7933fc7.ogg",
+   "dur": 5.51,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "De la sciure, sur le seuil du 14. Une empreinte. Semelle lisse, à petits carreaux."
+  },
+  "f610943308a5": {
+   "file": "f610943308a5.ogg",
+   "dur": 6.31,
+   "speaker": "bastien",
+   "delivery": "spoken",
+   "text": "Mec. Si je m’étais arrêté pour huiler un rideau, ma montre aurait fait une pause. Et ma montre fait JAMAIS de pause."
   },
   "f68cf394af5a": {
    "file": "f68cf394af5a.ogg",
@@ -2030,19 +5104,69 @@
    "delivery": "inner",
    "text": "Franchement ? Plus depuis mes dix-neuf ans."
   },
+  "f68ec24e99eb": {
+   "file": "f68ec24e99eb.ogg",
+   "dur": 0.83,
+   "speaker": "jo",
+   "delivery": "bark",
+   "text": "Bouge pas."
+  },
   "f6c3de06eb7b": {
-   "file": "f6c3de06eb7b.ogg",
-   "dur": 0.55,
-   "speaker": "hugo",
-   "delivery": "inner",
-   "text": "Merci."
+   "variants": {
+    "Hugo": {
+     "file": "f6c3de06eb7b-hugo.ogg",
+     "dur": 0.55,
+     "speaker": "hugo",
+     "delivery": "inner",
+     "text": "Merci."
+    },
+    "Odile": {
+     "file": "f6c3de06eb7b-odile.ogg",
+     "dur": 0.86,
+     "speaker": "odile",
+     "delivery": "spoken",
+     "text": "Merci."
+    }
+   }
+  },
+  "f7547e336d0c": {
+   "file": "f7547e336d0c.ogg",
+   "dur": 1.67,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Ben, tu vas apprendre."
+  },
+  "f75a3d7b556e": {
+   "file": "f75a3d7b556e.ogg",
+   "dur": 0.73,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Tiguidou."
   },
   "f79645accbcd": {
-   "file": "f79645accbcd.ogg",
-   "dur": 0.58,
-   "speaker": "sami",
-   "delivery": "spoken",
-   "text": "Pourquoi ?"
+   "variants": {
+    "Sami": {
+     "file": "f79645accbcd-sami.ogg",
+     "dur": 0.58,
+     "speaker": "sami",
+     "delivery": "spoken",
+     "text": "Pourquoi ?"
+    },
+    "Hugo": {
+     "file": "f79645accbcd-hugo.ogg",
+     "dur": 0.59,
+     "speaker": "hugo",
+     "delivery": "spoken",
+     "text": "Pourquoi ?"
+    }
+   }
+  },
+  "f7a07f0ef1ef": {
+   "file": "f7a07f0ef1ef.ogg",
+   "dur": 2.51,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Un croissant de lune. Il fera l’affaire."
   },
   "f7a5b4d9f416": {
    "file": "f7a5b4d9f416.ogg",
@@ -2050,6 +5174,13 @@
    "speaker": "hugo",
    "delivery": "inner",
    "text": "Là. Celui-là sonne faux."
+  },
+  "f7ad22d93319": {
+   "file": "f7ad22d93319.ogg",
+   "dur": 1.98,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Quelqu’un répare la rue la nuit."
   },
   "f804f40c80ad": {
    "file": "f804f40c80ad.ogg",
@@ -2075,9 +5206,51 @@
   "f865c8e741bb": {
    "file": "f865c8e741bb.ogg",
    "dur": 1.12,
-   "speaker": "ines",
+   "speaker": "lou",
    "delivery": "spoken",
    "text": "Mettez-vous devant."
+  },
+  "f8737316b67e": {
+   "file": "f8737316b67e.ogg",
+   "dur": 1.9,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Pis toi ? T’as appris quoi, dernièrement ?"
+  },
+  "f8829672f024": {
+   "file": "f8829672f024.ogg",
+   "dur": 3.33,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Et sur la tranche, un bleu. Pas un bleu de magasin."
+  },
+  "f8bc6e4e8ce8": {
+   "file": "f8bc6e4e8ce8.ogg",
+   "dur": 1.2,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Bonsoir, monsieur Durand."
+  },
+  "f98a661c07ee": {
+   "file": "f98a661c07ee.ogg",
+   "dur": 2.23,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "C’est pas de la pitié. C’est de la soupe."
+  },
+  "fab295c0e531": {
+   "file": "fab295c0e531.ogg",
+   "dur": 1.31,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Pis la clé à rayons ?"
+  },
+  "fac1e42a394f": {
+   "file": "fac1e42a394f.ogg",
+   "dur": 6.14,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Il ne crie plus, grâce à monsieur Durand. Mais il se bloque toujours à mi-hauteur. Il n’a pas pensé à tout."
   },
   "faffa5a89558": {
    "file": "faffa5a89558.ogg",
@@ -2093,12 +5266,82 @@
    "delivery": "spoken",
    "text": "Vous lui avez fait quoi ? À la jambe."
   },
+  "fc805523e0ab": {
+   "file": "fc805523e0ab.ogg",
+   "dur": 1.4,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Vous devriez dormir."
+  },
+  "fcc057dccfb5": {
+   "file": "fcc057dccfb5.ogg",
+   "dur": 1.75,
+   "speaker": "hugo",
+   "delivery": "spoken",
+   "text": "Vous les avez vues arriver ?"
+  },
+  "fcf999aa629d": {
+   "file": "fcf999aa629d.ogg",
+   "dur": 2.77,
+   "speaker": "benali",
+   "delivery": "bark",
+   "text": "Doucement. La pâte n’est pas en retard."
+  },
+  "fd0baab0814c": {
+   "file": "fd0baab0814c.ogg",
+   "dur": 2.89,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "C’est une effraction avec de bonnes manières."
+  },
+  "fd4f3b28db6e": {
+   "file": "fd4f3b28db6e.ogg",
+   "dur": 4.27,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Je reviens tantôt. Je veux voir ce qu’il fait."
+  },
+  "fd8f0ed944e1": {
+   "file": "fd8f0ed944e1.ogg",
+   "dur": 2.22,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "Je sais c’est quoi. Je dis que c’est hot."
+  },
+  "fe3736fd5d2e": {
+   "file": "fe3736fd5d2e.ogg",
+   "dur": 4.49,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Quatre heures dix. La jambe est cassée. Le réveil, lui, va très bien."
+  },
+  "fe5fcf814404": {
+   "file": "fe5fcf814404.ogg",
+   "dur": 5.23,
+   "speaker": "jo",
+   "delivery": "spoken",
+   "text": "La plus petite peinture du mur. Pis la plus propre. Je dis ça de même."
+  },
+  "fe760cc2f030": {
+   "file": "fe760cc2f030.ogg",
+   "dur": 2.03,
+   "speaker": "sami",
+   "delivery": "spoken",
+   "text": "C’est pas moi. Moi, je casse."
+  },
   "fecb713feb56": {
    "file": "fecb713feb56.ogg",
    "dur": 0.73,
    "speaker": "hugo",
    "delivery": "spoken",
    "text": "J’ai vu."
+  },
+  "ff6b116f91e1": {
+   "file": "ff6b116f91e1.ogg",
+   "dur": 4.83,
+   "speaker": "odile",
+   "delivery": "spoken",
+   "text": "J’ai connu des enquêtes plus brillantes. Celle du monsieur de la pêche, par exemple."
   },
   "ff7e6362b41a": {
    "file": "ff7e6362b41a.ogg",
@@ -2113,6 +5356,13 @@
    "speaker": "odile",
    "delivery": "spoken",
    "text": "Avant toi ? Deux. Moi et mon père. Il avait écrit « tout » et il l’avait souligné. C’était un menteur."
+  },
+  "ff838c63e5af": {
+   "file": "ff838c63e5af.ogg",
+   "dur": 6.21,
+   "speaker": "hugo",
+   "delivery": "inner",
+   "text": "Il a raison. Des mois que j’entends son clic. Je lui ai même servi un thé. Je n’ai jamais levé les yeux."
   }
  }
 }

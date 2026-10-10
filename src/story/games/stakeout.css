@@ -1,0 +1,126 @@
+/* STAKEOUT: peering from the bench at 3 a.m. The night closes in at the edges, the attention frame is
+   four pencil corners, the streetlight is a sodium wash from its side, and the marks are pencil. */
+
+/* The night around the view; a held breath narrows it. */
+.ga-stakeout .so-night {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 78% 74% at 50% 47%, rgba(4, 6, 10, 0) 46%, rgba(4, 6, 10, 0.5) 78%, rgba(2, 3, 6, 0.86) 100%);
+  transition: opacity 0.4s ease;
+}
+.ga-stakeout .so-night::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 62% 58% at 50% 47%, rgba(2, 3, 6, 0) 50%, rgba(2, 3, 6, 0.55) 100%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.ga-stakeout.hold .so-night::after { opacity: 1; }
+
+/* The streetlight on Hugo's face: a warm wash from the lamp's side of the frame. */
+.ga-stakeout .so-light {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 55% 85% at 104% 22%, rgba(255, 196, 118, 0.62), rgba(255, 170, 90, 0.18) 45%, rgba(255, 170, 90, 0) 72%),
+    linear-gradient(90deg, rgba(255, 190, 110, 0) 55%, rgba(255, 190, 110, 0.16));
+  mix-blend-mode: screen;
+}
+.ga-stakeout.left .so-light { transform: scaleX(-1); }
+
+/* The attention frame: pale pencil corners, ochre while he is in it, red as he slips out. */
+.ga-stakeout .so-frame { position: absolute; left: 22%; right: 22%; top: 20%; bottom: 20%; }
+.ga-stakeout .so-frame i {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border: 3px solid rgba(239, 233, 218, 0.62);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 6px rgba(0, 0, 0, 0.5));
+  transition: border-color 0.25s ease;
+}
+.ga-stakeout .so-frame i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-radius: 5px 0 0 0; transform: rotate(-1deg); }
+.ga-stakeout .so-frame i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-radius: 0 4px 0 0; transform: rotate(1.5deg); }
+.ga-stakeout .so-frame i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 4px; transform: rotate(1deg); }
+.ga-stakeout .so-frame i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; transform: rotate(-1.2deg); }
+.ga-stakeout .so-frame.in i { border-color: rgba(217, 164, 65, 0.92); }
+.ga-stakeout .so-frame.warn i { border-color: rgba(194, 70, 52, 0.9); animation: so-throb 0.45s ease-in-out infinite alternate; }
+@keyframes so-throb { from { opacity: 1; } to { opacity: 0.45; } }
+
+/* Where he went: a pencil chevron on the frame's edge. */
+.ga-stakeout .so-arrow {
+  position: absolute;
+  right: calc(22% - 46px);
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  border-top: 3px solid rgba(239, 233, 218, 0.85);
+  border-right: 3px solid rgba(239, 233, 218, 0.85);
+  border-radius: 0 3px 0 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.8));
+  transition: opacity 0.25s ease;
+}
+.ga-stakeout .so-arrow.l { right: auto; left: calc(22% - 46px); transform: rotate(-135deg); }
+.ga-stakeout .so-arrow.on { opacity: 1; animation: so-nudge 0.7s ease-in-out infinite alternate; }
+.ga-stakeout .so-arrow.warn { border-color: #e2563f; }
+@keyframes so-nudge { from { translate: 0 0; } to { translate: 5px 0; } }
+.ga-stakeout .so-arrow.l.on { animation-name: so-nudge-l; }
+@keyframes so-nudge-l { from { translate: 0 0; } to { translate: -5px 0; } }
+
+/* The « ? » over his head while he looks round, signwriter red; « ! » once he has seen something. */
+.ga-stakeout .so-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--hand);
+  font-size: 46px;
+  line-height: 1;
+  color: #c9483a;
+  text-shadow: 0 0 2px rgba(255, 240, 220, 0.85), 0 2px 8px rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.ga-stakeout .so-mark.on { opacity: 1; }
+.ga-stakeout .so-mark.caught { color: #e2563f; font-size: 54px; }
+
+/* The freewheel's « clic », pencilled where the rear hub is, drifting up. */
+.ga-stakeout .so-clicks span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--hand);
+  font-size: 19px;
+  color: rgba(239, 233, 218, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(var(--tilt, 0deg));
+}
+.ga-stakeout .so-clicks span.go { animation: so-click 1.3s ease-out forwards; }
+@keyframes so-click {
+  0% { opacity: 0; translate: 0 4px; }
+  15% { opacity: 0.95; }
+  100% { opacity: 0; translate: 10px -34px; }
+}
+
+/* The two meters, top centre: how much of him you have seen, and the breath (only when it moves). */
+.ga-stakeout .so-meters {
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 34px;
+}
+.ga-stakeout .so-meters .ga-meter { position: relative; width: 180px; }
+.ga-stakeout .so-breath { opacity: 0.55; }
+.ga-stakeout .so-breath.on { opacity: 1; }
+.ga-stakeout.alert .so-breath .ga-label { color: #f2b8a8; }
+
+@media (max-width: 760px) {
+  .ga-stakeout .so-meters { gap: 16px; top: 64px; }
+  .ga-stakeout .so-meters .ga-meter { width: 130px; }
+}

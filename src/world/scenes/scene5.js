@@ -9,6 +9,7 @@ import { makeMotes } from './scene5/fx.js';
 import { makeHugoPanel } from './scene5/hugoPanel.js';
 import { paintNo14 } from './scene5/no14paint.js';
 import { buildJobs } from './scene5/jobs.js';
+import { layoutMural, openShop, makeR4Cast } from './scene5/r4wall.js';
 import { mem } from '../../story/memory.js';
 
 // Ch5 "The Wall": Rue des Tanneurs by day (Week 12), then golden hour.
@@ -28,6 +29,8 @@ import { mem } from '../../story/memory.js';
 //   cast.js      Odile, Sami (riding with hands and feet on the bike), the neighbours with their
 //                brushes / tin / camera, the run club
 //   fx.js        dust in the low sun
+//   r4wall.js    Revision 4 (SCRIPT-R4 §8): the seven-panel layout with M. Durand's key and Jo's swallow,
+//                CYCLES DURAND open by day, M. Durand (a chair beside Odile's) and Jo
 //
 // Layout (metres, the street runs along -Z):
 //   blind wall face   x = WALL_X (measured by raycast, contract -5.95), z -12 ... -32, h 8
@@ -866,7 +869,7 @@ function makeLineKit(wallX) {
 
 export async function buildScene5(ctx) {
   const T2 = ctx.L?.ch2 || {};
-  const T5 = ctx.L?.ch5 || {};
+  const T5 = ctx.L?.ch7 || {};
   let base = null;
   try {
     const r = await buildScene2(ctx, { variant: 'wall' });
@@ -913,6 +916,8 @@ export async function buildScene5(ctx) {
   group.updateMatrixWorld(true);
   const surfaceAt = (x, z) => groundY(group, x, z, 0.3);
 
+  // R4: room on the wall for M. Durand's key and Jo's swallow (scene2 cut it into seven equal slots).
+  const mural = local ? null : layoutMural(base.panels || []);
   // Panels -> colour controls (grey until the line passes under them).
   const panels = (base.panels || []).map((p) => panelControl(p));
   for (const p of panels) p.set(0);
@@ -935,8 +940,10 @@ export async function buildScene5(ctx) {
     facing: Math.atan2(wallX - chX, (LINE_Z0 + LINE_Z1) / 2 - chZ),
   };
 
-  // ---- PUNCTURES card in the bike shop window
-  const card = B.sign(T5.signs?.shopCard ?? 'PUNCTURES FIXED — ASK AT No. 14', 0.78, 0.3, {
+  // ---- CYCLES DURAND open by day (R4), then the PUNCTURES card in its window (three lines since R4)
+  const shopOpen = local ? null : openShop(extras, { signs: base.signs });
+  if (shopOpen) disposers.push(shopOpen.dispose);
+  const card = B.sign(T5.signs?.shopCard ?? 'PUNCTURES FIXED — ASK AT No. 14', 0.78, 0.42, {
     bg: '#efe8d6',
     fg: '#2b4f8a',
     italic: true,
@@ -944,7 +951,7 @@ export async function buildScene5(ctx) {
     font: '"Bradley Hand", "Segoe Print", "Noteworthy", cursive',
   });
   B.relabel(card, () => T5.signs?.shopCard ?? 'PUNCTURES FIXED — ASK AT No. 14');
-  card.position.set(5.84, 1.35, spots.shop[1] + 0.4);
+  card.position.set(5.84, 1.32, spots.shop[1] + 0.4);
   card.rotation.y = -Math.PI / 2;
   card.rotation.z = -0.03;
   extras.add(card);
@@ -980,6 +987,13 @@ export async function buildScene5(ctx) {
   samiRig.add(cast.sami.root); // reparented from extras (still disposed with the group)
   const rider = makeRider(cast.sami, samiBike, aimBone);
   const neighbourHome = cast.homes;
+  // R4: M. Durand beside Odile, Jo at her swallow.
+  const joMid = mural?.byId?.jo ? (mural.byId.jo.z0 + mural.byId.jo.z1) / 2 : null;
+  const r4 = await safe('R4 cast', () =>
+    makeR4Cast(ctx, extras, { odileChair: spots.odileChair, chairFacing: chair.facing, surfaceAt, wallX, joPanel: joMid, encreDoor: spots.joDoor }),
+  );
+  if (r4) Object.assign(spots, r4.spots);
+  const panelOf = (id) => panels.find((p) => p.id === id) || null;
 
   // ---- golden hour: the low sun comes down the street from No. 14's end, so the right-hand roofs
   // shade the wall; a warm, soft bounce off the facades opposite keeps the finished mural in the light.
@@ -1036,6 +1050,12 @@ export async function buildScene5(ctx) {
     chair,
     muralLadder: side?.muralLadder || null,
     neighbourHome,
+    // R4 (scene5/r4wall.js): null when the cast failed to build
+    durand: r4?.durand || null,
+    jo: r4?.jo || null,
+    durandSeat: r4?.durandSeat || null,
+    panelOf,
+    shopOpen,
     groundAt,
     surfaceAt,
     motes,

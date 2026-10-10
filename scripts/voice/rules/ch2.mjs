@@ -1,0 +1,63 @@
+// Voice rules and voice-direction context for Ch2 « Ne t’arrête jamais » (src/story/ch2.js).
+// Read by scripts/voice/extract-lines.mjs (rule syntax and kinds: see the table comment there). The chapter's
+// builder owns this file: add a rule for every new text key, or extract-lines reports it as UNCLASSIFIED.
+
+export const RULES = [
+  ['ch2.title', { kind: 'none', why: 'title' }],
+  ['ch2.objectives.**', { kind: 'none', why: 'objective' }],
+  ['ch2.prompts.**', { kind: 'none', why: 'prompt' }],
+  ['ch2.signs.**', { kind: 'none', why: 'sign' }],
+  ['ch2.lapStart', { kind: 'none', why: 'watch' }], ['ch2.lapEnd', { kind: 'none', why: 'watch' }],
+  ['ch2.start', { kind: 'think', use: 'd.thought(T.start, 5.5)' }],
+  ['ch2.pauseBuzz', { kind: 'none', why: 'watch' }],
+  ['ch2.pauseReply', { kind: 'think', use: 'd.thought(T.pauseReply, 1.6)' }],
+  ['ch2.ghost', { kind: 'say', use: 'd.say(T.ghost)' }],
+  ['ch2.ghostLinger', { kind: 'think', use: 'd.thought(T.ghostLinger, 5.5)' }],
+  ['ch2.billboard', { kind: 'say', use: 'look(..., T.billboard) -> d.say' }],
+  ['ch2.club', { kind: 'say', use: 'd.say(L.ch2.club)' }],
+  ['ch2.clubAfter', { kind: 'say', use: 'd.say(L.ch2.clubAfter)' }],
+  ['ch2.shop', { kind: 'say', use: 'look(..., T.shop) -> d.say' }],
+  ['ch2.bench', { kind: 'say', use: 'd.say(T.bench)' }],
+  ['ch2.arrivalLoop', { kind: 'say', use: 'd.say(T.arrivalLoop)' }],
+  ['ch2.arrival', { kind: 'say', use: 'd.say(T.arrival)' }],
+  ['ch2.hold.gauge', { kind: 'none', why: 'ui' }],
+  ['ch2.hold.barks', { kind: 'bark', use: 'holdStill: ui.thought(nextBark(), 2.4, {who})' }],
+  ['ch2.hold.buzz', { kind: 'none', why: 'watch' }],
+  ['ch2.hold.buzzReply', { kind: 'think', use: 'd.thought(H.buzzReply, 1.8)' }],
+  ['ch2.after', { kind: 'say', use: 'd.say(T.after)' }],
+  ['ch2.nameOne', { kind: 'menu', use: 'd.correct(T.nameOne)' }],
+  ['ch2.leaving', { kind: 'say', use: 'd.say(T.leaving)' }],
+  ['ch2.howFarLap', { kind: 'none', why: 'watch' }],
+  ['ch2.flare', { kind: 'none', why: 'data' }],
+  // Revision 4 (docs/SCRIPT-R4.md §3)
+  ['ch2.shutter', { kind: 'descend' }],
+  ['ch2.shutter.bark', { kind: 'bark', use: 'ch2.js shutterBeat: ui.thought(T.shutter.bark.text, 3.4, {who}) after the shriek' }],
+  ['ch2.shutter.thought', { kind: 'think', use: 'ch2.js shutterBeat: d.thought(T.shutter.thought, 5.5)' }],
+  ['ch2.jo.call', { kind: 'say', use: 'ch2.js joCameo: d.say(T.jo.call)' }],
+  ['ch2.jo.menu', { kind: 'choose', use: "ch2.js joCameo: d.choose(T.jo.menu) (who: Jo; option 0 -> remember('joSign'))" }],
+  ['ch2.jo.after', { kind: 'say', use: 'ch2.js joCameo: d.say(T.jo.after slices)' }],
+];
+
+// Longest-prefix match on the key path; to / mood can be per speaker. English: direction for the voice model.
+export const CONTEXT = [
+  ['ch2', { scene: 'Ch2, Rue des Tanneurs, late evening, rain; Hugo limps round the block in the boot', to: 'himself', mood: 'tired, dry' }],
+  ['ch2.start', { scene: 'Ch2: out of the building at last, three flights in a boot', to: 'himself', mood: 'exhausted wry tally' }],
+  ['ch2.pauseReply', { scene: 'Ch2: the watch offers to pause the walk', to: 'the watch', mood: 'curt refusal' }],
+  ['ch2.ghost', { scene: 'Ch2: a hand-painted ghost sign high on the brick', to: 'himself', mood: 'quiet admiration' }],
+  ['ch2.ghostLinger', { scene: 'Ch2: still standing under the ghost sign', to: 'himself', mood: 'soft, noticing' }],
+  ['ch2.billboard', { scene: 'Ch2: the STRIDE "NEVER STOP" billboard', to: 'himself', mood: 'bitter irony' }],
+  ['ch2.club', { scene: 'Ch2: the run club passes; Bastien jogs on the spot beside Hugo in the rain', to: { bastien: 'Hugo', hugo: 'Bastien' }, mood: { bastien: 'loud, cheerful, breathless, oblivious', hugo: 'flat, terse' } }],
+  ['ch2.clubAfter', { scene: 'Ch2: Bastien has run off', to: 'himself', mood: 'self-recognition, quiet' }],
+  ['ch2.shop', { scene: 'Ch2: the closed bike shop and its thank-you sign', to: 'himself', mood: 'bitter-funny' }],
+  ['ch2.bench', { scene: 'Ch2: sitting on a wet bench in the dark', to: 'himself', mood: 'self-mocking' }],
+  ['ch2.arrivalLoop', { scene: 'Ch2: back where he started after one block', to: 'himself', mood: 'deflated' }],
+  ['ch2.arrival', { scene: 'Ch2: Odile, on a creaking scaffold tower, calls down to the stranger in the boot', to: { odile: 'Hugo, from above', hugo: 'Odile, looking up' }, mood: { odile: 'brusque commands, no time for niceties', hugo: 'surprised' } }],
+  ['ch2.hold', { scene: 'Ch2: Hugo holds the scaffold still while Odile letters the fascia above', to: { odile: 'Hugo below, without looking down', hugo: 'the watch' }, mood: { odile: 'terse, irritable, absorbed in the brush', hugo: 'gritted, "not now"' } }],
+  ['ch2.after', { scene: 'Ch2: Odile has climbed down and sizes him up', to: { odile: 'Hugo', hugo: 'Odile' }, mood: { odile: 'dry, sardonic, testing', hugo: 'defensive' } }],
+  ['ch2.nameOne', { scene: 'Ch2: Odile shoots down his excuses', to: 'Hugo', mood: 'deadpan; the last reply is an offhand invitation' }],
+  ['ch2.shutter', { scene: 'Ch2: Mme Benali, the baker, drags her rusty shutter down with a long metal scream as Hugo limps past', to: { benali: 'Hugo, over the noise', hugo: 'himself' }, mood: { benali: 'apologetic, warm, raising her voice over the shriek', hugo: 'quiet memory, a little rueful' } }],
+  ['ch2.jo', { scene: 'Ch2: Jo, a tattoo artist from Québec, up a stepladder outside her new shop ENCRE FINE, holding a crooked sign; she calls down to the tall stranger in the walking boot', to: { jo: 'Hugo, below', hugo: 'Jo, up the ladder' }, mood: { jo: 'loud, warm, quick, cheerful, a laugh behind it; contradicts him for fun', hugo: 'dry, a little thrown' } }],
+  ['ch2.jo.call', { scene: 'Ch2: first line of a new character: Jo shouts down from her ladder at the man in the boot', to: 'Hugo, below', mood: 'loud, cheerful, from up a ladder' }],
+  ['ch2.jo.after', { scene: 'Ch2: Jo has fixed her sign with one slap of the palm; she teases him about the boot', to: { jo: 'Hugo', hugo: 'Jo' }, mood: { jo: '"Tiguidou" satisfied to herself; then teasing, a grin, not a correction on "Tu."', hugo: 'deadpan, defensive about the boot; the last thought quiet' } }],
+  ['ch2.leaving', { scene: 'Ch2: as he turns to go, Odile asks about the leg', to: { odile: 'Hugo', hugo: 'Odile' }, mood: { odile: 'blunt, curious', hugo: 'honest, quiet, a little ashamed' } }],
+];

@@ -4,6 +4,7 @@ import { rhythm } from './minigames.js';
 import { PRESETS } from '../render/Mood.js';
 import { buildScene3, LAYOUT } from '../world/scenes/scene3.js';
 import { runSound, CH3_SOUNDS } from './ch3sound.js';
+import { oldManPass } from '../world/scenes/scene3/oldman.js';
 
 // Ch3 "The Long Run" (flashback): three training blocks on the same dawn ring-road straight,
 // each a steady A/D cadence run with the weekly km climbing on the watch and a STRIDE "Rest"
@@ -78,6 +79,8 @@ async function run(ctx, d) {
   // Recorded sound (ch3sound.js): steps, breath to the cadence, the weeks' beds, the race crowd, the crack.
   const snd = runSound(ctx);
   snd.week(0, 2.5);
+  // R4 (SCRIPT-R4 §4): Week 31's wordless seed, built hidden now so nothing hitches mid-run.
+  const oldMan = oldManPass(ctx);
 
   // ------------------------------------------------------------ the motor (one per-frame loop)
   // Moves Hugo and the race pack every frame; the minigame only sets the target speed and rate.
@@ -206,6 +209,12 @@ async function run(ctx, d) {
     const said = new Set();
     await cadenceRun({
       onFrame: () => {
+        // R4, Week 31 (« SAMEDI, 4 H 47 »), between the 10 m and 30 m thoughts: the old man and his clicking
+        // black bike come the other way on the far kerb. No line, no hotspot; nobody turns their head.
+        if (i === 2 && !oldMan.on && !oldMan.started && M.dist >= 11) {
+          oldMan.started = true;
+          oldMan.start(p.z - 26);
+        }
         const k = clamp(M.dist / wk.length, 0, 1);
         ui.watch(fmtKm(wk.total * k), { tick: false });
         for (const m of marks) {

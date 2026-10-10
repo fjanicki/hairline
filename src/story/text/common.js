@@ -1,4 +1,6 @@
 // HAIRLINE: shared player-facing text (source: docs/DESIGN.md). Core-owned.
+// The game is French only: every string here is the text as shown. Style, typography and tu/vous
+// rules: docs/i18n-fr.md. Check with `node scripts/text-check.mjs`.
 //
 // Conventions (see DESIGN.md "Text layout"):
 //   - Arrays of line objects { who, text, inner?, voicemail? } go to d.say(lines).
@@ -15,9 +17,12 @@ export const NAMES = {
   bastien: 'Bastien',
   stride: 'STRIDE',
   dr: 'Dr Okafor',
-  ines: 'Ines',
-  marco: 'Marco',
+  lou: 'Lou',
+  gerard: 'Gérard',
   benali: 'Mme Benali',
+  jo: 'Jo',
+  durand: 'M. Durand',
+  oldman: 'Le vieux monsieur', // R4 Ch5: Durand before Hugo learns his name (voice and colour: durand)
 };
 
 export const hugo = (text) => ({ who: NAMES.hugo, text });
@@ -25,234 +30,262 @@ export const think = (text) => ({ who: NAMES.hugo, text, inner: true });
 export const odile = (text) => ({ who: NAMES.odile, text });
 export const sami = (text) => ({ who: NAMES.sami, text });
 export const bastien = (text) => ({ who: NAMES.bastien, text });
-export const ines = (text) => ({ who: NAMES.ines, text });
-export const marco = (text) => ({ who: NAMES.marco, text });
+export const lou = (text) => ({ who: NAMES.lou, text });
+export const gerard = (text) => ({ who: NAMES.gerard, text });
 export const dr = (text) => ({ who: NAMES.dr, text });
+export const jo = (text) => ({ who: NAMES.jo, text });
+export const durand = (text) => ({ who: NAMES.durand, text });
+export const oldman = (text) => ({ who: NAMES.oldman, text });
 /** Stage direction: no speaker, rendered italic via *...*. */
 export const stage = (text) => ({ who: null, text: `*${text}*` });
 
 // Canonical notebook entries. Chapters reference these keys, never literal strings.
 const ITEMS = {
-  ride: 'Ride.',
-  run: 'Run.',
-  hold: 'Hold still.',
-  sand: 'Sand with the grain.',
-  measure: 'Measure twice.',
-  grey: "Mix a grey that isn't sad.",
-  wheel: 'True a wheel.',
-  sign: 'Letter a sign.',
-  teach: 'Teech.', // Sami's hand, Sami's spelling. Hugo doesn't correct it.
-  rest: 'Rest.',
+  ride: 'Rouler.',
+  run: 'Courir.',
+  hold: 'Ne pas bouger.',
+  sand: 'Poncer dans le sens du fil.',
+  measure: 'Mesurer deux fois.',
+  grey: 'Faire un gris pas triste.',
+  wheel: 'Dévoiler une roue.',
+  sign: 'Peindre une enseigne.',
+  teach: 'Aprendre.', // Sami's hand, Sami's spelling. Hugo doesn't correct it.
+  rest: 'Se reposer.',
+  // Revision 4 (docs/SCRIPT-R4.md §8, the 15-line final list).
+  croissant: 'Rouler un croissant.', // + NOTES.moon
+  puncture: 'Trouver une crevaison.',
+  fineLine: 'Tracer un trait fin.', // + NOTES.badly, in Jo's hand
+  case: 'Mener une enquête.',
+  cook: 'Cuisiner.', // Jo writes the whole line, + NOTES.learning
 };
+// Small notes written after an entry (ui.notebook.annotate(text, note, { hand })).
+const NOTES = {
+  moon: '(lune)',
+  badly: '(mal)',
+  learning: '(en cours)',
+};
+
+// Notebook seeds per chapter (SCRIPT-R4 §10.4): what Ch4 to Ch6 wrote, for a chapter started directly.
+const SEED5 = [
+  { text: ITEMS.ride, struck: true },
+  { text: ITEMS.run, struck: true },
+  { text: ITEMS.hold },
+  { text: ITEMS.sand },
+  { text: ITEMS.measure },
+  { text: ITEMS.grey },
+];
+const SEED6 = [...SEED5, { text: ITEMS.croissant, note: NOTES.moon }, { text: ITEMS.puncture }, { text: ITEMS.wheel }];
+const SEED7 = [...SEED6, { text: ITEMS.sign }, { text: ITEMS.fineLine, note: NOTES.badly, noteHand: 'jo' }, { text: ITEMS.case }];
 
 export const common = {
   names: NAMES,
 
   title: {
     name: 'HAIRLINE',
-    tagline: 'The crack was thinner than a hair. It went all the way through.',
-    begin: 'Click to begin',
+    tagline: 'La fêlure était plus fine qu’un cheveu. Elle allait jusqu’au bout.',
+    begin: 'Cliquer pour commencer',
     // Shown instead of `begin` when there is saved progress ({n} chapter number, {name} its title).
-    continue: 'Click to continue · Chapter {n}: {name}',
-    newGame: 'New game',
+    continue: 'Cliquer pour reprendre · Chapitre {n} : {name}',
+    newGame: 'Nouvelle partie',
     // Keys are tokens ({KeyW}, {Space}...), resolved for the player's layout (docs/API.md, i18n).
     controls: [
-      ['{KeyW}{KeyA}{KeyS}{KeyD} / {Arrows}', 'Move / steady a brush'],
-      ['Mouse', 'Look around · {KeyR} re-centre'],
-      ['{Shift}', 'Try to jog'],
-      ['{KeyE}', 'Interact / advance'],
-      ['{Space}', 'Hold the tape · pluck a spoke'],
-      ['{KeyA} / {KeyD}', 'Keep a rhythm'],
-      ['1 – 5', 'Choices · paint tins'],
-      ['{KeyM}', 'Mute'],
+      ['{KeyW}{KeyA}{KeyS}{KeyD} / {Arrows}', 'Se déplacer / guider le pinceau'],
+      ['Souris', 'Regarder autour · {KeyR} recentrer'],
+      ['{Shift}', 'Essayer de trottiner'],
+      ['{KeyE}', 'Interagir / continuer'],
+      ['{Tab}', 'La poche · {Escape} ranger l’objet'],
+      ['{Space}', 'Tenir le mètre · pincer un rayon'],
+      ['{KeyA} / {KeyD}', 'Garder le rythme'],
+      ['1 – 5', 'Choix · pots de peinture'],
+      ['{KeyM}', 'Couper le son'],
       ['{Escape}', 'Pause'],
     ],
   },
 
   // Names of the non-letter key tokens ({Space}...). Letter tokens ({KeyA}) follow the keyboard layout.
-  keyNames: { Space: 'Space', Shift: 'Shift', Escape: 'Esc', Enter: 'Enter', Arrows: 'Arrows' },
+  keyNames: { Space: 'Espace', Shift: 'Maj', Escape: 'Échap', Enter: 'Entrée', Arrows: 'Flèches' },
 
-  loading: 'Loading',
-  noWebGL: 'This demo needs WebGL.',
-  contextLost: 'The graphics context was lost.',
-  reload: 'Reload',
+  loading: 'Chargement',
+  noWebGL: 'Cette démo nécessite WebGL.',
+  contextLost: 'Le contexte graphique a été perdu.',
+  reload: 'Recharger',
   mobile: {
-    text: 'HAIRLINE is designed for a keyboard and a larger screen.',
-    continue: 'Continue anyway',
+    text: 'HAIRLINE se joue au clavier, sur un écran plus grand.',
+    continue: 'Continuer quand même',
   },
   pause: {
-    title: 'Paused',
-    resume: 'Resume',
-    restart: 'Restart chapter',
+    title: 'Pause',
+    resume: 'Reprendre',
+    restart: 'Recommencer le chapitre',
     options: 'Options',
     escKey: '{Escape}', // footer: '{escKey} · {muteHint}'
-    muteHint: '{KeyM} to mute',
-    quality: 'Graphics',
-    tiers: { low: 'Low', medium: 'Medium', high: 'High' },
+    muteHint: '{KeyM} pour couper le son',
+    quality: 'Graphismes',
+    tiers: { low: 'Bas', medium: 'Moyen', high: 'Élevé' },
   },
-  // Options panel (title screen and pause menu). Language names are native (i18n.js LANGS).
+  // Options panel (title screen and pause menu): voices, then graphics (pause.quality / pause.tiers).
   options: {
     title: 'Options',
-    language: 'Language',
-    // Voices row: French voice-over only; in English the row is greyed with the note.
-    voices: 'Voices',
-    voicesOn: 'On',
-    voicesOff: 'Off',
-    voicesNote: 'French only',
-    back: 'Back',
+    voices: 'Voix',
+    voicesOn: 'Activées',
+    voicesOff: 'Désactivées',
+    back: 'Retour',
   },
 
   // Small HUD bits ({n} is filled in by the code).
   ui: {
-    chapter: 'CHAPTER {n}',
-    pain: 'PAIN',
-    voicemail: 'VOICEMAIL',
-    space: 'SPACE',
-    distance: '{n} m',
-    interact: 'Interact',
+    chapter: 'CHAPITRE {n}',
+    pain: 'DOULEUR',
+    voicemail: 'MESSAGE VOCAL',
+    space: 'ESPACE',
+    distance: '{n} m',
+    interact: 'Interagir',
     next: '{KeyE} ▸', // dialogue / card advance cue
-    muted: 'Muted',
-    soundOn: 'Sound on',
+    muted: 'Son coupé',
+    soundOn: 'Son activé',
   },
 
   opening: [
-    'Hugo Revel was a professional cyclist for twelve years.',
-    "He never won a race. That wasn't his job.",
-    'When it ended, he took up running. Then he kept going.',
-    'Last week, he ran 212.4 kilometres.',
-    'At kilometre 31 on Sunday, his left shin cracked along a line thinner than a hair.',
-    'He finished the race.',
-    'This week: 0.0.',
+    'Hugo Revel a été cycliste professionnel pendant douze ans.',
+    'Il n’a jamais gagné une course. Ce n’était pas son travail.',
+    'Quand ça s’est arrêté, il s’est mis à courir. Et il ne s’est plus arrêté.',
+    'La semaine dernière, il a couru 212,4 kilomètres.',
+    'Dimanche, au kilomètre 31, son tibia gauche s’est fêlé le long d’un trait plus fin qu’un cheveu.',
+    'Il est allé au bout de la course.',
+    'Cette semaine : 0,0.',
   ],
 
   // Player stumble lines (ui.thought). `first` is only true on boot day 4 (Ch1/Ch2);
-  // Ch4/Ch5 set player.firstStumbleDone = true so they draw from the bag.
+  // Ch4 to Ch7 set player.firstStumbleDone = true so they draw from the bag.
   stumble: {
-    first: 'Twelve weeks. This is day four.',
+    first: 'Douze semaines. On en est au jour quatre.',
     bag: [
-      "Bone doesn't negotiate.",
-      'This boot weighs more than my race wheels.',
-      'Thinner than a hair. Still wins.',
-      "Twelve weeks is eighty-four days. I've done the maths. Twice.",
-      'I know. I *know*.',
+      'L’os ne négocie pas.',
+      'Cette botte pèse plus lourd que mes roues carbone.',
+      'Plus fin qu’un cheveu. Et c’est lui qui gagne.',
+      'Douze semaines, ça fait quatre-vingt-quatre jours. J’ai fait le calcul. Deux fois.',
+      'Je sais. Je *sais*.',
     ],
   },
 
   hints: {
-    jog: 'Hold {Shift} to jog',
-    rhythm: 'Alternate {KeyA} and {KeyD}. Steady, not fast.',
-    sand: 'Alternate {KeyA} and {KeyD}. Steady.',
-    steer: 'The brush follows the chalk. {KeyW}{KeyA}{KeyS}{KeyD}: small corrections only',
-    steerLine: '{KeyW} / {KeyS} to steady the brush',
-    still: "Don't touch anything",
+    jog: 'Maintenir {Shift} pour trottiner',
+    rhythm: 'Alterner {KeyA} et {KeyD}. Régulier, pas rapide.',
+    sand: 'Alterner {KeyA} et {KeyD}. Régulier.',
+    steer: 'Le pinceau suit la craie. {KeyW}{KeyA}{KeyS}{KeyD} : petites corrections seulement',
+    steerLine: '{KeyW} / {KeyS} pour stabiliser le pinceau',
+    still: 'Ne toucher à rien',
     space: '{Space}',
   },
 
   // GPS watch HUD (ui.watch / ui.watchBuzz). Docked bottom-right.
   watch: {
     unit: 'km',
-    zero: '0.0 km',
+    zero: '0,0 km',
     labels: {
-      week: 'THIS WEEK',
-      run: 'RUN · THIS WEEK', // Ch4/Ch5: true while he walks everywhere
-      walk: 'WALK',
-      race: 'RACE',
-      last: 'LAST WEEK',
+      week: 'CETTE SEMAINE',
+      run: 'COURSE · SEMAINE', // Ch4 to Ch7: true while he walks everywhere
+      walk: 'MARCHE',
+      race: 'MARATHON',
+      last: 'SEM. PRÉC.',
     },
-    // Seeded by the Director at each chapter start (index = chapter 0..4). null = hidden.
+    // Seeded by the Director at each chapter start (index = chapter 0..6, SCRIPT-R4 §10.3). null = hidden.
     atChapter: [
       null, // Ch1: appears when he takes it off the charger
-      { face: '0.32 km', label: 'WALK', lap: '38:40' },
-      { face: '0.0 km', label: 'THIS WEEK', lap: null },
-      { face: '0.0 km', label: 'RUN · THIS WEEK', lap: null },
-      { face: '0.0 km', label: 'RUN · THIS WEEK', lap: null },
+      { face: '0,32 km', label: 'MARCHE', lap: '38:40' },
+      { face: '0,0 km', label: 'CETTE SEMAINE', lap: null },
+      { face: '0,0 km', label: 'COURSE · SEMAINE', lap: null }, // Ch4
+      { face: '0,0 km', label: 'COURSE · SEMAINE', lap: null }, // Ch5
+      { face: '0,0 km', label: 'COURSE · SEMAINE', lap: null }, // Ch6
+      { face: '0,0 km', label: 'COURSE · SEMAINE', lap: null }, // Ch7: stays 0,0 until the nail
     ],
   },
 
-  // "WHAT I CAN DO" notebook HUD (ui.notebook). Docked top-right.
+  // « CE QUE JE SAIS FAIRE » notebook HUD (ui.notebook). Docked top-right.
   notebook: {
-    heading: 'WHAT I CAN DO',
+    heading: 'CE QUE JE SAIS FAIRE',
     items: ITEMS,
-    someSundays: '(some Sundays)',
-    // Seeded by the Director at each chapter start. null = hidden (created in Ch4 Day 5).
-    atChapter: [
-      null,
-      null,
-      null,
-      null,
-      [
-        { text: ITEMS.ride, struck: true },
-        { text: ITEMS.run, struck: true },
-        { text: ITEMS.hold },
-        { text: ITEMS.sand },
-        { text: ITEMS.measure },
-        { text: ITEMS.grey },
-        { text: ITEMS.wheel },
-        { text: ITEMS.sign },
-      ],
-    ],
-    // For reference / verification: the list as it stands at the very end.
+    notes: NOTES,
+    someSundays: '(certains dimanches)',
+    // Seeded by the Director at each chapter start (SCRIPT-R4 §10.4). null = hidden (created in Ch4 Day 5).
+    // Entries: { text, struck?, note?, hand?: 'hugo' | 'sami' | 'jo', noteHand? }.
+    atChapter: [null, null, null, null, SEED5, SEED6, SEED7],
+    // For reference / verification: the list as it stands at the very end (SCRIPT-R4 §8, 15 lines).
     final: [
       { text: ITEMS.ride },
-      { text: ITEMS.run, note: '(some Sundays)' },
+      { text: ITEMS.run, note: '(certains dimanches)' },
       { text: ITEMS.hold },
       { text: ITEMS.sand },
       { text: ITEMS.measure },
       { text: ITEMS.grey },
+      { text: ITEMS.croissant, note: NOTES.moon },
+      { text: ITEMS.puncture },
       { text: ITEMS.wheel },
       { text: ITEMS.sign },
+      { text: ITEMS.fineLine, note: NOTES.badly, noteHand: 'jo' },
+      { text: ITEMS.case },
       { text: ITEMS.teach, hand: 'sami' },
+      { text: ITEMS.cook, note: NOTES.learning, hand: 'jo' },
       { text: ITEMS.rest },
     ],
   },
 
   ending: {
-    // The closing card: 7 lines chosen from memory by story/ending.js (endingLines). `lines` is the
-    // default selection (no panel, Sami right first time, no jobs, the grey his own).
+    // The closing card: 9 lines chosen from memory by story/ending.js (endingLines, SCRIPT-R4 §8.9). `lines` is
+    // the default selection (no panel, Sami right first time, no jobs, the grey his own, Jo cool).
     cards: {
       street: {
-        plain: 'Rue des Tanneurs never got another billboard.',
-        wheel: "Rue des Tanneurs never got another billboard. Where it was, there's a small wheel. Sami says it's his.",
-        door: "Rue des Tanneurs never got another billboard. Where it was, there's a small grey door. People knock on the real one.",
-        hand: 'Rue des Tanneurs never got another billboard. Where it was, a small hand holds a brush very still.',
+        plain: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire.',
+        wheel: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. Là où il était, il y a une petite roue. Sami dit que c’est la sienne.',
+        door: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. Là où il était, il y a une petite porte grise. Les gens frappent à la vraie.',
+        hand: 'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire. Là où il était, une petite main tient un pinceau, parfaitement immobile.',
       },
       sami: {
-        first: "Sami Haddad fixes punctures. Two euros, or free if you'll learn.",
-        second: "Sami Haddad fixes punctures. Two euros, or free if you'll learn. He lets you get it wrong first.",
+        first: 'Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre.',
+        second: 'Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre. Il laisse d’abord les gens se tromper.',
       },
       job: {
-        board: "Marco's board says KEBAB again, by hand. He added GREAT himself. It's a bit drunk.",
-        wheel: "Ines rides a wheel that doesn't rub. She signs her work now. Small, in the corner.",
-        shutter: "Mme Benali's shutter goes up at six without a sound. She misses the argument.",
+        board: 'Le chevalet de Gérard affiche de nouveau KEBAB, à la main. Il a ajouté EXCELLENT lui-même. Les lettres sont un peu pompettes.',
+        wheel: 'Lou roule sur une roue qui ne frotte plus. Elle signe son travail, maintenant. En petit, dans le coin.',
+        // R4: Durand took the scream; Hugo's job takes the jam.
+        shutter: 'Le rideau de fer de Mme Benali monte d’une traite, à six heures. Il ne crie plus, il ne coince plus. La dispute lui manque.',
       },
       grey: {
-        own: "No. 14's door is a grey that's been somewhere. He never wrote the recipe down.",
-        odile: "No. 14's door is a grey Odile finished. He says he mixed it. She lets him.",
+        own: 'La porte du N° 14 est d’un gris qui a vécu. Il n’a jamais noté la recette.',
+        odile: 'La porte du N° 14 est d’un gris qu’Odile a rattrapé. Il dit que c’est lui qui l’a fait. Elle le laisse dire.',
       },
       radio: {
-        fixed: "Odile's radio gets four stations now. She listens to the fishing one.",
-        one: "Odile's radio still gets one station. She's learned a great deal about fishing.",
+        fixed: 'La radio d’Odile capte quatre stations, maintenant. Elle écoute celle qui parle de pêche.',
+        one: 'La radio d’Odile ne capte toujours qu’une station. Elle a beaucoup appris sur la pêche.',
       },
-      ask: 'Odile Marchal\'s list got one line longer that year. It says "Ask."',
-      runs: 'Hugo Revel runs some Sundays. Nobody knows how far, including him.',
-      watch: "His watch hangs on a nail above the workbench. It thinks he's been resting for a year.",
+      durand: 'Albert Durand a appris à faire la grasse matinée. Il ouvre à dix heures, maintenant. Sami arrive à dix heures cinq.',
+      // Jo's warmth (memory.js joWarmth(), warm >= 3). Warm closes echo chains 1 and 2; nobody explains it.
+      jo: {
+        warm: 'Jo a tatoué un trait sur le tibia gauche d’Hugo, juste par-dessus la fêlure. Plus fin qu’un cheveu. Il va jusqu’au bout.',
+        cool: 'Hugo doit toujours un souper à Jo. Il en est à sa quatrième sauce. Elle dit que la cinquième sera la bonne.',
+      },
+      ask: 'Cette année-là, la liste d’Odile Marchal s’est allongée d’une ligne. Il y est écrit : « Demander. »',
+      runs: 'Hugo Revel court certains dimanches. Personne ne sait jusqu’où, pas même lui.',
+      watch: 'Sa montre pend à un clou au-dessus de l’établi. Elle croit qu’il se repose depuis un an.',
     },
     lines: [
-      'Rue des Tanneurs never got another billboard.',
-      "Sami Haddad fixes punctures. Two euros, or free if you'll learn.",
-      "No. 14's door is a grey that's been somewhere. He never wrote the recipe down.",
-      "Odile's radio still gets one station. She's learned a great deal about fishing.",
-      'Odile Marchal\'s list got one line longer that year. It says "Ask."',
-      'Hugo Revel runs some Sundays. Nobody knows how far, including him.',
-      "His watch hangs on a nail above the workbench. It thinks he's been resting for a year.",
+      'La rue des Tanneurs n’a plus jamais eu de panneau publicitaire.',
+      'Sami Haddad répare les crevaisons. Deux euros, ou gratuit pour ceux qui veulent apprendre.',
+      'Albert Durand a appris à faire la grasse matinée. Il ouvre à dix heures, maintenant. Sami arrive à dix heures cinq.',
+      'La porte du N° 14 est d’un gris qui a vécu. Il n’a jamais noté la recette.',
+      'La radio d’Odile ne capte toujours qu’une station. Elle a beaucoup appris sur la pêche.',
+      'Cette année-là, la liste d’Odile Marchal s’est allongée d’une ligne. Il y est écrit : « Demander. »',
+      'Hugo doit toujours un souper à Jo. Il en est à sa quatrième sauce. Elle dit que la cinquième sera la bonne.',
+      'Hugo Revel court certains dimanches. Personne ne sait jusqu’où, pas même lui.',
+      'Sa montre pend à un clou au-dessus de l’établi. Elle croit qu’il se repose depuis un an.',
     ],
-    bigs: ['212.4 km'],
+    bigs: ['212,4 km'],
     hairline: true,
     hairlineColor: '#d9a441',
-    thanks: 'Thank you for playing.',
-    playAgain: 'Play again',
+    thanks: 'Merci d’avoir joué.',
+    playAgain: 'Rejouer',
     credits:
-      'Characters and animations: Quaternius. Props, materials and HDRIs: Poly Haven, ambientCG. Street pieces and footsteps: Kenney. Music and ambience: OpenGameArt. These are all CC0. French voices: Kyutai TTS (kyutai/tts-1.6b-en_fr, CC BY 4.0), with voices from CML-TTS (CC BY 4.0) and a voice donation (CC0).',
+      'Personnages et animations : Quaternius. Accessoires, matériaux et HDRI : Poly Haven, ambientCG. Éléments de rue et bruits de pas : Kenney. Musique et ambiances : OpenGameArt. Tous en CC0. Voix françaises : Kyutai TTS (kyutai/tts-1.6b-en_fr, CC BY 4.0), avec des voix de CML-TTS (CC BY 4.0) et d’un don de voix (CC0). Voix de Jo : Chatterbox (Resemble AI, MIT), d’après une voix de Mozilla Common Voice (CC0).',
   },
 };
 

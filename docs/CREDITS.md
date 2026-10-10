@@ -4,8 +4,8 @@ Every third-party file the game uses, where it comes from and under which licenc
 is CC0** (public domain dedication): no attribution is required and commercial use and
 redistribution are allowed. The game credits the sources anyway, here, in the README and on the
 end card. Exception: the French voice-over is CC BY 4.0 (Kyutai TTS, CML-TTS voices; see
-[French voices](#french-voices-kyutai-tts-cc-by-40-cml-tts-cc-by-40-voice-donation-cc0)), credited
-on the end card. There is no Mixamo, login-walled or paid asset in the build.
+[French voices](#french-voices-kyutai-tts-cc-by-40-cml-tts-cc-by-40-chatterbox-mit-common-voice-and-voice-donation-cc0)),
+credited on the end card. There is no Mixamo, login-walled or paid asset in the build.
 
 None of these files are in git. `npm run setup:assets` (`bash scripts/fetch-assets.sh`)
 downloads them from the URLs below into `.cache/dl` and copies only the files the game uses into
@@ -149,9 +149,9 @@ ours is Joth's, at the page below.
 | `audio/rain.ogg` (file `2.ogg` of the zip) | "Rain (loopable)", Ylmir | https://opengameart.org/content/rain-loopable (CC0) | https://opengameart.org/sites/default/files/Rain%20OGG.zip |
 | `audio/crowd.ogg` (the Ch3 race) | "Crowd Shouting/Speaking Ambience", StarNinjas | https://opengameart.org/content/crowd-shoutingspeaking-ambience (CC0; the author asks for a link to their profile, given here as a courtesy) | https://opengameart.org/sites/default/files/crowd_shouting_0.ogg |
 
-## French voices: Kyutai TTS (CC BY 4.0), CML-TTS (CC BY 4.0), voice donation (CC0)
+## French voices: Kyutai TTS (CC BY 4.0), CML-TTS (CC BY 4.0), Chatterbox (MIT), Common Voice and voice donation (CC0)
 
-The French voice-over (`public/assets/voice/fr/*.ogg`, 301 clips, played only in French with
+The French voice-over (`public/assets/voice/fr/*.ogg`, 763 clips, played only in French with
 Options > Voices on) is synthesised; how it is made and checked is in `docs/voice.md`. Unlike the
 rest of this page these are **CC BY 4.0** items, so the credit below (and on the end card) is required.
 
@@ -159,8 +159,16 @@ rest of this page these are **CC BY 4.0** items, so the credit below (and on the
 |---|---|
 | Kyutai TTS 1.6B en_fr weights ([`kyutai/tts-1.6b-en_fr`](https://huggingface.co/kyutai/tts-1.6b-en_fr)) | CC BY 4.0 (credit: Kyutai) |
 | moshi-mlx 0.3.0 / moshi (inference code, not shipped) | MIT / Apache-2.0 |
-| Voice embeddings `cml-tts/fr/*` in [`kyutai/tts-voices`](https://huggingface.co/kyutai/tts-voices) (12 of the 13 voices) | CC BY 4.0 (CML-TTS, derived from LibriVox public-domain readings; credit: the CML-TTS authors) |
+| Voice embeddings `cml-tts/fr/*` in [`kyutai/tts-voices`](https://huggingface.co/kyutai/tts-voices) (13 of the 14 Kyutai voices) | CC BY 4.0 (CML-TTS, derived from LibriVox public-domain readings; credit: the CML-TTS authors) |
 | Voice embedding `voice-donations/Erick_enhanced` (Dr Okafor) | CC0 |
+
+**Jo's voice** (her 100 clips) is not Kyutai: it is a zero-shot clone made with Chatterbox Multilingual.
+
+| Item | Licence |
+|---|---|
+| [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) (Resemble AI; code and weights [`ResembleAI/chatterbox`](https://huggingface.co/ResembleAI/chatterbox), T3 `t3_mtl23ls_v3`; not shipped) | MIT. Every output carries Resemble's inaudible Perth watermark, so Jo's clips do too. |
+| Reference voice: an anonymous contributor to [Mozilla Common Voice](https://commonvoice.mozilla.org) French (accent « Français du Canada »), 2 clips joined to 15 s; kept in the repo as `scripts/voice/refs/jo.wav` | CC0 (no attribution required; credited « Mozilla Common Voice » as a courtesy; the contributor stays anonymous) |
+| [Resemble Enhance](https://github.com/resemble-ai/resemble-enhance) (denoise + enhance of that reference before cloning; not shipped) | MIT |
 
 QA-only tools (nothing of them is in the clips) are listed in `docs/voice.md` section 9.
 
@@ -170,3 +178,30 @@ Written for this project. [three.js](https://threejs.org) r186 is MIT-licensed; 
 The asset build scripts use [glTF-Transform](https://gltf-transform.dev) (MIT) and
 [sharp](https://sharp.pixelplumbing.com) (Apache-2.0) as dev tools only; neither ships.
 
+
+## Revision 4 characters and props: made for this project
+
+Jo's tattoo sleeves (`src/characters/tattoo.js`), the rings, pencil and flat cap
+(`src/characters/accessories.js`) and the Revision 4 props (`src/world/props/r4.js`: the evidence
+board, bucket, inner tube, kebab counter, thermos, keys, phone, tattoo machine, the ENCRE FINE sign
+and the flash sheets) are drawn procedurally in code at run time. No third-party file was added
+for them; Jo and M. Durand are built from the Quaternius parts above.
+
+## Sound effects (`public/assets/sfx/`)
+
+Built by `scripts/assets/sfx.sh` and `scripts/sfx/build.py`; every file, its source and its licence is listed in
+the catalogue of `docs/assets/sfx.md`. **Not all of this group is CC0** (see the last two rows): those two sources were
+chosen when the project was personal and unpublished, and need a decision now that the repository is public
+(replace them, or license the BBC files).
+
+| Source | Licence | Used for |
+|---|---|---|
+| Kenney [RPG Audio](https://kenney.nl/assets/rpg-audio) and [Impact Sounds](https://kenney.nl/assets/impact-sounds) | CC0 | pages, notebook, creaks, tocks, clinks, tins, wood steps, thuds; R4: knife, coins, cloth, door slam |
+| OpenGameArt: ["202 More Sound Effects"](https://opengameart.org/content/202-more-sound-effects) (owlishmedia), ["Pencil Sounds"](https://opengameart.org/content/pencil-sounds) (antumdeluge), ["Breathing Tired"](https://opengameart.org/content/breathing-tired) (mikeask) | CC0 | Velcro, camera shutter, pencil and eraser, breathing |
+| Synthesised for this project (`scripts/sfx/synth.py`, Revision 4) | CC0 (own work, like the code) | the freewheel click, bubbles, tattoo machine, oiled shutter, dough roll, neon flicker, phone and watch buzzes, chimes, stopwatch, air hiss, cork pin, stamp |
+| [BBC Sound Effects](https://sound-effects.bbcrewind.co.uk) archive (35 recordings, Revision 3) | RemArc licence: personal, educational and research use only. © BBC | hammer, rain, fridge, strip light, TV bed, doors, night streets, neon hum, running feet, drips, brush, birds, crowd, sanding, plane, tools, kettle, radio static, garage door, SLR shutter, bicycle bell and passes |
+| Generated locally with [TangoFlux](https://huggingface.co/declare-lab/TangoFlux) (Revision 3 and 4 sets marked "generated" in the catalogue) | Non-commercial research use (Stability AI Community License + WavCaps academic terms) | the sounds no recording covered (R4: shutter scream, bakery, dough slap, kebab counter, keys and locks, water, pump, pours, felt-tip, night street, breath) |
+
+Required notice for the generated set: "This Stability AI Model is licensed under the Stability AI Community
+License, Copyright © Stability AI Ltd. All Rights Reserved." and "Powered by Stability AI". The text encoder
+(`google/flan-t5-large`) is Apache-2.0; LAION CLAP (Apache-2.0) only ranked the takes.

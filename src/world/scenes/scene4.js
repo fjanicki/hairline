@@ -12,6 +12,9 @@ import { rigBike } from '../bikeRig.js';
 import { buildMixer } from './scene4/mixer.js';
 import { rigTape } from './scene4/tapeRig.js';
 
+// R4: the pegboard's lower row between the tape and spoke key outlines (scene4/textures.js PEG_TOOLS; world).
+const PEG_SPOT = { x: -2.68, y: 1.43 };
+
 // Ch4 "Measure Twice": Odile's repair workshop, ground floor of No. 14 Rue des Tanneurs.
 // A 9 x 6 m dollhouse room (the +Z wall is omitted so the follow camera sits outside it; an
 // invisible ceiling and fourth wall cast shadow so daylight only gets in under the garage door).
@@ -669,7 +672,7 @@ function buildBoard(surf) {
   };
   redraw();
 
-  const color = L.ch4.week7.lettering.paint || SIGN_RED;
+  const color = L.ch6.week7.lettering.paint || SIGN_RED;
   let last = null;
   const seg = (a, b) => {
     // Main body + two thin bristle tracks, slightly offset.
@@ -1022,7 +1025,7 @@ export async function buildScene4(ctx) {
       hugoFrame: [DOOR_X, -2.32],
       hugoBench: [EASEL.x, -1.75],
       hugoBikeStand: [STAND.x - 0.55, STAND.z - 0.55],
-      hugoSign: [2.45, -2.0],
+      hugoSign: [2.45, -1.88], // inside the "behind the trestles" rectangle (z ≥ −1.9), so he can walk off after the beat
       odileSign: [1.6, -1.35],
       odileTrestle: [1.75, -1.2],
       odileBench: [EASEL.x, -1.78],
@@ -1047,6 +1050,9 @@ export async function buildScene4(ctx) {
       bikeTalk: { pos: [-0.9, 1.75, 2.9], look: [-2.6, 0.95, 1.0], fov: 48 },
       bench: { pos: [0.45, 1.7, -0.35], look: [EASEL.x + 0.2, 1.05, -2.35], fov: 46 },
       hungDoor: { pos: [1.9, 1.7, 0.2], look: [DOOR_X - 0.1, 1.3, BACK_Z], fov: 44 },
+      // R4: the pegboard's lower row, the tape's outline and the spoke key's beside it (Ch4 tapeTake / hook;
+      // Ch5 the key back). From the vice side, so Hugo at spots.pegboard stays out of frame.
+      pegboard: { pos: [-1.72, 1.68, -2.02], look: [PEG_SPOT.x, PEG_SPOT.y, BACK_Z], fov: 34 },
       lettering() {
         const c = boardCenter();
         return { pos: [c.x, c.y + 0.03, c.z + 0.88], look: [c.x, c.y, c.z], fov: 30 };
@@ -1079,6 +1085,16 @@ export async function buildScene4(ctx) {
     takeSandpaper() {
       props.sandpaper.visible = false;
     },
+    /** R4: Odile's tape on its pegboard outline (Ch4 Day 5-8: true; taken on Day 8). Every build starts without. */
+    setPegTape(on) {
+      props.pegTape.visible = !!on;
+    },
+    /** R4: the spoke key on its outline (missing in Ch4: the hook; Ch5 hangs it back / takes it / hangs it back). */
+    setSpokeKey(on) {
+      props.spokeKey.visible = !!on;
+    },
+    /** R4: world points of the two outlines (camera targets, sounds). */
+    peg: { tape: props.pegTape.getWorldPosition(new THREE.Vector3()), spokeKey: props.spokeKey.getWorldPosition(new THREE.Vector3()) },
     /** Move Odile's stool: [x, z] and a yaw, or null for its home at the end of the bench. */
     setStool(pos = null, rotY = 0.4) {
       const s = props.stool;

@@ -21,10 +21,13 @@ ASR_REPO = "mlx-community/whisper-large-v3-mlx"
 def norm(t: str) -> str:
     t = re.sub(r"\*[^*]*\*", " ", t)
     t = t.replace("’", "'").replace("‘", "'").replace("…", " ").replace("œ", "oe").replace("æ", "ae")
+    t = re.sub(r"\bdix-neuf cents?\b", "mille neuf cent", t, flags=re.I)  # a year said "dix-neuf cent", written 1971
+    t = re.sub(r"(\d+)\s*h\s*30\b", lambda m: m.group(1) + " heures et demie", t)  # "8h30" for "huit heures et demie"
     t = re.sub(r"(\d+)\s*h\s*(\d+)", lambda m: m.group(1) + " heures " + m.group(2), t)
     t = re.sub(r"(\d)\s*km\b", lambda m: m.group(1) + " kilomètres", t)
     t = re.sub(r"(\d+),5\b", lambda m: m.group(1) + " et demi", t)  # ASR writes "81,5" for "quatre-vingt-un et demi"
     t = re.sub(r"(\d+),(\d+)", lambda m: m.group(1) + " virgule " + m.group(2), t)
+    t = re.sub(r"(\d+)\s*(?:ème|eme|e)\b", lambda m: " " + num2words(int(m.group(1)), lang="fr", to="ordinal") + " ", t)
     t = re.sub(r"\d+", lambda m: " " + num2words(int(m.group(0)), lang="fr") + " ", t)
     t = t.lower()
     t = re.sub(r"[-'«»\"“”.,!?;:()\[\]/]", " ", t)
@@ -45,23 +48,107 @@ def asr(path: str) -> str:
     ws = [w for s in r["segments"] for w in s.get("words", [])]
     if not ws:
         return r["text"].strip()
-    keep = [w["word"] for w in ws if w["end"] - 0.4 > 0.03 and w["start"] - 0.4 < dur - 0.03]
-    return "".join(keep).strip()
+    out = []
+    for sg in r["segments"]:
+        sw = [w for w in sg.get("words", []) if w["end"] - 0.4 > 0.03 and w["start"] - 0.4 < dur - 0.03]
+        joined = "".join(w["word"] for w in sg.get("words", []))
+        # A number that is in the segment text but missing from its word list (seen on a 1971 said slowly:
+        # the words read "faite en pour", the text "faite en 1971 pour"): use the segment text.
+        if sw and any(d not in joined for d in re.findall(r"\d+", sg.get("text", ""))):
+            out.append(" " + sg["text"].strip())
+        else:
+            out += [w["word"] for w in sw]
+    return "".join(out).strip()
 
 
 # ASR spellings of the cast's proper names that sound identical to the intended reading
 ASR_EQUIV = {"marshall": "marchal", "marshal": "marchal", "révèle": "revel", "rêvel": "revel", "revelle": "revel",
              "rével": "revel", "rebel": "revel", "okafort": "okafor", "straide": "straïde", "stride": "straïde",
-             "strayed": "straïde", "samy": "sami", "inès": "ines"}
+             "strayed": "straïde", "samy": "sami", "loup": "lou", "gérart": "gérard",
+             # R4 (Jo's Québécois words, spelled letters, homophones Whisper picks)
+             "okay": "ok", "tigidou": "tiguidou", "tigido": "tiguidou", "tchum": "chum", "tchomme": "chum",
+             "emme": "m", "ô": "o", "teinté": "un thé", "ticom": "chum", "tecom": "chum", "xiv": "quatorze"}
+
+# Abbreviations Whisper writes for words the TTS text spells out ("M. Durand" for "monsieur Durand").
+ABBR = [(r"\bM\.(?=\s)", "Monsieur"), (r"\b[Mm]\b\.?(?=\s+(?i:durand|revel|révèle|marchal|lemaire|okafor))", "Monsieur"), (r"\bMme\b\.?", "Madame"), (r"\bMlle\b\.?", "Mademoiselle")]
+
+
+# Whisper's training-data captions: it appends them to clips that end in quiet room tone. Never in a HAIRLINE line.
+HALLU = re.compile(r"\s*(sous-titrage|sous-titres|sous titrage)\b.*$|\s*(Merci d'avoir regardé|Abonnez-vous)\b.*$", re.I | re.S)
+
+
+def strip_hallu(t: str) -> str:
+    return HALLU.sub("", t or "").strip()
+
+
+# Whisper writes colloquial Québécois (Jo) in standard spelling (and a few R4 homophones): « Chu » as « je suis », « Y dort » as « il dort »,
+# « Pis » as « puis ». (pattern on the normalised transcript, replacement, word the reference must contain)
+# Applied as an alternative reading only: cer() keeps the better of raw and mapped, so « il y a » can't get worse.
+QC_EQUIV = [
+    (r"\bje ne suis\b", "chu ne", "chu"),
+    (r"\b(je|j) suis\b", "chu", "chu"),
+
+    (r"\bpuis\b", "pis", "pis"),
+    (r"\bbenally\b", "benali", "benali"),
+    (r"\bpoids\b", "pois", "pois"),
+    (r"\bles?quel(le)?s?\b", "lesquels", "lesquels"),
+    (r"\bdeux\b(?!.*\bdeux\b)", "de", "de"),  # « De kebab. » heard « Deux kebabs » (/də/ ~ /dø/); see qc_hyp  # « Lesquels ? » /lekɛl/
+]
+
+
+def _cer1(r: str, h: str) -> float:
+    return min(float(jiwer.cer(r, h)), float(jiwer.cer(silent(r), silent(h))))
 
 
 def cer(ref: str, hyp: str) -> float:
+    """CER, the best of a few equivalent readings of the transcript (abbreviations expanded, Québécois spellings,
+    colloquial negation without « ne », the same sounds across a word boundary)."""
+    hx = hyp
+    for pat, rep in ABBR:
+        hx = re.sub(pat, rep, hx)
+    best = _cer_core(ref, hyp)
+    return min(best, _cer_core(ref, hx)) if hx != hyp else best
+
+
+def _sound(t: str) -> str:
+    t = t.replace(" ", "").replace("ç", "s")
+    return "".join(ch for ch in unicodedata.normalize("NFD", t) if unicodedata.category(ch) != "Mn")
+
+
+def _cer_core(ref: str, hyp: str) -> float:
     r, h = norm(ref), norm(hyp)
     h = " ".join(ASR_EQUIV.get(w, w) for w in h.split())
     r = " ".join(ASR_EQUIV.get(w, w) for w in r.split())
     if not r:
         return 0.0 if not h else 1.0
-    return min(float(jiwer.cer(r, h)), float(jiwer.cer(silent(r), silent(h))))
+    best = _cer1(r, h)
+    hq = qc_hyp(r, h)
+    if hq != h:
+        best = min(best, _cer1(r, hq))
+    rw = set(r.split())
+    if "ne" not in rw and "n" not in rw:  # colloquial negation (« je veux pas »): Whisper writes the « ne »
+        hn = " ".join(w for w in hq.split() if w not in ("ne", "n"))
+        if hn != hq:
+            best = min(best, _cer1(r, hn))
+    if len(r) <= 12:  # short lines: same sounds across a word boundary (« Pas ça ! » heard « Passa ! »)
+        best = min(best, float(jiwer.cer(_sound(r), _sound(hq))) if _sound(hq) else 1.0)
+    return best
+
+
+def qc_hyp(r: str, h: str) -> str:
+    """The transcript with Whisper's standard spellings of Québécois words mapped back (normalised strings)."""
+    words = set(r.split())
+    for pat, rep, need in QC_EQUIV:
+        if need in words and rep not in ("de",) or rep == "de" and "de" in words and "deux" not in words:
+            h = re.sub(pat, rep, h)
+    # « Y dort jamais » heard « il dort », « Y a une étiquette » heard « il y a »: only where the line says « y <word> »
+    # without « il » (so « il y a » in a line stays as it is)
+    rr = f" {r} "
+    if re.search(r"(?<!\bil) y a\b", rr):
+        h = re.sub(r"\bil y a\b", "y a", h) if " il y a " not in rr else h
+    h = re.sub(r"\bil (\w+)", lambda m: f"y {m.group(1)}" if (f" y {m.group(1)} " in rr and f" il y {m.group(1)} " not in rr
+                                                              and f" il {m.group(1)} " not in rr) else m.group(0), h)
+    return h
 
 
 def silent(t: str) -> str:

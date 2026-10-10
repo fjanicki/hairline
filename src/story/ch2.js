@@ -4,6 +4,7 @@ import { parseNum } from './i18n.js';
 import { buildScene2 } from '../world/scenes/scene2.js';
 import { remember } from './memory.js';
 import { streetBeds } from '../world/scenes/scene2/sound.js';
+import { SIDEWALK_Y } from '../world/scenes/scene2/street.js';
 
 // Ch2 "Never Stop": Rue des Tanneurs, late evening, rain (docs/DESIGN.md).
 // Beats, in order (auto beats are z-thresholds in one sequential chain, each gated on 'play'):
@@ -11,6 +12,9 @@ import { streetBeds } from '../world/scenes/scene2/sound.js';
 //   -> z < -42 the loop line, Odile on the scaffold -> HOLD STILL -> "Name one thing" -> "How far?" -> watch, cut to white.
 // Optional hotspots: the ghost sign (stay put after it: the linger seed), the STRIDE billboard, the closed bike shop, the bench (sit / stand).
 // The watch is live the whole walk: face = 0.32 km + metres walked; lap = 38:40 -> 41:10 from progress along z.
+// Revision 4 (docs/SCRIPT-R4.md §3): z < -9, Mme Benali's shutter screams down in three jerks (non-blocking: her
+// bark, his thought); after the club, at ENCRE FINE (spots.joLadder), Jo on her stepladder (blocking, short:
+// the call, the menu (option 1 = remember('joSign')), the sign slapped straight, she goes in, the door slams).
 
 const T = L.ch2;
 const CAM = { offset: [0, 2.6, 4.2], look: [0, 1.1, 0] };
@@ -25,6 +29,11 @@ const PACK_VOL = 1.0;
 const RAIN_VOL = 0.22;
 const STILL_SECS = 7; // HOLD STILL: seconds of stillness to fill the gauge
 const ASSIST_AFTER = 25;
+// R4: Mme Benali's shutter. SCRIPT-R4 says z < -9, but from there the follow camera has the bakery behind it:
+// it starts at -3 (the shutter fully in frame on the left) and the PAUSE beat waits for her bark.
+const SHUTTER_Z = -3;
+const SHUTTER_LATE_Z = -16; // past this without the beat (a skip): the shutter is simply down
+const JO_AHEAD = 5.5; // R4: Jo calls out when Hugo is this far short of her ladder (z)
 // Recorded sfx sets (docs/assets/sfx.md, Integration "Ch2"), preloaded with the chapter through `sounds`.
 // The beds start in run() (the Director only toggles rain / crowd); scene2 runs the hums and the drips.
 const SOUNDS = [
@@ -42,6 +51,10 @@ const SOUNDS = [
   'brush_stroke',
   'boot_step_wet',
   'body_thud',
+  // R4 (.cache/r4/sfx-names.md): the bakery shutter, Jo's door and her palm on the sign
+  'shutter_scream',
+  'door_slam',
+  'table_tock',
 ];
 /** True while a voice clip is being said (French voices; docs/voice.md): big one-shots step back. */
 const speaking = (ctx) => ctx.voice?.cur?.state === 'playing';
@@ -185,6 +198,10 @@ export default {
       }),
     );
 
+    // ------------------------------------------------------------ R4: Mme Benali and her shutter; Jo on her ladder
+    const shutter = shutterBeat(ctx, d, S, { ready, offs });
+    const jo = makeJo(ctx, S);
+
     // ------------------------------------------------------------ optional hotspots
     const look = (shot, lines) =>
       d.cinematic(
@@ -281,10 +298,11 @@ export default {
     };
 
     // ------------------------------------------------------------ z < -6: PAUSE ACTIVITY?
-    let r = await d.until(() => ready() && player.position.z < PAUSE_Z);
+    let r = await d.until(() => ready() && player.position.z < PAUSE_Z && shutter.quiet());
     if (r === 'skipped') jumpTo(PAUSE_Z - 0.3);
     ui.watchBuzz(T.pauseBuzz, 2.6);
     d.after(2.8, () => d.thought(T.pauseReply, 1.6));
+    shutter.pauseDone(4.8); // his shutter thought comes after the « Non. »
 
     // ------------------------------------------------------------ z < -24: the run club
     r = await d.until(() => ready() && player.position.z < CLUB_Z);
@@ -292,6 +310,18 @@ export default {
     lock = true;
     await runClub(ctx, d, S, { follow });
     lock = false;
+    shutter.done(); // a skip past the bakery: the shutter is simply down
+
+    // ------------------------------------------------------------ R4: Jo at ENCRE FINE (blocking, short)
+    if (jo) {
+      const jz = jo.ladder.pos[2] + JO_AHEAD;
+      r = await d.until(() => ready() && player.position.z < jz);
+      if (r === 'skipped') jumpTo(jz - 0.3);
+      lock = true;
+      if (seated) await standUp();
+      await joCameo(ctx, d, S, jo, { follow });
+      lock = false;
+    }
 
     // ------------------------------------------------------------ z < -42: back where he started
     r = await d.until(() => ready() && player.position.z < ARRIVE_Z);
@@ -373,6 +403,209 @@ export default {
     for (const off of offs) off();
   },
 };
+
+// ------------------------------------------------------------------ R4: Mme Benali's shutter
+
+/**
+ * z < -9 (once, non-blocking, after the PAUSE thought): Mme Benali drags her shutter down; it screams and comes
+ * down in three jerks. Then her bark over the noise, then his thought. A world.onUpdate watcher, not a d.until,
+ * so the main chain (and skip) never waits on it. Returns { done() } (a skip past it: the shutter is down).
+ */
+function shutterBeat(ctx, d, S, { ready, offs }) {
+  const { player, audio, world, assets, ui } = ctx;
+  const B = S.bakery;
+  const T = L.ch2.shutter;
+  if (!B) return { done() {} };
+  const f = B.focus; // the street-end rail at hinge height (world)
+  // She stands on the pavement in front of the middle of the shutter, facing it (-X), the hook in her hands.
+  const at = [f.x + 0.75, f.z + 2.0];
+  const benali = assets.makeCharacter({ preset: 'mme', name: 'Mme Benali' });
+  benali.root.position.set(at[0], SIDEWALK_Y, at[1]);
+  benali.root.rotation.y = -Math.PI / 2;
+  benali.play('hold_can', 0);
+  world.add(benali.root);
+  const shutterPos = [f.x, 1.4, f.z + 2.2];
+  let state = 'wait';
+  let since = 0; // seconds since the chapter started (the PAUSE beat is ~2.8 s after z -6)
+  let barked = false;
+  let thoughtAt = null; // seconds (since): set by the main chain after the PAUSE beat
+  let thought = false;
+  const finish = () => {
+    if (state === 'done') return;
+    state = 'done';
+    B.setOpen(0);
+    benali.root.visible = false;
+  };
+  const go = () => {
+    state = 'run';
+    benali.play('reach', 0.25);
+    // The scream (one recording, 1.6-2 s) and its three judders.
+    audio.sfx('shutter_scream', { volume: 0.6, pos: shutterPos, ref: 3, jitter: 0.02 });
+    B.setOpen(0.5, 0.42);
+    d.after(0.72, () => B.setOpen(0.24, 0.38));
+    d.after(1.36, () => B.setOpen(0, 0.42));
+    d.after(1.95, () => {
+      // Pardon! She turns to him, over the last of the noise.
+      const p = player.position;
+      benali.root.rotation.y = Math.atan2(p.x - benali.root.position.x, p.z - benali.root.position.z);
+      benali.play('talk', 0.3);
+      ui.thought(T.bark.text, 3.4, { who: T.bark.who });
+    });
+    d.after(5.4, () => {
+      barked = true;
+      benali.play('arms_crossed', 0.4);
+    });
+    d.after(6.5, () => {
+      state = 'over';
+    });
+  };
+  offs.push(
+    world.onUpdate((_dt, raw) => {
+      since += raw;
+      const z = player.position.z;
+      if (barked && !thought && thoughtAt !== null && since >= thoughtAt && state !== 'done') {
+        thought = true;
+        d.thought(T.thought, 5.5);
+      }
+      if (state === 'wait') {
+        if (z < SHUTTER_LATE_Z) return finish();
+        if (z < SHUTTER_Z && ready()) go();
+      } else if (state === 'over' && z < -22) {
+        // She has gone in; the run club needs the pavement.
+        state = 'done';
+        benali.root.visible = false;
+      }
+    }),
+  );
+  return {
+    done: () => state === 'wait' && finish(),
+    /** False while the scream and her bark are on (the PAUSE beat waits). */
+    quiet: () => state !== 'run' || barked,
+    /** The PAUSE beat has played: his thought `secs` later, once her bark is over. */
+    pauseDone(secs) {
+      thoughtAt = since + secs;
+    },
+  };
+}
+
+// ------------------------------------------------------------------ R4: Jo at ENCRE FINE
+
+/** Jo on the third step of her ladder under the crooked sign (null if the set has no ladder). */
+function makeJo(ctx, S) {
+  const jl = S.encre?.joLadder;
+  if (!jl) return null;
+  const char = ctx.assets.makeCharacter({ preset: 'jo', name: 'Jo' });
+  // On the second step (0.6 m), not the third: her head clears the board and her hands reach it.
+  char.root.position.set(jl.pos[0], SIDEWALK_Y + 0.615, jl.pos[2] + 0.076);
+  char.root.rotation.y = Math.PI + (jl.facing || 0); // on the steps, facing the sign over the ladder top
+  char.play('paint', 0);
+  ctx.world.add(char.root);
+  return { char, ladder: jl, ground: SIDEWALK_Y };
+}
+
+/**
+ * The cameo: « Hey, le grand avec la botte ! », the menu, the palm on the sign, « Tu. On est pas à la banque. »,
+ * she climbs down and goes in; the door slams; his thought.
+ */
+async function joCameo(ctx, d, S, J, { follow }) {
+  const { player, cam, audio, world, runner, engine } = ctx;
+  const T = L.ch2.jo;
+  const { char } = J;
+  const jr = char.root;
+  const E = S.encre;
+  const turnToHugo = () => {
+    const p = player.position;
+    jr.rotation.y = Math.atan2(p.x - jr.position.x, p.z - jr.position.z);
+  };
+  const twoShot = () => {
+    const p = player.position;
+    // Over his left shoulder on the line from her to him: he stands in the right third, she is up her
+    // ladder left of centre. (The old shot looked across at the ladder from the street's middle and
+    // left him ~60° out of frame.)
+    const jx = jr.position.x;
+    const jz = jr.position.z;
+    let dx = p.x - jx;
+    let dz = p.z - jz;
+    const len = Math.hypot(dx, dz) || 1;
+    dx /= len;
+    dz /= len;
+    const [rx, rz] = [dz, -dx]; // screen right when looking from him to her
+    const cx = clamp(p.x + dx * 2.3 - rx * 1.1, -4.2, 4.4);
+    const cz = p.z + dz * 2.3 - rz * 1.1;
+    return { pos: [cx, 1.7, cz], look: [jx + (p.x - jx) * 0.35, 1.95, jz + (p.z - jz) * 0.35], fov: 32 };
+  };
+  await d.cinematic(
+    async () => {
+      // She turns on her step and calls down; he stops and looks up.
+      turnToHugo();
+      char.play('call_out', 0.25);
+      player.face(jr.position.x, jr.position.z);
+      await d.gate(cam.tween(twoShot(), 1.0));
+      await d.say(T.call);
+      char.play('talk', 0.3);
+      const pick = await d.choose(T.menu);
+      if (pick === 0) remember('joSign', true); // the honest answer (warmth +1, SCRIPT-R4 §11.2)
+
+      // The palm: she turns back to the board and slaps it straight, first time, no level.
+      jr.rotation.y = Math.PI + (J.ladder.facing || 0);
+      char.play('reach', 0.2, { once: true });
+      if (S.shots.jo) cam.tween(S.shots.jo, 0.8);
+      d.after(0.45, () => {
+        E.straighten?.(0.18);
+        const c = E.focus?.sign;
+        audio.sfx('table_tock', { volume: 0.4, rate: 0.8, pos: c ? [c.x, c.y, c.z] : null, ref: 2 });
+      });
+      await d.say(T.after.slice(0, 1));
+      turnToHugo();
+      char.play('talk', 0.3);
+      await d.gate(cam.tween(twoShot(), 0.8));
+      await d.say(T.after.slice(1, 7));
+
+      // She climbs down and goes in; the door slams.
+      let gone = false; // the door has slammed (a skip ends the walk early: nothing reopens it after)
+      const leave = (async () => {
+        char.play('stand', 0.2);
+        audio.sfx('creak_wood', { volume: 0.25, rate: 1.3, alt: 'creak_wood_alt', pos: J.ladder.pos, ref: 2 });
+        const y0 = jr.position.y;
+        let t = 0;
+        await new Promise((res) => {
+          const off = world.onUpdate((_dt, raw) => {
+            t += raw;
+            const k = Math.min(1, t / 0.6);
+            jr.position.y = y0 + (J.ground - y0) * k;
+            if (k >= 1) {
+              off();
+              res();
+            }
+          });
+        });
+        const door = S.spots.joDoor;
+        await runner.walkTo(char, [door[0] + 0.15, door[1] + 0.5], { speed: 1.25 });
+        if (gone) return;
+        E.setOpen?.(1, 0.3);
+        await new Promise((res) => engine.after(0.3, res));
+        const inside = S.spots.encreInside;
+        if (gone) return;
+        await runner.walkTo(char, [door[0] + (inside[0] - door[0]) * 0.35, door[1] + (inside[1] - door[1]) * 0.35], { speed: 1.25 });
+      })();
+      const done = () => {
+        gone = true;
+        jr.visible = false;
+        E.setOpen?.(0, 0.12);
+        const dp = S.spots.joDoor;
+        audio.sfx('door_slam', { volume: 0.5, pos: [dp[0], 1.2, dp[1]], ref: 3 });
+      };
+      await d.say(T.after.slice(7, 8));
+      await d.gate(leave, () => false);
+      done();
+      await d.wait(0.5);
+      await d.say(T.after.slice(8));
+    },
+    { letterbox: false },
+  );
+  player.root.rotation.y = Math.PI;
+  follow();
+}
 
 // ------------------------------------------------------------------ the run club
 

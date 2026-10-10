@@ -267,7 +267,7 @@ export async function buildWorkshop(ctx, parent, { spots, wallZ, openSign, T5, s
     { kind: 'brush', u: 0.88, v: 0.42 }, // out on the street
     { kind: 'brush', u: 0.93, v: 0.42 },
   ];
-  const pbArt = () => texFrom(pegboardCanvas(1024, 640, tools, watchUV, ctx.L.ch5.signs.rest));
+  const pbArt = () => texFrom(pegboardCanvas(1024, 640, tools, watchUV, ctx.L.ch7.signs.rest));
   const pbTex = pbArt();
   const pegMat = new THREE.MeshStandardMaterial({ color: '#ffffff', map: pbTex, roughness: 0.85 });
   B.relangTexture(pegMat, pbArt); // 'rest' under the watch outline

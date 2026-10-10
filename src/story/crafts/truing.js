@@ -46,17 +46,17 @@ export function pluck(audio, freq, { volume = 0.16, decay = 0.7 } = {}) {
 const chalkMat = () => new THREE.MeshBasicMaterial({ color: '#e9e4d6', fog: false });
 
 /**
- * trueWheel(ctx, d, {rig, faults, text = L.ch4.week4.truing, f0 = 523, onSpokeTrue(i)})
+ * trueWheel(ctx, d, {rig, faults, text = L.ch5.week4.truing, f0 = 523, onSpokeTrue(i)})
  *   -> Promise<{skipped, assisted, plucks, secs, overTight}>
  * rig: a bikeRig rig (src/world/bikeRig.js). faults: [[spoke, tension], ...]. `text` gives flat,
  * barks.{who, clunk, hitting, notFixed, ping, higher} and assisted; the hint, gauge and pitch words
- * always come from L.ch4.week4.truing. Ends with the wheel true, one clear pluck and the wheel
+ * always come from L.ch5.week4.truing. Ends with the wheel true, one clear pluck and the wheel
  * spinning free (rig.setSpin(0.6)); the caller does the reveal.
  */
 export async function trueWheel(ctx, d, opts = {}) {
-  const { rig, faults = [[4, 0.6]], text = L.ch4.week4.truing, f0 = 523, onSpokeTrue } = opts;
+  const { rig, faults = [[4, 0.6]], text = L.ch5.week4.truing, f0 = 523, onSpokeTrue } = opts;
   const { ui, input, audio, engine } = ctx;
-  const H = L.ch4.week4.truing;
+  const H = L.ch5.week4.truing;
   const T = new Array(N).fill(1);
   for (const [i, t] of faults) T[mod(i)] = clamp(t, 0.4, 1.4);
   const out = (i) => Math.abs(T[i] - 1) > IN_TUNE + 1e-6;

@@ -50,14 +50,14 @@ export class Character {
    * both work. Returns the action or null (unknown clip, or the capsule).
    */
   play(name, fade = 0.25, { timeScale, once = false } = {}) {
-    const alias = CLIP_ALIASES[name];
-    const next = this.actions[name] || (alias && this.actions[alias.clip]);
+    const alias = CLIP_ALIASES[this._clipName(name)];
+    const next = this._action(name);
     if (!next) {
       this.current = name;
       return null;
     }
     if (this.current === name) return next;
-    const prev = this.current ? this.actions[this.current] || this.actions[CLIP_ALIASES[this.current]?.clip] : null;
+    const prev = this.current ? this._action(this.current) : null;
     if (prev !== next) {
       next.reset();
       next.enabled = true;
@@ -77,12 +77,29 @@ export class Character {
     return next;
   }
 
+  /** The clip a request plays for this character: the recipe's remap (Durand's 'walk' is 'walk_old'). */
+  _clipName(name) {
+    const to = this.recipe?.clips?.[name];
+    return to && this.actions[to] ? to : name;
+  }
+
+  _action(name) {
+    const n = this._clipName(name);
+    return this.actions[n] || this.actions[CLIP_ALIASES[n]?.clip] || null;
+  }
+
+  /** Natural walking speed (m/s): the recipe's `pace` (M. Durand 0.6), else Runner's default 1.4. */
+  get pace() {
+    return this.recipe?.pace ?? 1.4;
+  }
+
   /**
    * The timeScale at which locomotion clip `name` ('walk', 'run', ...) covers `v` m/s of ground, so
    * the planted foot stays put: v / (CLIP_SPEED x the stride scale, model.scale.z = scale x slim).
    */
   strideRate(name, v) {
-    const speed = CLIP_SPEED[CLIP_ALIASES[name]?.clip ?? name];
+    const n = this._clipName(name);
+    const speed = CLIP_SPEED[CLIP_ALIASES[n]?.clip ?? n];
     return speed ? v / (speed * (this.model.scale.z || 1)) : 1;
   }
 
@@ -145,6 +162,12 @@ export class Character {
       return;
     }
     const r = o.recipe;
+    if (r.tintInner && r.inner) {
+      // Jo: her colour is the top under the jacket.
+      r.inner.color = color;
+      for (const s of o.slots) if (s.kind === 'cloth' && /shirt|blouse/.test(s.part)) this._kit.colorSlot(s, r);
+      return;
+    }
     if (r.kit) {
       r.kit.top = color;
       for (const m of new Set(o.slots.map((s) => s.material))) this._kit.setKit(m, r.kit);
@@ -189,6 +212,10 @@ export class Character {
 
   update(dt) {
     if (this.mixer) {
+      // The stoop is multiplied onto the bones after the mixer runs. A bone the playing clip doesn't
+      // animate (the talk clips, a finished one-shot) is never rewritten by the mixer, so without this
+      // the stoop compounded every frame and the torso spun round the waist during conversations.
+      if (this._stoopBase) for (const [b, q] of this._stoopBase) b.quaternion.copy(q);
       this.mixer.update(dt);
       if (!this._comp.equals(this._compTo)) {
         this._comp.lerp(this._compTo, 1 - Math.exp(-this._compRate * dt));
@@ -197,6 +224,8 @@ export class Character {
       this._applyRigY();
       if (this.stoop) {
         // Age: a rounded upper back and a forward head, on top of whatever clip plays.
+        this._stoopBase ??= new Map(['spine_03', 'neck_01', 'Head'].map((n) => this._boneMap?.get(n)).filter(Boolean).map((b) => [b, new THREE.Quaternion()]));
+        for (const [b, q] of this._stoopBase) q.copy(b.quaternion);
         _q.setFromAxisAngle(_x, this.stoop);
         this._boneMap.get('spine_03')?.quaternion.multiply(_q);
         _q.setFromAxisAngle(_x, this.stoop * 0.8);
@@ -204,6 +233,8 @@ export class Character {
         // ...with the chin pushed forward, not the gaze dropped: the head tips back up.
         _q.setFromAxisAngle(_x, -this.stoop * 1.4);
         this._boneMap.get('Head')?.quaternion.multiply(_q);
+      } else if (this._stoopBase) {
+        this._stoopBase = null;
       }
     }
     if (this._fade) {

@@ -1,12 +1,12 @@
 import { MeshStandardMaterial } from 'three';
 
 // HAIRLINE art bible: named surface recipes and per-chapter lighting, shared by every scene so the
-// same street (Ch2 at dusk in the rain, Ch5 at golden hour) is built from the same materials.
+// same street (Ch2 at dusk in the rain, Ch7 at golden hour) is built from the same materials.
 //
 //   look.surface('street.asphalt')            -> cached MeshStandardMaterial (world-mapped PBR + weather)
 //   look.surface('facade.brick', { grime: 1 }) -> same recipe, overrides merged
 //   look.recipe('street.asphalt')             -> the raw recipe object (read-only)
-//   look.chapter                              -> the active chapter look (CHAPTER_LOOKS[i]); set by main.js
+//   look.chapter                              -> the active scene look (LOOKS / CHAPTER_LOOKS[i]); set by main.js
 //   LIGHTING.<preset>                         -> HDRI + grade data the Mood presets spread in
 //
 // The recipe `level` is the target mean albedo (linear luminance) every texture is normalised to,
@@ -20,7 +20,7 @@ import { MeshStandardMaterial } from 'three';
  * mean albedo (linear); tint multiplies; wet/grime are multipliers on the chapter's weather (0 = never).
  */
 export const SURFACES = {
-  // Street (Ch2, Ch3, Ch5): same recipes both times; the chapter weather makes Ch2 wet, Ch5 dry.
+  // Street (Ch2, Ch3, Ch5-Ch7): same recipes every time; the look's weather makes Ch2 wet, Ch7 dry.
   'street.asphalt': { id: 'street_asphalt_wet', color: '#4a4b4d', level: 0.075, roughness: 1, grime: 0.8, wet: 1 },
   'street.cobbles': { id: 'street_cobbles', color: '#4e4e50', level: 0.08, grime: 0.8, wet: 1 },
   'street.pavement': { id: 'street_pavement', color: '#7c7b76', level: 0.16, grime: 0.9, wet: 0.9 },
@@ -40,7 +40,7 @@ export const SURFACES = {
   'interior.plaster': { id: 'plaster_painted', color: '#a59e8c', level: 0.3, grime: 0.8, wet: 0 },
   'interior.tile': { id: 'tile_white_long', color: '#b4b2aa', level: 0.4, grime: 0.8, wet: 0 },
   'interior.fabric': { id: 'fabric_wool', color: '#5d5f62', level: 0.1, grime: 0.3, wet: 0, scale: 1.5 },
-  // Workshop (Ch4, Ch5 open garage)
+  // Workshop (Ch4-Ch6, Ch7 open garage)
   'workshop.concrete': { id: 'workshop_floor_concrete', color: '#7a7268', level: 0.16, grime: 0.8, wet: 0 },
   'workshop.brick': { id: 'brick_whitewashed', color: '#a8a296', level: 0.32, grime: 1, wet: 0 },
   'workshop.timber': { id: 'wood_planks_weathered', color: '#6e6050', level: 0.14, grime: 0.6, wet: 0 },
@@ -137,7 +137,7 @@ export const LIGHTING = {
     shoulder: 0.6,
     ca: 0.45,
   },
-  // Ch5 day: late afternoon after the rain, warming with hope (ch5.js overrides most of it).
+  // Ch7 day: late afternoon after the rain, warming with hope (ch7.js overrides most of it).
   wall: {
     env: 'golden_street',
     envIntensity: 0.06,
@@ -155,7 +155,7 @@ export const LIGHTING = {
     shoulder: 0.5,
     ca: 0.35,
   },
-  // Ch5 final walk: gold from the far end of the street.
+  // Ch7 final walk: gold from the far end of the street.
   golden: {
     env: 'golden_street',
     envIntensity: 0.12,
@@ -186,44 +186,75 @@ export const LIGHTING = {
 };
 
 /**
- * Chapter looks, by chapter index (0 = Ch1). main.js activates one before each build so the shared
- * build.js helpers pick the right recipes for big surfaces the scenes did not tag:
+ * Scene looks, by name. main.js activates one before each scene build (a chapter's own build, or a
+ * mid-chapter d.scene() swap) so the shared build.js helpers pick the right recipes for big surfaces the
+ * scenes did not tag:
  *   ground  - large build.ground() planes          slab - thin, large build.box() slabs (sidewalks)
  *   facade  - tall, wide build.box() blocks         walls - build.mat() with a grimeTexture map
- *   wet / grime - chapter weather multipliers       kenney - restyleKenney() options for Kenney props
+ *   wet / grime - weather multipliers               kenney - restyleKenney() options for Kenney props
  *   cones   - add soft light cones under street lamps and spot lights
- *   hdris   - every HDRI the chapter may switch to (preloaded with the chapter)
- *   materials / props - everything the build loads (CHAPTER_ASSETS below; preloaded with the chapter)
+ *   hdris   - every HDRI the scene may switch to (preloaded with it)
+ *   materials / props - everything the build loads (SCENE_ASSETS below; preloaded with it)
  */
-export const CHAPTER_LOOKS = [
-  { key: 'ch1', ground: 'interior.floorboards', slab: 'interior.floorboards', facade: 'interior.plaster', walls: 'interior.plaster', wet: 0, grime: 0.8, kenney: { grime: 0.5, desat: 0.15 }, cones: false, hdris: ['interior_dim'] },
-  { key: 'ch2', ground: 'street.asphalt', slab: 'street.pavement', facade: 'facade.brick', walls: 'facade.render', wet: 1, grime: 1, kenney: { grime: 0.7, desat: 0.2, wet: 0.7 }, cones: true, hdris: ['night_street'] },
-  { key: 'ch3', ground: 'street.asphalt', slab: 'street.pavement', facade: 'concrete.grimy', walls: 'concrete.grimy', wet: 0.7, grime: 0.8, kenney: { grime: 0.5, desat: 0.15, wet: 0.5 }, cones: true, hdris: ['dawn_fog'] },
-  { key: 'ch4', ground: 'workshop.concrete', slab: 'workshop.timber', facade: 'workshop.brick', walls: 'workshop.brick', wet: 0, grime: 0.9, kenney: { grime: 0.6, desat: 0.15 }, cones: true, hdris: ['workshop'] },
-  { key: 'ch5', ground: 'street.asphalt', slab: 'street.pavement', facade: 'facade.brick', walls: 'facade.render', wet: 0.25, grime: 0.8, kenney: { grime: 0.55, desat: 0.15, wet: 0.15 }, cones: false, hdris: ['golden_street'] },
-];
+export const LOOKS = {
+  flat: { key: 'flat', ground: 'interior.floorboards', slab: 'interior.floorboards', facade: 'interior.plaster', walls: 'interior.plaster', wet: 0, grime: 0.8, kenney: { grime: 0.5, desat: 0.15 }, cones: false, hdris: ['interior_dim'] },
+  evening: { key: 'evening', ground: 'street.asphalt', slab: 'street.pavement', facade: 'facade.brick', walls: 'facade.render', wet: 1, grime: 1, kenney: { grime: 0.7, desat: 0.2, wet: 0.7 }, cones: true, hdris: ['night_street'] },
+  dawnrun: { key: 'dawnrun', ground: 'street.asphalt', slab: 'street.pavement', facade: 'concrete.grimy', walls: 'concrete.grimy', wet: 0.7, grime: 0.8, kenney: { grime: 0.5, desat: 0.15, wet: 0.5 }, cones: true, hdris: ['dawn_fog'] },
+  workshop: { key: 'workshop', ground: 'workshop.concrete', slab: 'workshop.timber', facade: 'workshop.brick', walls: 'workshop.brick', wet: 0, grime: 0.9, kenney: { grime: 0.6, desat: 0.15 }, cones: true, hdris: ['workshop'] },
+  wall: { key: 'wall', ground: 'street.asphalt', slab: 'street.pavement', facade: 'facade.brick', walls: 'facade.render', wet: 0.25, grime: 0.8, kenney: { grime: 0.55, desat: 0.15, wet: 0.15 }, cones: false, hdris: ['golden_street'] },
+};
 
 /**
- * Every PBR set and prop each chapter's build loads (measured from the builds; Kenney pieces by
- * path, Poly Haven props by id). main.js fetches them in parallel up front: on the loading screen for
- * the first chapter, behind the fade for the others. A stale list only costs time, never correctness.
+ * Every PBR set and prop each look's build loads (measured from the builds; Kenney pieces by path, Poly
+ * Haven props by id). main.js fetches them in parallel up front: on the loading screen for the first
+ * chapter, behind the fade for the others. A stale list only costs time, never correctness.
  */
-const CHAPTER_ASSETS = [
-  { materials: ['fabric_wool', 'flat_floorboards', 'metal_painted_rusty', 'metal_plate_worn', 'plaster_painted', 'tile_white_long', 'wood_planks_painted', 'wood_plywood'],
+const SCENE_ASSETS = {
+  flat: { materials: ['fabric_wool', 'flat_floorboards', 'metal_painted_rusty', 'metal_plate_worn', 'plaster_painted', 'tile_white_long', 'wood_planks_painted', 'wood_plywood'],
     props: ['cardboard_box', 'crt_tv', 'fluoro_light', 'iron_bed', 'paint_can', 'sofa_worn', 'trash_bag', 'wrist_watch'] },
-  { materials: ['brick_whitewashed', 'concrete_grimy', 'facade_brick_dark', 'facade_brick_painted', 'facade_brick_plaster', 'facade_render', 'metal_corrugated_rusty', 'metal_painted_green', 'metal_painted_rusty', 'shutter_rusty', 'street_asphalt_wet', 'street_cobbles', 'street_pavement', 'wall_mural_render', 'wood_planks_painted', 'wood_planks_weathered', 'workshop_floor_concrete'],
+  evening: { materials: ['brick_whitewashed', 'concrete_grimy', 'facade_brick_dark', 'facade_brick_painted', 'facade_brick_plaster', 'facade_render', 'metal_corrugated_rusty', 'metal_painted_green', 'metal_painted_rusty', 'shutter_rusty', 'street_asphalt_wet', 'street_cobbles', 'street_pavement', 'wall_mural_render', 'wood_planks_painted', 'wood_planks_weathered', 'workshop_floor_concrete'],
     props: ['kenney/city/low-detail-building-a.glb', 'kenney/city/low-detail-building-b.glb', 'kenney/city/low-detail-building-c.glb', 'kenney/city/low-detail-building-d.glb', 'kenney/retro/detail-bricks-type-a.glb', 'kenney/retro/pallet-small.glb', 'kenney/roads/construction-cone.glb', 'kenney/survival/bottle-large.glb', 'barrel', 'bin_metal', 'cafe_set', 'cardboard_box', 'crate_wood', 'milk_crate', 'paint_can', 'trash_bag'] },
-  { materials: ['concrete_grimy', 'facade_brick_dark', 'facade_brick_painted', 'facade_brick_plaster', 'facade_render', 'metal_painted_green', 'metal_painted_rusty', 'shutter_rusty', 'street_asphalt_wet', 'street_cobbles', 'street_pavement'],
+  dawnrun: { materials: ['concrete_grimy', 'facade_brick_dark', 'facade_brick_painted', 'facade_brick_plaster', 'facade_render', 'metal_painted_green', 'metal_painted_rusty', 'shutter_rusty', 'street_asphalt_wet', 'street_cobbles', 'street_pavement'],
     props: ['kenney/retro/detail-dumpster-closed.glb', 'kenney/retro/pallet-small.glb', 'bin_metal', 'milk_crate', 'road_barrier', 'trash_bag'] },
-  { materials: ['brick_whitewashed', 'concrete_grimy', 'facade_brick_plaster', 'facade_render', 'metal_corrugated_rusty', 'metal_painted_green', 'metal_painted_rusty', 'metal_plate_worn', 'plaster_painted', 'shutter_rusty', 'street_cobbles', 'street_pavement', 'wood_planks_painted', 'wood_planks_weathered', 'wood_plywood', 'workshop_floor_concrete'],
+  workshop: { materials: ['brick_whitewashed', 'concrete_grimy', 'facade_brick_plaster', 'facade_render', 'metal_corrugated_rusty', 'metal_painted_green', 'metal_painted_rusty', 'metal_plate_worn', 'plaster_painted', 'shutter_rusty', 'street_cobbles', 'street_pavement', 'wood_planks_painted', 'wood_planks_weathered', 'wood_plywood', 'workshop_floor_concrete'],
     props: ['barrel', 'bench_vice', 'bulb', 'cardboard_box', 'chair_painted', 'crate_wood', 'drill', 'fluoro_light', 'hammer', 'handsaw', 'oil_can', 'paint_can', 'pliers', 'radio', 'screwdriver', 'spanner', 'steel_shelves', 'stool', 'tape_measure', 'toolbox', 'track_pump'] },
-  { materials: ['brick_whitewashed', 'concrete_grimy', 'fabric_wool', 'facade_brick_dark', 'facade_brick_painted', 'facade_brick_plaster', 'facade_render', 'metal_corrugated_rusty', 'metal_painted_green', 'metal_painted_rusty', 'shutter_rusty', 'street_asphalt_wet', 'street_cobbles', 'street_pavement', 'wall_mural_render', 'wood_planks_painted', 'wood_planks_weathered', 'wood_plywood', 'workshop_floor_concrete'],
+  wall: { materials: ['brick_whitewashed', 'concrete_grimy', 'fabric_wool', 'facade_brick_dark', 'facade_brick_painted', 'facade_brick_plaster', 'facade_render', 'metal_corrugated_rusty', 'metal_painted_green', 'metal_painted_rusty', 'shutter_rusty', 'street_asphalt_wet', 'street_cobbles', 'street_pavement', 'wall_mural_render', 'wood_planks_painted', 'wood_planks_weathered', 'wood_plywood', 'workshop_floor_concrete'],
     props: ['kenney/city/low-detail-building-a.glb', 'kenney/city/low-detail-building-b.glb', 'kenney/city/low-detail-building-c.glb', 'kenney/city/low-detail-building-d.glb', 'kenney/survival/bottle-large.glb', 'barrel', 'bench_vice', 'bin_metal', 'bulb', 'cafe_set', 'cardboard_box', 'chair_painted', 'crate_wood', 'fluoro_light', 'hammer', 'handsaw', 'milk_crate', 'oil_can', 'paint_can', 'pliers', 'radio', 'screwdriver', 'spanner', 'steel_shelves', 'stepladder', 'stool', 'toolbox', 'track_pump', 'trash_bag', 'wrist_watch'] },
-];
-CHAPTER_ASSETS.forEach((a, i) => Object.assign(CHAPTER_LOOKS[i], {
+};
+// R4 sets on the street (scene2/encre.js, durand.js): ENCRE FINE's plaster and boards in every street
+// variant (Ch2 and the wall too), so the street looks preload them.
+for (const k of ['evening', 'wall']) SCENE_ASSETS[k].materials.push('plaster_painted', 'flat_floorboards');
+for (const [k, a] of Object.entries(SCENE_ASSETS)) Object.assign(LOOKS[k], {
   materials: a.materials,
   props: a.props.map((p) => (p.includes('/') ? p : `props/${p}.glb`)),
-}));
+});
+
+/**
+ * The R4 street variants (buildScene2 'day' and 'night'): Ch5 and Ch6 by day, Ch5's 4 a.m. bakery and Ch6's
+ * nights (their other scenes, the workshop and the flat, use LOOKS.workshop / LOOKS.flat). scene2 sets its
+ * own weather for these variants (wet 0.4 by day, 1 at night), so `wet` / `grime` here only reach the props
+ * and the boot. Night keeps the sodium cones. The matching mood presets are scene2.js STREET_MOODS.
+ */
+export const STREET_LOOKS = {
+  day: { ...LOOKS.wall, key: 'day', wet: 0.4, grime: 0.9, kenney: { grime: 0.6, desat: 0.15, wet: 0.3 }, cones: false, hdris: ['dawn_fog', 'golden_street'] },
+  night: { ...LOOKS.evening, key: 'night', wet: 1, grime: 1, cones: true, hdris: ['night_street'] },
+};
+Object.assign(LOOKS, STREET_LOOKS);
+
+/**
+ * Chapter looks, by chapter index (0 = Ch1; Revision 4 order, docs/SCRIPT-R4.md §0.3): the look of the
+ * chapter's own build. A chapter may name another with `look: 'workshop'` (Ch5 and Ch6 open in the
+ * workshop); mid-chapter scene swaps (Director.scene) name theirs in the set (story/sets.js).
+ */
+export const CHAPTER_LOOKS = [LOOKS.flat, LOOKS.evening, LOOKS.dawnrun, LOOKS.workshop, STREET_LOOKS.day, STREET_LOOKS.day, LOOKS.wall];
+
+/** A look from a chapter index, a LOOKS name or a look object (null if unknown). */
+export function resolveLook(ref) {
+  if (ref && typeof ref === 'object') return ref;
+  if (typeof ref === 'number') return CHAPTER_LOOKS[ref] || null;
+  if (typeof ref === 'string') return LOOKS[ref] || null;
+  return null;
+}
 
 /** The shared look. main.js binds the Materials instance and switches chapters. */
 export const look = {
@@ -236,10 +267,10 @@ export const look = {
     return this;
   },
 
-  /** Activate chapter i's look (main.js, before the scene builds). */
-  begin(i) {
-    this.index = i;
-    this.chapter = CHAPTER_LOOKS[i] || null;
+  /** Activate a look before a scene builds (main.js): a chapter index, a LOOKS name or a look object. */
+  begin(ref) {
+    this.index = typeof ref === 'number' ? ref : this.index;
+    this.chapter = resolveLook(ref);
     return this.chapter;
   },
 
@@ -248,9 +279,9 @@ export const look = {
     return SURFACES[name];
   },
 
-  /** Material ids a chapter uses: its first-pass surfaces plus its measured list (for preloading). */
-  materialIds(i = this.index) {
-    const c = CHAPTER_LOOKS[i];
+  /** Material ids a look uses (chapter index, LOOKS name or look object; default: the active look). */
+  materialIds(ref) {
+    const c = ref === undefined ? this.chapter : resolveLook(ref);
     if (!c) return [];
     const ids = [c.ground, c.slab, c.facade, c.walls].map((n) => SURFACES[n]?.id).filter(Boolean);
     return [...new Set([...ids, ...(c.materials || [])])];

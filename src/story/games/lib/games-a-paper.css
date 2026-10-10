@@ -1,0 +1,123 @@
+/* GAMES-A shared look (docs/DESIGN-R4.md "New minigames"): the notebook's paper, pencil and ink.
+   Every game layer sits in #ui at the HUD's level and never takes the mouse (the canvas does). */
+
+.ga-layer {
+  --ga-paper: #d9d3c2;
+  --ga-pencil: #3b3a36;
+  --ga-red: #a3392b;
+  --ga-ochre: #d9a441;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.ga-layer.show { opacity: 1; }
+
+/* A scrap of the notebook's paper: cream, a little stained, a pencil-grey hand. */
+.ga-paper {
+  position: absolute;
+  background-color: var(--ga-paper);
+  background-image:
+    radial-gradient(ellipse at 80% 90%, rgba(120, 96, 60, 0.22), rgba(0, 0, 0, 0) 55%),
+    radial-gradient(ellipse at 15% 10%, rgba(110, 100, 70, 0.18), rgba(0, 0, 0, 0) 45%);
+  color: var(--ga-pencil);
+  font-family: var(--hand);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+  border-radius: 2px;
+}
+.ga-paper .ga-head {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #4d4a42;
+  text-transform: uppercase;
+}
+
+/* A hand-drawn meter: a pencil box with a wash of colour in it. */
+.ga-meter {
+  position: absolute;
+  width: 200px;
+  font-family: var(--hand);
+  color: #efe9da;
+  text-shadow: var(--shadow);
+  transition: opacity 0.3s ease;
+}
+.ga-meter .ga-label {
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  opacity: 0.85;
+}
+.ga-meter .ga-track {
+  position: relative;
+  height: 12px;
+  border: 1.5px solid rgba(239, 233, 218, 0.85);
+  border-radius: 3px 5px 4px 3px;
+  transform: rotate(-0.6deg);
+  overflow: hidden;
+  background: rgba(20, 16, 12, 0.35);
+}
+.ga-meter .ga-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: repeating-linear-gradient(-55deg, rgba(217, 164, 65, 0.95) 0 5px, rgba(217, 164, 65, 0.7) 5px 8px);
+}
+.ga-meter.red .ga-fill { background: repeating-linear-gradient(-55deg, rgba(194, 70, 52, 0.95) 0 5px, rgba(163, 57, 43, 0.75) 5px 8px); }
+.ga-meter.warn .ga-track { animation: ga-throb 0.5s ease-in-out infinite alternate; }
+@keyframes ga-throb { from { border-color: rgba(239, 233, 218, 0.85); } to { border-color: #e2563f; } }
+
+/* Mouse chips: a tiny drawn mouse with the active button inked. */
+.ga-mouse {
+  display: inline-block;
+  width: 13px;
+  height: 18px;
+  border: 1.5px solid currentColor;
+  border-radius: 7px 7px 8px 8px;
+  vertical-align: -4px;
+  margin-right: 6px;
+  position: relative;
+  background: linear-gradient(currentColor, currentColor) 50% 0 / 1.5px 7px no-repeat;
+}
+.ga-mouse.l::before,
+.ga-mouse.r::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 5px;
+  height: 7px;
+  background: var(--ga-ochre);
+}
+.ga-mouse.l::before { left: 0; border-radius: 6px 0 0 0; }
+.ga-mouse.r::before { right: 0; border-radius: 0 6px 0 0; }
+.ga-mouse.w { background: linear-gradient(var(--ga-ochre), var(--ga-ochre)) 50% 2px / 3px 6px no-repeat; }
+
+/* The prompt line the games use (bottom centre, like ui.prompt but with mouse chips). */
+.ga-tips {
+  position: absolute;
+  left: 50%;
+  bottom: 23vh;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 22px;
+  font-family: var(--font);
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: #f2efe8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 14px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+}
+body:has(.thought.show) .ga-tips { bottom: max(23vh, calc(15vh + 124px)); }
+.ga-tips span { display: inline-flex; align-items: center; }
+
+@media (max-width: 760px) {
+  .ga-tips { flex-direction: column; gap: 6px; align-items: center; font-size: 13px; }
+}

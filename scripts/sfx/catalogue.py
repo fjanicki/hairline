@@ -18,6 +18,7 @@ PACKS = {
     "moresounds": ("https://opengameart.org/content/202-more-sound-effects", "CC0 (owlishmedia, OpenGameArt)"),
     "pencil": ("https://opengameart.org/content/pencil-sounds", "CC0 (antumdeluge, OpenGameArt; from Freesound #443241, #571800)"),
     "breathing": ("https://opengameart.org/content/breathing-tired", "CC0 (mikeask, OpenGameArt)"),
+    "synth": ("scripts/sfx/synth.py", "CC0 (synthesised for this project)"),
 }
 
 def source_cell(r):
@@ -34,6 +35,10 @@ def source_cell(r):
         if "id" in meta:
             out.append(f"[BBC {meta['id']}](https://sound-effects.bbcrewind.co.uk/search?q={meta['id']}) {meta['desc']}")
             lic.add("BBC RemArc (personal/educational)")
+        elif meta.get("pack") == "synth":
+            files = r.get("files") or [s]
+            out.append(f"synthesised: `scripts/sfx/synth.py` `{meta['fn']}()`, {meta['desc']}")
+            lic.add(PACKS["synth"][1])
         else:
             url, l = PACKS[meta["pack"]]
             files = r.get("files") or [s]

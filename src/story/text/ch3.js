@@ -1,121 +1,121 @@
-// Ch3 "The Long Run": flashback. Owned by the Ch3 agent. Source: docs/DESIGN.md.
+// Ch3 « À la longue »: flashback. Owned by the Ch3 agent. Source: docs/DESIGN.md.
 // Week totals: 104.2 / 168.0 / 170.2 (Saturday). The race adds 42.2 -> 212.4.
 import { think, odile, hugo, dr } from './common.js';
 
 export default {
-  title: 'The Long Run',
+  title: 'À la longue',
   signs: { bakery: 'BOULANGERIE' },
-  objectives: { run: 'Keep it steady.', finish: 'Finish.' },
+  objectives: { run: 'Garder le rythme.', finish: 'Aller au bout.' },
   keys: { both: '[{KeyA} / {KeyD}]', a: '[{KeyA}]', d: '[{KeyD}]' }, // layout-aware tokens
-  gauge: { label: 'CADENCE', unit: 'spm', scale: 60 },
+  gauge: { label: 'CADENCE', unit: 'ppm', scale: 60 },
 
   // Non-blocking feedback from minigames.rhythm.
   cadence: {
-    mash: "Easy. It's a long way.",
-    low: "Don't let it drop.",
-    steady: "There. That's the stuff.",
+    mash: 'Tranquille. C’est long.',
+    low: 'Ne pas laisser tomber.',
+    steady: 'Voilà. C’est ça.',
   },
 
-  weekLabel: 'THIS WEEK',
+  weekLabel: 'CETTE SEMAINE',
 
   // Three training blocks. `thoughts` keys are metres into the segment.
   weeks: [
     {
-      caption: 'TRAINING BLOCK — WEEK 9 — 5:12 AM — THE LOOP',
+      caption: 'BLOC D’ENTRAÎNEMENT — SEMAINE 9 — 5 H 12 — LA BOUCLE',
       length: 60,
       total: 104.2,
       thoughts: {
-        15: "Cycling was other people's races. This one's mine. Every metre of it.",
-        33: "At fifteen I built my own wheels. I could hear a slack spoke from the kitchen.",
-        55: 'Only other light on at this hour is the bakery. I beat it every morning.',
+        15: 'Le vélo, c’étaient les courses des autres. Celle-ci est à moi. Chaque mètre.',
+        33: 'À quinze ans, je montais mes roues moi-même. J’entendais un rayon détendu depuis la cuisine.',
+        55: 'À cette heure-là, la seule autre lumière allumée, c’est la boulangerie. Je la bats tous les matins.',
       },
       stride: {
-        prompt: 'STRIDE: Six days in a row! Recovery is part of training. Take a rest day?',
+        prompt: 'STRIDE : Six jours d’affilée ! La récup fait partie de l’entraînement. Un jour de repos ?',
         options: [
-          { text: 'Rest day', reply: 'Rest day. Good idea. Tomorrow.' },
-          { text: 'Easy 10 km', reply: 'An easy ten. Easy is a state of mind.' },
-          { text: 'Dismiss', reply: 'Dismissed.' },
+          { text: 'Jour de repos', reply: 'Jour de repos. Bonne idée. Demain.' },
+          { text: '10 km tranquille', reply: 'Un petit dix tranquille. Tranquille, c’est un état d’esprit.' },
+          { text: 'Ignorer', reply: 'Ignoré.' },
         ],
       },
     },
     {
-      caption: 'TRAINING BLOCK — WEEK 20 — 5:04 AM — THE LOOP, TWICE',
+      caption: 'BLOC D’ENTRAÎNEMENT — SEMAINE 20 — 5 H 04 — LA BOUCLE, DEUX FOIS',
       length: 40,
       total: 168.0,
       thoughts: {
-        10: "There's a spot on the shin the size of a coin. I don't press it. If I don't press it, it isn't there.",
-        30: "Everybody's shin is a bit loud. Bastien says.",
+        10: 'Il y a un point sur le tibia, grand comme une pièce. Je n’appuie pas dessus. Si je n’appuie pas, il n’existe pas.',
+        30: 'Tout le monde a le tibia un peu bavard. C’est Bastien qui le dit.',
       },
       stride: {
-        prompt: 'STRIDE: Training load HIGH. Your body needs rest.',
+        prompt: 'STRIDE : Charge d’entraînement ÉLEVÉE. Ton corps a besoin de repos.',
         options: [
-          { text: 'Rest (tomorrow)', reply: 'I said tomorrow. I meant it at the time.' },
-          { text: 'Run', reply: null },
-          { text: 'Run anyway', reply: 'Anyway. My favourite pace.' },
+          { text: 'Repos (demain)', reply: 'J’ai dit demain. Sur le moment, je le pensais.' },
+          { text: 'Courir', reply: null },
+          { text: 'Courir quand même', reply: 'Quand même. Mon allure préférée.' },
         ],
       },
     },
     {
-      caption: 'TRAINING BLOCK — WEEK 31 — SATURDAY, 4:47 AM — THE LOOP, THREE TIMES',
+      caption: 'BLOC D’ENTRAÎNEMENT — SEMAINE 31 — SAMEDI, 4 H 47 — LA BOUCLE, TROIS FOIS',
       length: 40,
       total: 170.2,
       thoughts: {
-        10: 'Two ibuprofen. The stairs. The long way round.',
-        30: 'When it hurts, I count. Counting is a painkiller, if you do enough of it.',
+        10: 'Deux ibuprofènes. L’escalier. Le chemin le plus long.',
+        30: 'Quand ça fait mal, je compte. Compter, c’est un antidouleur, à forte dose.',
       },
       stride: {
-        prompt: 'STRIDE: Race day tomorrow! Taper complete?',
+        prompt: 'STRIDE : Course demain ! Affûtage terminé ?',
         options: [
-          { text: 'Yes', reply: ['Yes.', "It's not lying if it's a watch."] },
-          { text: 'Rest (after Sunday)', reply: 'Rest after Sunday. I was very firm about that.' },
-          { text: 'Snooze', reply: 'Snooze. Story of the year.' },
+          { text: 'Oui', reply: ['Oui.', 'Mentir à une montre, ce n’est pas mentir.'] },
+          { text: 'Repos (après dimanche)', reply: 'Repos après dimanche. J’étais très ferme là-dessus.' },
+          { text: 'Reporter', reply: 'Reporter. Toute mon année en un mot.' },
         ],
       },
     },
   ],
 
-  sunday: ['Sunday.'],
+  sunday: ['Dimanche.'],
 
   race: {
-    caption: 'STRIDE CITY MARATHON — KM 29',
-    label: 'RACE',
+    caption: 'MARATHON STRIDE — KM 29',
+    label: 'MARATHON',
     faceStart: 29.0,
     boards: ['KM 29', 'KM 30', 'KM 31'],
-    banners: ['STRIDE', 'NEVER STOP', 'STRIDE CITY MARATHON'],
+    banners: ['STRIDE', 'NE T’ARRÊTE JAMAIS', 'MARATHON STRIDE'],
     thoughts: {
-      km30: 'Thirty. This is where they say the wall is.',
-      km30plus: "I've never hit the wall. Not once. I was very proud of that.", // 12 m past KM 30
+      km30: 'Trente. C’est ici, paraît-il, qu’on prend le mur.',
+      km30plus: 'Je n’ai jamais pris le mur. Pas une fois. J’en étais très fier.', // 12 m past KM 30
     },
   },
 
   // Card, bg 'clear', italic.
   crack: [
-    "It wasn't loud. It sounded like a pencil lead going, somewhere inside a drawer.",
-    'I remember thinking: only eleven more.',
+    'Ce n’était pas fort. On aurait dit une mine de crayon qui casse, quelque part dans un tiroir.',
+    'Je me souviens avoir pensé : plus que onze.',
   ],
 
   // Guaranteed at 3 s into the limp.
-  keepGoing: 'I could have stopped. I want that on the record. I could have stopped.',
+  keepGoing: 'J’aurais pu m’arrêter. Je veux que ce soit noté. J’aurais pu m’arrêter.',
 
   // Over black: ui.watch(..., { over: true }).
   finish: {
-    face: '42.2 km',
+    face: '42,2 km',
     lap: '3:04:51',
-    buzz: 'GREAT EFFORT!',
-    weekLabel: 'THIS WEEK',
+    buzz: 'BEL EFFORT !',
+    weekLabel: 'CETTE SEMAINE',
     weekFrom: 170.2,
     weekTo: 212.4,
   },
 
-  doctor: [dr('See that? No. There.'), dr("It's thinner than a hair, Mr Revel. But it goes all the way through.")],
+  doctor: [dr('Vous voyez, là ? Non. Là.'), dr('Le trait est plus fin qu’un cheveu, monsieur Revel. Mais il va jusqu’au bout.')],
 
   present: [
-    odile('Well? How far?'),
-    hugo('Two hundred and twelve point four.'),
-    odile('In a week?'),
-    hugo('In a week.'),
-    odile('Where were you going?'),
-    hugo('...It was a loop.'),
+    odile('Alors ? Jusqu’où ?'),
+    hugo('Deux cent douze virgule quatre.'),
+    odile('En une semaine ?'),
+    hugo('En une semaine.'),
+    odile('Et vous alliez où, comme ça ?'),
+    hugo('…C’était une boucle.'),
   ],
 };
 

@@ -1,4 +1,5 @@
-"""Bake the French voice lines of HAIRLINE with Kyutai TTS 1.6B en_fr.
+"""Bake the French voice lines of HAIRLINE with Kyutai TTS 1.6B en_fr (and Chatterbox Multilingual for the speakers
+whose cast.json entry has "engine": "chatterbox": Jo).
 
 Run with the evaluation venv (mlx-whisper, speechbrain, parselmouth, pyloudnorm):
     nice -n 10 .cache/tts/A/evalvenv/bin/python scripts/voice/generate.py [options]
@@ -24,6 +25,14 @@ Options:
   --repost             re-run delivery processing for all lines (keeps takes)
   --regen              discard the selected lines' takes and generate them again (use with --only/--keys)
   --no-mac             generate only on the remote worker
+
+Engines (cast.json speakers[*].engine, default "kyutai"):
+  kyutai      "voice" (a kyutai/tts-voices embedding), "cfg", "temp"; Mac MLX worker and/or auriga (auriga_gen.sh).
+  chatterbox  zero-shot cloning from "ref" (a wav in the repo; its sha256 must equal "refHash"), with "exaggeration",
+              "cfgWeight", "temp", "t3", "lang". Always on auriga (remote/auriga_cb.sh: scripts/voice/clone/cb_worker.py
+              in ~/hairline-clone/venv-cb), host = --remote or the speaker's "host"; never on the Mac. The takes'
+              Whisper transcripts are also made on auriga (remote/asr_remote.py). The engine, model, settings and the
+              reference's hash are in the generation hash, so a new reference regenerates that speaker only.
   --dry-run            list what would be done        --report-only  recompute report/manifest/audition
 """
 import argparse
@@ -54,6 +63,7 @@ STATE_P = CACHE / "state.json"
 MAC_PY = ROOT / ".cache/tts/A/venv/bin/python"
 WORKER = HERE / "kyutai_worker.py"
 AURIGA = HERE / "remote/auriga_gen.sh"
+AURIGA_CB = HERE / "remote/auriga_cb.sh"
 POST_VERSION = 7  # bump when the post-processing code (not the cast.json chain) changes
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -113,8 +123,31 @@ def tts_of(l):  # per-key TTS text: pronunciation.json "lines", then cast.json t
     return o.get("tts", l["tts"])
 
 
+def engine(spk: str) -> str:
+    return CAST["speakers"][spk].get("engine", "kyutai")
+
+
+_REF_SHA = {}
+
+
+def ref_sha(sp) -> str:
+    """sha256 of a cloning reference (repo path). It must match the cast entry's refHash: a replaced reference is
+    caught here instead of silently mixing takes of two voices."""
+    p = ROOT / sp["ref"]
+    if p not in _REF_SHA:
+        _REF_SHA[p] = "sha256:" + hashlib.sha256(p.read_bytes()).hexdigest()
+        if sp.get("refHash") and sp["refHash"] != _REF_SHA[p]:
+            sys.exit(f"{sp['ref']}: sha256 {_REF_SHA[p]} differs from cast.json refHash {sp['refHash']}; "
+                     "update refHash after replacing the reference (this regenerates the speaker)")
+    return _REF_SHA[p]
+
+
 def gen_hash(l):
     sp = CAST["speakers"][l["speaker"]]
+    if engine(l["speaker"]) == "chatterbox":
+        return h({"engine": "chatterbox", "model": sp["model"], "t3": sp["t3"], "lang": sp["lang"],
+                  "tts": prep(tts_of(l)), "refHash": ref_sha(sp), "exaggeration": sp["exaggeration"],
+                  "cfgWeight": sp["cfgWeight"], "temp": sp["temp"], "seeds": QA["retakeSeeds"], "post": sp["post"]})
     return h({"model": CAST["model"]["id"], "tts": prep(tts_of(l)), "voice": sp["voice"], "cfg": sp["cfg"],
               "temp": sp["temp"], "seeds": QA["retakeSeeds"], "post": sp["post"]})
 
@@ -153,8 +186,10 @@ def speaker_post(raw: Path, proc: Path, ops):
     from parselmouth.praat import call
     snd = parselmouth.Sound(str(raw))
     for op in ops:
-        if op["op"] == "childify":
+        if op["op"] in ("childify", "gender"):  # Sami: child; Jo (R4): Québécois man -> woman
             snd = call(snd, "Change gender", 75, 600, op["formantRatio"], op["targetF0"], op["pitchRange"], 1.0)
+        elif op["op"] == "lengthen":  # Durand (R4): slower, pitch kept
+            snd = call(snd, "Lengthen (overlap-add)", 75, 600, op["factor"])
         else:
             raise ValueError(op)
     snd.save(str(proc), "WAV")
@@ -180,7 +215,12 @@ def qa_take(i, take):
     y, sr = sf.read(proc, dtype="float32")
     if y.ndim > 1:
         y = y.mean(1)
-    hyp = qa.asr(proc)
+    # A transcript made on auriga (engine=chatterbox: remote/asr_remote.py) is of the raw take; it stands for the
+    # processed one only when there is no speaker post (raw == proc). Otherwise Whisper runs here.
+    hyp = take.pop("asrRemote", None) if not sp["post"] else None
+    if hyp is None:
+        take.pop("asrRemote", None)
+        hyp = qa.asr(proc)
     st = qa.signal_stats(y, sr, tts_of(l))
     take.update(proc=str(proc), asr=hyp, wps=round(st["wps"], 2), cps=round(st["cps"], 1), span=st["span"],
                 letters=st["letters"], tailDb=round(st["tail_db"], 1))
@@ -215,18 +255,25 @@ CENT = {}
 F0MED = {}
 
 
+def _kept(l):
+    """Kept take of a line, only when it was made with the speaker's current cast entry (a recast speaker must not
+    be judged against the old voice's pitch / centroid)."""
+    st = STATE.get(line_id(l)) or {}
+    return (st.get("best") or {}) if st.get("genHash") == gen_hash(l) else {}
+
+
 def centroids():
     """Per-speaker ECAPA centroid sums and median F0 of the kept takes (dry), for the per-take speaker check."""
     CENT.clear()
     f0s = {}
     for l in LINES["lines"]:
-        b = (STATE.get(line_id(l)) or {}).get("best") or {}
+        b = _kept(l)
         if b.get("f0"):
             f0s.setdefault(l["speaker"], []).append(b["f0"])
     F0MED.clear()
     F0MED.update({k: float(np.median(v)) for k, v in f0s.items() if len(v) >= 3})
     for l in LINES["lines"]:
-        b = (STATE.get(line_id(l)) or {}).get("best") or {}
+        b = _kept(l)
         if b.get("emb"):
             c = CENT.setdefault(l["speaker"], {"sum": 0, "n": 0, "files": set()})
             c["sum"] = c["sum"] + np.array(b["emb"])
@@ -237,7 +284,9 @@ def centroids():
 def edge_words(l, take):
     """First/last-word checks on the ASR: a stray word before the line ('et j'allais'), a dropped first word
     ("'aurais pu" for "J'aurais pu"), or the last word missing. Returns a list of problems."""
-    ref, hyp = qa.norm(tts_of(l)).split(), qa.norm(take.get("asr") or "").split()
+    r0 = qa.norm(tts_of(l))
+    eq = lambda ws: [w2 for w in ws for w2 in qa.ASR_EQUIV.get(w, w).split()]  # noqa: E731
+    ref, hyp = eq(r0.split()), eq(qa.qc_hyp(r0, qa.norm(qa.strip_hallu(take.get("asr") or ""))).split())
     if not ref or not hyp or QA.get("noAsr", {}).get(l["key"]):
         return []
 
@@ -261,7 +310,7 @@ def edge_words(l, take):
         import unicodedata
 
         def tail(ws):
-            t = "".join(qa.silent(w) for w in ws)
+            t = "".join(qa.silent(w) for w in ws).replace("ç", "s")
             t = "".join(ch for ch in unicodedata.normalize("NFD", t) if unicodedata.category(ch) != "Mn")
             return t[-10:]
         if float(jiwer.cer(tail(ref), tail(hyp))) > 0.35:
@@ -299,6 +348,11 @@ def judge(l, take):
     n = take.get("letters", 99)
     take["badPace"] = bool((n >= 12 and not (lo <= take["cps"] <= hi)) or take["span"] > 1.5 + n * 0.15)
     take["cut"] = bool(take["tailDb"] > QA["maxTailDb"])
+    if take.get("asr") and qa.strip_hallu(take["asr"]) != take["asr"]:  # caption hallucination ("Sous-titrage ...")
+        take["asrRaw"], take["asr"] = take["asr"], qa.strip_hallu(take["asr"])
+    ver = QA.get("verified", {}).get(l["key"])  # a take checked by hand (Whisper skips a part it hears on its own)
+    if ver and ver.get("genHash") == gen_hash(l) and ver.get("attempt") == take.get("attempt") and take.get("asr") != ver["heard"]:
+        take["asrRaw"], take["asr"] = take["asr"], ver["heard"]
     no_asr = QA.get("noAsr", {}).get(l["key"])
     if no_asr:  # interjections ASR cannot score: judge on the voiced span only
         a, b = no_asr["span"]
@@ -310,6 +364,13 @@ def judge(l, take):
     take["speaker"] = l["speaker"]
     if ("emb" not in take or "onsetDb" not in take or "f0r" not in take) and take.get("proc") and Path(take["proc"]).exists():
         take_extras(take)
+    if take.get("f0r") is None and F0MED.get(l["speaker"]) and take.get("proc") and Path(take["proc"]).exists():
+        # scored before the speaker had a pitch median (first pass of a new / recast speaker): measure it now, or
+        # the second pass would skip the pitch check for every first-pass take
+        import librosa
+        y16, _ = librosa.load(take["proc"], sr=16000, mono=True)
+        med = F0MED[l["speaker"]]
+        take["f0r"] = round(qa.f0_median(y16, 16000, floor=max(50, med / 2.2), ceil=med * 2.5), 1) or None
     take["edge"] = edge_words(l, take)
     od = take.get("onsetDb", -99)  # the model started mid-phoneme: clipped consonant or a stray syllable
     take["hotOnset"] = bool(od > QA.get("hotOnsetDb", -12) and (take["edge"] or c > 0.0) or od > QA.get("hotOnsetHardDb", -6))
@@ -320,7 +381,7 @@ def judge(l, take):
     take["f0Dev"] = round(12 * np.log2(take["f0r"] / med), 1) if take.get("f0r") and med else None
     lim = QA.get("maxF0DevSt", 7) if take.get("machine", "mac") == "mac" else QA.get("maxF0DevStRemote", 4)
     if take["f0Dev"] is not None and abs(take["f0Dev"]) > lim:
-        take["wrongSpk"] = True  # pitch far off the character's (Odile at 280 Hz, Marco +6 st on auriga)
+        take["wrongSpk"] = True  # pitch far off the character's (Odile at 280 Hz, Gérard +6 st on auriga)
     take["pass"] = bool(c <= QA["maxCer"] and not take["cut"] and not take["badPace"] and take["ended"]
                         and not take["edge"] and not take["hotOnset"] and not take["wrongSpk"])
     take["score"] = round(score(take), 4)
@@ -336,7 +397,18 @@ if args.keys:
     keep = set(args.keys.split(","))
     lines = [l for l in lines if l["key"] in keep or line_id(l) in keep]
 BYID = {line_id(l): l for l in lines}
-centroids()
+
+# A line that becomes a per-speaker variant (the same text now said by a second character) moves from
+# <key>.ogg to <key>-<speaker>.ogg: keep its takes when they were made with this speaker's voice.
+for l in LINES["lines"]:
+    i = line_id(l)
+    old = STATE.get(l["key"])
+    if l.get("variant") and i not in STATE and old and old.get("genHash") == gen_hash(l) and old.get("best") \
+            and (old["best"].get("speaker") or l["speaker"]) == l["speaker"]:
+        STATE[i] = json.loads(json.dumps(old))
+        STATE[i].pop("postHash", None)
+        STATE[i].pop("out", None)
+        log(f"variant {i}: kept the takes of {l['key']}")
 
 def pick_best(i):
     st = STATE.get(i)
@@ -346,6 +418,12 @@ def pick_best(i):
     if good:
         st["best"] = min(good, key=lambda t: (t["score"], t["attempt"]))
 
+
+if args.regen:
+    for i in BYID:
+        STATE.pop(i, None)
+centroids()
+SPK_NO_F0 = {l["speaker"] for l in lines} - set(F0MED)  # no pitch reference yet (new or recast speaker)
 
 if args.reasr or args.requa:
     for i, l in BYID.items():
@@ -375,10 +453,6 @@ if args.reasr or args.requa:
                 st["done"] = False  # gets its remaining retakes on this run
     save_state()
     log("re-scored stored takes" + (" (new ASR)" if args.reasr else ""))
-
-if args.regen:
-    for i in BYID:
-        STATE.pop(i, None)
 
 need_gen, need_post, up_to_date = [], [], []
 for l in lines:
@@ -410,6 +484,8 @@ WORK_LOCK = threading.Lock()
 RESULTS = queue.Queue()
 INFLIGHT = {"n": 0}
 STOP = threading.Event()
+WORK_EVT = threading.Event()  # set when work is queued: idle workers wake on it (a plain time.sleep in a background
+#                               job can be held for minutes by macOS timer coalescing)
 MACHINE_STATS = {}
 
 
@@ -426,14 +502,20 @@ def take_path(i, attempt, machine):
     return d / f"a{attempt}-{machine}.wav"
 
 
-def grab(n):
-    """Take up to n similar-length work items (same attempt -> same seed)."""
+def has_work(eng="kyutai"):
     with WORK_LOCK:
-        if not WORK:
+        return any(engine(BYID[w[0]]["speaker"]) == eng for w in WORK)
+
+
+def grab(n, eng="kyutai"):
+    """Take up to n similar-length work items (same attempt -> same seed) of one engine."""
+    with WORK_LOCK:
+        mine = [w for w in WORK if engine(BYID[w[0]]["speaker"]) == eng]
+        if not mine:
             return []
-        WORK.sort(key=lambda x: (x[1], len(BYID[x[0]]["tts"])))
-        a0 = WORK[0][1]
-        same = [w for w in WORK if w[1] == a0][:n]
+        mine.sort(key=lambda x: (x[1], len(BYID[x[0]]["tts"])))
+        a0 = mine[0][1]
+        same = [w for w in mine if w[1] == a0][:n]
         for w in same:
             WORK.remove(w)
         INFLIGHT["n"] += len(same)
@@ -450,9 +532,10 @@ def mac_machine(batch):
     while not STOP.is_set():
         got = grab(batch)
         if not got:
-            if INFLIGHT["n"] == 0 and not WORK:
+            if INFLIGHT["n"] == 0 and not has_work():
                 break
-            time.sleep(1)
+            WORK_EVT.wait(1)
+            WORK_EVT.clear()
             continue
         items = [item_for(i, a, take_path(i, a, name)) for i, a in got]
         req = {"seed": items[0]["seed"], "temp": items[0]["temp"], "initialPadding": PAD, "items": items}
@@ -485,9 +568,10 @@ def remote_machine(host, chunk, batch):
     while not STOP.is_set():
         got = grab(chunk)
         if not got:
-            if INFLIGHT["n"] == 0 and not WORK:
+            if INFLIGHT["n"] == 0 and not has_work():
                 break
-            time.sleep(2)
+            WORK_EVT.wait(2)
+            WORK_EVT.clear()
             continue
         jobs = []
         for i, a in got:
@@ -525,6 +609,81 @@ def remote_machine(host, chunk, batch):
         log(f"{host} run {run}: {n_ok}/{len(jobs)} lines in {dt:.0f}s (rc {rc})")
         if rc != 0:
             log(f"{host} failed; disabling remote for this run")
+            break
+
+
+def cb_machine(host, chunk):
+    """engine=chatterbox speakers: Chatterbox Multilingual on auriga (remote/auriga_cb.sh -> clone/cb_worker.py), one
+    take per (line, attempt) at that attempt's retake seed, with the Whisper transcript made on auriga too. The
+    machine name is the host, so the remote pitch limit (maxF0DevStRemote) applies."""
+    name = host
+    MACHINE_STATS[name] = {"lines": 0, "audio_s": 0.0, "gen_s": 0.0, "batches": 0}
+    rdir = CACHE / "remote"
+    rdir.mkdir(exist_ok=True)
+    while not STOP.is_set():
+        got = grab(chunk, "chatterbox")
+        if not got:
+            if INFLIGHT["n"] == 0 and not has_work("chatterbox"):
+                break
+            WORK_EVT.wait(2)
+            WORK_EVT.clear()
+            continue
+        jobs = []
+        for i, a in got:
+            l = BYID[i]
+            sp = CAST["speakers"][l["speaker"]]
+            ref = ROOT / sp["ref"]
+            jobs.append({"key": f"{i}.a{a}", "refLocal": str(ref),
+                         "refName": f"{ref.stem}-{ref_sha(sp)[7:19]}{ref.suffix}", "text": prep(tts_of(l)),
+                         "lang": sp["lang"], "seed": QA["retakeSeeds"][a] + args.seed_offset, "takes": 1,
+                         "exaggeration": sp["exaggeration"], "cfg_weight": sp["cfgWeight"], "temperature": sp["temp"]})
+        run = "cb-" + h([j["key"] + STATE[i]["genHash"] for j, (i, a) in zip(jobs, got)])[:10]
+        # the reference goes to auriga under a content-addressed name (a replaced reference never reuses a file)
+        stage = rdir / run / "refs"
+        stage.mkdir(parents=True, exist_ok=True)
+        for j in jobs:
+            dst = stage / j.pop("refName")
+            if not dst.exists():
+                shutil.copy(j["refLocal"], dst)
+            j["refLocal"] = str(dst)
+        t3 = {CAST["speakers"][BYID[i]["speaker"]]["t3"] for i, _ in got}
+        assert len(t3) == 1, "one T3 checkpoint per run"
+        jp = rdir / f"{run}.json"
+        json.dump(jobs, open(jp, "w"), ensure_ascii=False, indent=1)
+        od = rdir / run / "out"
+        t0 = time.time()
+        rc = subprocess.run(["bash", str(AURIGA_CB), str(jp), str(od), "--name", run, "--host", host, "--t3", t3.pop()],
+                            stdout=open(CACHE / f"{host}-cb.log", "a"), stderr=subprocess.STDOUT).returncode
+        dt = time.time() - t0
+        asr = {}
+        try:
+            asr = json.load(open(od / "asr.json"))
+        except Exception:  # noqa: BLE001
+            pass
+        ms = MACHINE_STATS[name]
+        n_ok = 0
+        for j, (i, a) in zip(jobs, got):
+            src = od / f"{j['key']}.t0.wav"
+            if rc == 0 and src.exists():
+                dst = take_path(i, a, name)
+                shutil.copy(src, dst)
+                d = sf.info(dst).duration
+                ms["lines"] += 1
+                ms["audio_s"] += d
+                n_ok += 1
+                tk = {"attempt": a, "machine": name, "engine": "chatterbox", "seed": j["seed"], "raw": str(dst),
+                      "dur": d, "ended": True, "batch": 1, "pad": None}
+                if src.name in asr:
+                    tk["asrRemote"] = asr[src.name]
+                RESULTS.put((i, tk))
+            else:  # nobody else can make these takes: leave them for the next run
+                with WORK_LOCK:
+                    INFLIGHT["n"] -= 1
+        ms["gen_s"] += dt
+        ms["batches"] += 1
+        log(f"{host} chatterbox run {run}: {n_ok}/{len(jobs)} takes in {dt:.0f}s (rc {rc})")
+        if rc != 0:
+            log(f"{host} chatterbox failed (see {CACHE / (host + '-cb.log')}); its lines stay pending, re-run to resume")
             break
 
 
@@ -687,12 +846,17 @@ if not args.report_only and need_gen:
         WORK.append((i, nxt))
     save_state()
     threads = []
-    if not args.no_mac:
+    if not args.no_mac and has_work("kyutai"):
         threads.append(threading.Thread(target=mac_machine, args=(args.batch or CAST["model"]["defaults"]["batch"],),
                                         daemon=True))
-    if args.remote:
+    if args.remote and has_work("kyutai"):
         threads.append(threading.Thread(target=remote_machine, args=(args.remote, args.remote_chunk,
                                                                       args.remote_batch), daemon=True))
+    if has_work("chatterbox"):  # Chatterbox runs on auriga only (never on the Mac)
+        cb_hosts = {args.remote or CAST["speakers"][BYID[i]["speaker"]].get("host", "auriga") for i, _ in WORK
+                    if engine(BYID[i]["speaker"]) == "chatterbox"}
+        for host in sorted(cb_hosts):
+            threads.append(threading.Thread(target=cb_machine, args=(host, args.remote_chunk), daemon=True))
     for t in threads:
         t.start()
     total = len(WORK)
@@ -729,6 +893,7 @@ if not args.report_only and need_gen:
         else:
             with WORK_LOCK:
                 WORK.append((i, len(st["takes"])))
+            WORK_EVT.set()
         with WORK_LOCK:
             INFLIGHT["n"] -= 1
         tag = "ok " if take["pass"] else "re " if not st["done"] else "BAD"
@@ -823,7 +988,9 @@ try:
     old = json.load(open(mp))
 except Exception:
     pass
-man = {"version": 1, "model": f"{CAST['model']['id']} (moshi-mlx bf16; cfg 2.0, temp 0.6)",
+CLONED = sorted(k for k in CAST["speakers"] if engine(k) == "chatterbox")
+man = {"version": 1, "model": f"{CAST['model']['id']} (moshi-mlx bf16 on the Mac / PyTorch-ROCm on auriga; cfg 2.0, temp 0.6)"
+       + "".join(f"; {k}: {CAST['speakers'][k]['model']} (cloned voice, auriga)" for k in CLONED),
        "generatedAt": old.get("generatedAt") if old.get("lines") == man_lines else
        datetime.now(timezone.utc).isoformat(timespec="seconds"),
        "lines": dict(sorted(man_lines.items()))}
@@ -896,7 +1063,7 @@ log("failed:", len(fails), "| distinctness max pair:", rep["distinctness"]["maxP
 AUD = ROOT / ".cache/tts/audition"
 AUD.mkdir(parents=True, exist_ok=True)
 esc = lambda s: str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")  # noqa
-order = ["hugo", "odile", "sami", "bastien", "ines", "marco", "benali", "okafor", "receptionist", "tv",
+order = ["hugo", "odile", "sami", "bastien", "lou", "gerard", "benali", "jo", "durand", "okafor", "receptionist", "tv",
          "radio_fishing", "radio_football", "radio_forecast"]
 blocks = []
 for spk in order:
@@ -927,7 +1094,7 @@ for spk in order:
         f'<td class="m">{esc(l["file"][:-4])}</td></tr>' for l in sorted(ls, key=lambda l: l["path"]))
     blocks.append(f'<section><h2>{esc(meta.get("who", spk))} <span>{esc(meta.get("name", ""))}'
                   f' · {esc(meta.get("age", ""))} · F0 {rep["f0Median"].get(spk, 0):.0f} Hz · {len(ls)} lines</span></h2>'
-                  f'<p class="v">{esc(sp["voice"])} ({esc(sp["licence"])}){" + childify" if sp["post"] else ""}'
+                  f'<p class="v">{esc(sp.get("voice") or (sp.get("engine", "") + ": " + sp.get("ref", "")))} ({esc(sp["licence"])}){"".join(" + " + o["op"] for o in sp["post"])}'
                   f' — {esc(sp.get("why", ""))}</p><table>{rows}</table>'
                   + (f'<details><summary>All {len(ls)} lines</summary><table>{allrows}</table></details>' if len(ls) > 3 else '')
                   + '</section>')
@@ -966,6 +1133,52 @@ try:
                 f'<details open><summary>Before / after</summary><table>{rows_c}</table></details>')
 except Exception:  # noqa: BLE001
     pass
+# New lines (R4 voice phase): every clip not in the manifest before it, by chapter then speaker
+new_html = ""
+try:
+    base = set(json.load(open(CACHE / "baseline-r4.json"))["ids"])
+    game_ch = {}
+    for f in sorted((ROOT / "src/story/text/games").glob("ch*.js")):
+        for g in re.findall(r"^  (\w+): \{", f.read_text(), re.M):
+            game_ch[g] = f.stem
+    def chap(l):
+        a = l["path"].split(".")
+        if a[0] == "games" and len(a) > 1:
+            return game_ch.get(a[1], "games")
+        return a[0] if re.fullmatch(r"ch\d", a[0]) else "items" if a[0] == "items" else "common"
+    CH_NAME = {**{f"ch{n}": f"Chapitre {n}" for n in range(1, 8)}, "items": "Objets (tous chapitres)",
+               "common": "Commun", "games": "Mini-jeux"}
+    new = [l for l in ALL if line_id(l) not in base]
+    by = {}
+    for l in new:
+        by.setdefault(chap(l), {}).setdefault(l["speaker"], []).append(l)
+    secs = []
+    for ch in sorted(by, key=lambda c: (not c.startswith("ch"), c)):
+        sub = []
+        for spk in [s for s in order if s in by[ch]] + sorted(set(by[ch]) - set(order)):
+            ls = sorted(by[ch][spk], key=lambda l: l["path"])
+            rr = []
+            for l in ls:
+                st = STATE.get(line_id(l), {})
+                b = st.get("best") or {}
+                ok = bool(b.get("pass")) and bool(st.get("out"))
+                au = (f'<audio controls preload="none" src="../../../{esc(CAST["output"]["dir"])}/{esc(l["file"])}"></audio>'
+                      if (OUT / l["file"]).exists() else "<small>no clip</small>")
+                rr.append(f'<tr{"" if ok else " class=bad"}><td class="d">{esc(l["delivery"])}</td><td>{esc(l["text"])}'
+                          f'<small>{esc(l["path"])}{" · heard: " + esc(b.get("asr", "")) if b.get("cer") else ""}</small></td>'
+                          f'<td>{au}</td><td class="m">CER {b.get("cer", 1):.2f} · {len(st.get("takes", []))} take(s)'
+                          f'{" · " + esc(b.get("machine", "")) if b else ""}{"" if ok else " · QA FAIL"}</td></tr>')
+            sub.append(f'<h3>{esc(LINES["speakers"].get(spk, {}).get("who", spk))} <span>{len(ls)}</span></h3><table>{"".join(rr)}</table>')
+        n = sum(len(v) for v in by[ch].values())
+        secs.append(f'<details open><summary><b>{esc(CH_NAME.get(ch, ch))}</b> · {n} lines</summary>{"".join(sub)}</details>')
+    new_dur = sum(STATE.get(line_id(l), {}).get("out", {}).get("dur", 0) for l in new)
+    new_html = (f'<h2>New lines (R4) <span>{len(new)} clips · {new_dur / 60:.1f} min · by chapter, then speaker</span></h2>'
+                '<p class="v">Every clip that was not in the manifest before the R4 voice phase. Jo is the cloned voice '
+                'cb-qc1-clear (Chatterbox Multilingual, docs/voice.md §15; her clips were regenerated 2026-10-09); M. Durand is '
+                'provisional (§13). To recast one speaker, change its entry in scripts/voice/cast.json, then '
+                '<code>generate.py --only jo --remote auriga --no-mac</code>.</p>' + "".join(secs))
+except Exception as ex:  # noqa: BLE001
+    log("new-lines section skipped:", repr(ex))
 (AUD / "index.html").write_text(f"""<!doctype html><meta charset="utf-8"><title>HAIRLINE cast audition</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
@@ -976,13 +1189,37 @@ h2 span{{color:var(--dim);font-size:13px;font-weight:400}} .v{{color:var(--dim);
 table{{border-collapse:collapse;width:100%}} td{{border-bottom:1px solid var(--line);padding:8px;vertical-align:middle}}
 td small{{display:block;color:var(--dim);font-size:12px}} .d{{color:var(--dim);font-size:12px;width:70px}} .m{{color:var(--dim);font-size:12px;white-space:nowrap}}
 audio{{width:240px;height:32px}} a{{color:var(--acc)}} .note{{color:var(--dim)}}
-details{{margin:8px 0}} summary{{cursor:pointer;color:var(--dim)}} td small{{display:block}}
+details{{margin:8px 0}} h3{{margin:14px 0 2px;font-weight:500}} h3 span{{color:var(--dim);font-size:12px}} tr.bad td{{background:#3a1d1a}} code{{color:var(--acc)}} summary{{cursor:pointer;color:var(--dim)}} td small{{display:block}}
 </style>
 <h1>HAIRLINE · French cast</h1>
 <p class="note">Kyutai TTS 1.6B en_fr, final processed clips (Opus, delivery processing baked in). Three real lines per character
 (fewer when the character has fewer). Mean CER {rep['meanCer']}, {rep['inManifest']}/{rep['lines']} lines, {rep['totalDurS']/60:.1f} min.
 Max ECAPA similarity between two characters: {esc(rep['distinctness']['maxPair'])}. <a href="../listen.html">Listening checklist</a>.</p>
+{new_html}
+<h2 style="margin-top:40px">Cast <span>three real lines per character, then all of them</span></h2>
 {''.join(blocks)}
 {qa_html}
 """)
 log("audition page:", AUD / "index.html")
+
+# A speaker that had no pitch median / ECAPA centroid at the start of the run (new or recast) was generated without
+# the per-take pitch and speaker checks. Now that its kept takes exist, re-score them (and give the takes that
+# fail their remaining retakes) in a second pass.
+if SPK_NO_F0 and not (args.requa or args.reasr or args.dry_run or args.report_only):
+    now = {l["speaker"] for l in ALL if _kept(l).get("f0")}
+    cnt = {s: sum(1 for l in ALL if l["speaker"] == s and _kept(l).get("f0")) for s in SPK_NO_F0 & now}
+    redo = sorted(s for s, n in cnt.items() if n >= 3)
+    if redo:
+        argv, skip = [], False
+        for a in sys.argv[1:]:
+            if skip:
+                skip = False
+                continue
+            if a in ("--only", "--keys"):
+                skip = True
+                continue
+            if a == "--regen" or a.startswith(("--only=", "--keys=")):
+                continue
+            argv.append(a)
+        log("second pass with pitch / speaker checks for", ",".join(redo))
+        os.execv(sys.executable, [sys.executable, __file__, *argv, "--requa", "--only", ",".join(redo)])

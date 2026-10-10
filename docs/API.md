@@ -10,7 +10,8 @@ Read this file, `docs/DESIGN.md` (story, beats, mood values) and your own two fi
 - **Text:** all story text lives in `src/story/text/*.js`, assembled by `src/story/script.js` as `L` (`import { L } from './script.js'`).
   - Use `L.chN.*` (and shared `L.notebook.items.*`, `L.watch.*`, `L.hints.*`, `L.names.*`) and do not retype lines.
   - If a beat really needs a string that is missing (for example a tiny prompt label), define it as a local const at the top of your chapter file. Mark it with `// TEXT:` so it can be moved later.
-- **Testing:** use `http://localhost:5173/?debug=1&autostart=1&skipcards=1&chapter=N`, where N is 0-based: Ch1 = 0 … Ch5 = 4.
+- **Revision 4 (seven chapters, docs/SCRIPT-R4.md §0.3):** Ch1 « Sans impact », Ch2 « Ne t’arrête jamais », Ch3 « À la longue », Ch4 « Mesurer deux fois » (Day 5, Day 8), **Ch5 « Qui a huilé le rideau ? »** (new; Week 4 moved in from Ch4), **Ch6 « Service de nuit »** (new; Week 7 moved in from Ch4), **Ch7 « Le Mur »** (the old Ch5: `ch7.js`, `ch7jobs.js`, `ch7panel.js`, text keys `ch7.*`; its scene files keep the `scene5` names). Ch5 and Ch6 play in several scenes: see `Director.scene()` (§7) and `src/story/sets.js`. **Older notes in this file that say « Ch5 » about the wall, the line, the jobs, the panel or the golden walk mean today's Ch7.**
+- **Testing:** use `http://localhost:5173/?debug=1&autostart=1&skipcards=1&chapter=N`, where N is 0-based: Ch1 = 0 … Ch7 = 6.
   - The dev server hot-reloads.
   - `window.__game` exposes everything (see [Debug](#debug)).
 
@@ -42,41 +43,38 @@ import { rhythm, timing, makeSteer, memory } from './minigames.js'; // from src/
 
 Addons: `import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';` The `.js` extension is required.
 
-### Text and languages (i18n)
+### Text (French only)
 
-All player-facing text lives in `src/story/text/{common,ch1..ch5}.js` (English) and
-`src/story/text/fr/*.js` (French, same shape), assembled into `L` (`script.js`). `src/story/i18n.js`
-owns `getLang()`, `setLang(code)`, `onLangChange(fn, { chapter })` (returns unsubscribe), `LANGS` and
-`retext(s)` (a string from L in any language -> the same key now).
+The game is French only. All player-facing text lives in `src/story/text/{common,ch1..ch5}.js`, the
+text as shown, assembled into `L` (`script.js`). Style, typography and tu/vous rules for authors:
+`docs/i18n-fr.md`. `node scripts/text-check.mjs` checks it (exit 1 on errors; CI runs it).
+`src/story/i18n.js` owns `L`'s key-token resolution, `onLangChange(fn, { chapter })` (fires when `L` is
+re-resolved; returns unsubscribe), `retext(s)` (a string taken from L before a re-resolve -> the same key
+now), `num(s)` and `parseNum(s)`. `getLang()` always returns `'fr'`.
 
-- `setLang` rewrites `L` **in place**: `L` and every nested object/array keep their identity, so
-  `const T = L.ch2` at module scope is fine. **Never cache a string** (or anything built from one) at
-  module scope or in a constructor; read `L.ch2.howFarLap` when you use it. Chapter `title` /
-  `objective` are getters for that reason.
+- `L` is rewritten **in place** when it is re-resolved: `L` and every nested object/array keep their
+  identity, so `const T = L.ch2` at module scope is fine. **Never cache a string** (or anything built
+  from one) at module scope or in a constructor; read `L.ch2.howFarLap` when you use it. Chapter
+  `title` / `objective` are getters for that reason.
 - The UI re-renders what is on screen (objective, prompts, hotspot prompts, watch labels, notebook,
-  menus, pause/Options); a dialogue line or card already up finishes in the old language.
+  menus, pause/Options); a dialogue line or card already up keeps its text.
 - Canvas text in the world: `B.relabel(signMesh, () => text)` or
-  `B.relangTexture(material, () => makeTexture(), ['map', 'emissiveMap'])` redraw it on a switch (chapter
-  scoped; the Director drops them between chapters). Anything else is right after the chapter reloads.
-- A key missing from a translation falls back to English (debug: warning `[i18n] missing fr key: path`).
-- In-world signage that is already French (RÉPARATIONS, BOULANGERIE, street names) stays as it is in
-  every language (`AS_IS` in `scripts/i18n-lib.mjs`).
-- Numbers: `ui.watch()` and the end card show decimals through `num(s)` (`'212.4 km'` -> `'212,4 km'` in
-  French), so code keeps `toFixed()`; parse a face from text with `parseNum(s)` (either mark).
-- Key names: text writes keys as tokens, in every language: `{KeyA}`…`{KeyZ}` (a physical
-  `KeyboardEvent.code`, labelled with the player's layout: `{KeyW}{KeyA}{KeyS}{KeyD}` shows WASD on QWERTY,
-  ZQSD on AZERTY) and `{Space}` `{Shift}` `{Escape}` `{Enter}` `{Arrows}` (named from `L.keyNames`).
-  `L` holds them resolved (`src/core/KeyLabels.js`: real keydowns > `navigator.keyboard.getLayoutMap()` >
-  US QWERTY); when the layout is learned, `L` is re-resolved and `onLangChange` listeners fire. Code never
-  writes a key letter: use `L.ch3.keys.both`, `L.hints.*`, or `label('KeyE')` / `keyText(s)` from KeyLabels.
-  The checker requires the same tokens in English and translations and flags literal key names.
-
-**Adding a language:** `node scripts/i18n-skeleton.mjs <code>` writes `src/story/text/<code>/*.js` with
-every text leaf marked `⟦EN⟧ `; translate those (keep keys, array lengths, `who`/`inner`/`voicemail`/
-`correct`, `*stage*` markers, `{n}`, `[{KeyE}]` chips and `{KeyA}` key tokens), add `{ code, label }` to `LANGS` in
-`i18n.js` and the imports to `TEXTS` in `script.js`. Then `node scripts/i18n-check.mjs <code>` reports
-missing/extra keys, shape and flag mismatches, lost markers/placeholders/numbers, untranslated text,
-and text over the UI `LIMITS` (max characters per tight spot, measured at 1280x800); exit 1 on errors.
+  `B.relangTexture(material, () => makeTexture(), ['map', 'emissiveMap'])` redraw it when `L` is
+  re-resolved (chapter scoped; the Director drops them between chapters).
+- Numbers: `ui.watch()` and the end card show decimals through `num(s)` (`'212.4 km'` -> `'212,4 km'`),
+  so code keeps `toFixed()`; parse a face from text with `parseNum(s)` (either mark).
+- Key names: text writes keys as tokens: `{KeyA}`…`{KeyZ}` (a physical `KeyboardEvent.code`, labelled
+  with the player's layout: `{KeyW}{KeyA}{KeyS}{KeyD}` shows WASD on QWERTY, ZQSD on AZERTY) and
+  `{Space}` `{Shift}` `{Escape}` `{Enter}` `{Arrows}` (named from `L.keyNames`: Espace, Maj, Échap,
+  Entrée, Flèches). `L` holds them resolved (`src/core/KeyLabels.js`: real keydowns >
+  `navigator.keyboard.getLayoutMap()` > US QWERTY); when the layout is learned, `L` is re-resolved and
+  `onLangChange` listeners fire. Code never writes a key letter: use `L.ch3.keys.both`, `L.hints.*`, or
+  `label('KeyE')` / `keyText(s)` from KeyLabels. The checker flags unknown tokens and literal key names.
+- `text-check` also checks: no empty text, no leftover English (a cheap stop-word test), French
+  typography (« » with a no-break space inside, a no-break space before ? ! : ;, ’, …, decimal comma,
+  no double spaces) and text over the UI `LIMITS` (max characters per tight spot, measured at 1280x800).
+- After any change to a voiced line, run `node scripts/voice/extract-lines.mjs` and the generator
+  (`docs/voice.md`); `--check` fails while a voiced line has no clip.
 
 ---
 
@@ -98,6 +96,7 @@ export default {
   player: {                     // passed to player.configure() (see §5). bounds default to build().bounds
     spawn: [0, 1.5], facing: Math.PI, boot: true, limp: 1, painRate: 1 / 0.7, canJog: true, footsteps: 'boot',
   },
+  look: 'workshop',             // optional: the LOOKS name of the build's scene (default CHAPTER_LOOKS[i], world/look.js)
   build: (ctx) => buildScene1(ctx), // may be async; returns { group, bounds, spots, update?, dispose?, ...extras }
   async run(ctx, d) { /* the chapter's beats, top to bottom; return when the chapter is over */ },
 };
@@ -123,6 +122,11 @@ export default {
 11. After the last chapter, it fades and shows the ending cards and end card (`ui.endCard()`), with piano music.
 
 So `run()` starts with the player standing at `spawn` in a lit, faded-in scene.
+
+**Several scenes in one chapter (Revision 4).** `build` is the chapter's first scene. To move elsewhere mid-chapter
+(the workshop → the street by day → the street at 4 a.m. → the flat), call `W = await d.scene(set)` (§7) with a
+set from `src/story/sets.js`; it rebuilds the world behind a fade. List **every** scene's sounds in `sounds` (they
+are preloaded with the chapter, not per scene).
 
 **Return from `run()` to end the chapter.** Leave the screen however you like (for example faded to white). The next chapter's fade keeps that colour.
 
@@ -256,7 +260,7 @@ This never throws. If the character files fail to load, it returns a capsule sta
 
 | opt | default | |
 |---|---|---|
-| `preset` | `'passerby'` | Cast recipe: `'hugo' 'odile' 'sami' 'bastien' 'ines' 'marco' 'mme' 'runner' 'spectator' 'passerby'`. |
+| `preset` | `'passerby'` | Cast recipe: `'hugo' 'odile' 'sami' 'bastien' 'ines' 'marco' 'mme' 'runner' 'spectator' 'passerby'` (`ines` is Lou, `marco` is Gérard: the preset ids kept their old names). |
 | `variant` | — | Preset tokens: `'m'` / `'f'` (body), `'long'` (long sleeves and tights on runners), `'rain'` (a hood instead of hair). Hugo: `'civilian'` (default), `'runner'`, `'runner_dawn'`. Every runner recipe (Hugo's kits, `'runner'`, `'bastien'`) narrows the athletic body to 0.86 in x/z (`slim`), so the run club and the race field share one build. |
 | `tint` | preset | Main garment colour (shirt/blouse and sleeves; the kit top on runners). The DESIGN tints still apply: Odile `#9a7a4e`, Sami `#c24a3a`, the club's hi-vis. |
 | `scale` | preset | Overrides the preset's size (adult rigs are 1.81 m male, 1.77 m female at 1; Odile 0.95, Sami 0.74, Mme 0.92). |
@@ -399,7 +403,7 @@ radio.set(0.5 * dialSpeed, 1, 0.08); // ... radio.stop(0.2)
 
 **Ch4 / Ch5 helpers (`src/story/crafts/sound.js`).**
 
-- `speaking(ctx)`: true while a voice clip plays (never in English, or with voices off).
+- `speaking(ctx)`: true while a voice clip plays (never with voices off).
 - `duckUnderVoice(ctx, handle, {db=6})`: dips a long one-shot (a kettle, the run club passing) while a clip plays. Driven loops do the same in their own `set()` (×0.6 while `speaking`).
 - `wheelSound(ctx, rig)`: `freewheel_tick`, whose gain and rate follow a `bikeRig`'s measured rear-wheel speed (hand turns, a spin on the stand, a walk beside the rider), plus `freewheel_coastdown` when a free spin is let go. Returns `{dispose()}`.
 - `stirSlice(audio)`: a 0.4 s slice of `paint_stir_loop` with 60 ms fades.
@@ -421,11 +425,11 @@ radio.set(0.5 * dialSpeed, 1, 0.08); // ... radio.stop(0.2)
 
 #### Runtime API: French voices (`ctx.voice`, `src/core/Voice.js`)
 
-French voice-over for the displayed lines (docs/voice.md §8). Chapters rarely call it: the UI plays dialogue lines, menu replies, voiced card lines, thoughts and barks itself. It is active only in French with the Voices option on (`localStorage['hairline.voice']`, default on); otherwise every call is a no-op and nothing is fetched.
+French voice-over for the displayed lines (docs/voice.md §8). Chapters rarely call it: the UI plays dialogue lines, menu replies, voiced card lines, thoughts and barks itself. It is active with the Voix option on (`localStorage['hairline.voice']`, default on) and WebAudio up; otherwise every call is a no-op and nothing is fetched.
 
 | Member | Notes |
 |---|---|
-| `active` / `enabled` / `supported` | Clips play / the saved option / the language is French. |
+| `active` / `enabled` / `supported` | Clips play / the saved option / always true (the game is French). |
 | `setEnabled(on)` | The Options row calls it. Turning it off stops the clip. |
 | `play(text, who, {kind='dialogue'\|'thought'}) → clip \| null` | `clip`: `{dur, busy, state, remaining(), ended, stop(fade)}`. A dialogue stops whatever is playing; a thought is skipped over a dialogue clip. Never two clips at once. |
 | `cur` | The clip loading or playing (`cur?.state === 'playing'`: something is being said; see `speaking(ctx)` in `crafts/sound.js`). |
@@ -443,7 +447,7 @@ Debug: `__game.debug.voice`, `voiceLog` (`request`/`start`/`end`/`stop`/`miss`/`
 
 Blocking methods return Promises. In chapters, call the **Director wrappers** (`d.say`, `d.card`, `d.choose`, `d.correct`) so `skip()` works. Text supports `*emphasis*` (rendered italic).
 
-**Speaker colours.** A speaker's CSS class is the first word of `who`, lowercased (`'Dr Okafor'` → `dr`, `"Dr Okafor's office"` → `dr`, `'Bastien (Run Club)'` → `bastien`, `'Mme Benali'` → `mme`). Coloured: `hugo odile sami bastien stride dr ines marco mme tv phone mum`; anything else is grey.
+**Speaker colours.** A speaker's CSS class is the first word of `who`, lowercased, accents dropped (`'Dr Okafor (cabinet)'` → `dr`, `'Bastien (club)'` → `bastien`, `'Mme Benali'` → `mme`, `'Gérard'` → `gerard`), then `Téléphone` → `phone` and `Maman` → `mum`. Coloured: `hugo odile sami bastien stride dr lou gerard mme tv phone mum`; anything else is grey.
 
 | Method | Returns | Notes |
 |---|---|---|
@@ -469,7 +473,7 @@ Blocking methods return Promises. In chapters, call the **Director wrappers** (`
 | `letterbox(on)` | | Cinematic bars. |
 | `chapterTitle(num, name, secs)` | | The Director uses it. |
 | `modal` | getter `boolean` | True while a dialogue, choices or card is open. |
-| `endCard(E = L.ending)` | `Promise` | The Director calls it after Ch5. Do not call it. Runs `card(E.lines)`, each of `E.bigs` (`212.4 km`), the `E.hairline` 1 px ochre line drawing to 60% width, then `E.thanks`, Play again and `E.credits`. |
+| `endCard(E = L.ending)` | `Promise` | The Director calls it after the last chapter (Ch7). Do not call it. Runs `card(E.lines)`, each of `E.bigs` (`212.4 km`), the `E.hairline` 1 px ochre line drawing to 60% width, then `E.thanks`, Play again and `E.credits`. |
 | `clearTransient()` | | The Director calls it between chapters: objective, prompt, caption, banner, **watchFocus(false), watch(null), notebook.hide(), gauge(null)**, pain, letterbox, drive, hint, thought. |
 
 The previous game's `stopwatch`, `reaction` and `splits` are **removed**.
@@ -491,14 +495,14 @@ ui.watch(null);                                                       // taken o
 
 #### The notebook ("WHAT I CAN DO")
 
-Lined school paper in pencil grey, handwritten font, docked small at the top-right. It **opens full size** (moves toward the centre) for a few seconds on every change, then docks again. Entries: `[{text, struck?, note?, hand?: 'hugo' | 'sami'}]`. Always use `L.notebook.items.*` for texts.
+Lined school paper in pencil grey, handwritten font, docked small at the top-right. It **opens full size** (moves toward the centre) for a few seconds on every change, then docks again. Entries: `[{text, struck?, note?, hand?: 'hugo' | 'sami' | 'jo', noteHand?: 'sami' | 'jo'}]`. Always use `L.notebook.items.*` for texts and `L.notebook.notes.*` (`moon` « (lune) », `badly` « (mal) », `learning` « (en cours) ») for notes. Three hands: Hugo's pencil, Sami's blue biro (bigger, slanted) and **Jo's black felt-tip** (`'jo'`: small, upright, a touch bolder). The open page holds the final 15 lines at 1280 × 720 and scrolls (keeping the line being written in view) on shorter screens.
 
 | Method | Returns | Notes |
 |---|---|---|
 | `notebook.set(entries \| null)` | | Replace the list (no animation) and show it docked. `set([])` shows an empty page with the heading (Ch4 Day 5). `null` clears and hides. |
-| `notebook.add(text, {hand='hugo'})` | `Promise` (~0.9 s) | Writes a new line with a pencil write-on animation and the recorded `pencil_write` (Sami at rate 0.85; the procedural scratch is the fallback); opens for 3.2 s. `hand: 'sami'` = bigger, slanted, blue biro ("Teech."). |
+| `notebook.add(text, {hand='hugo', note, noteHand})` | `Promise` (~0.9 s) | Writes a new line with a pencil write-on animation and the recorded `pencil_write` (Sami at rate 0.85, Jo 1.2; the procedural scratch is the fallback); opens for 3.2 s. `hand: 'sami'` = bigger, slanted, blue biro ("Teech."); `hand: 'jo'` = Jo's felt-tip. `note` is written with the line, in the line's hand unless `noteHand` says otherwise (`add(N.cook, {hand: 'jo', note: L.notebook.notes.learning})`). |
 | `notebook.strike(text, on=true)` | `Promise` (~0.7 s) | Draws a light pencil line through an entry; `on=false` erases it (Ch5 finale): a short `pencil_write` stroke / `pencil_erase`. Opening full size plays `notebook_open` + `page_flip`, docking `notebook_close` (fx; the sets are in Ch4 / Ch5 `sounds`). |
-| `notebook.annotate(text, note)` | `Promise` | Writes a small note after an entry (`annotate(items.run, L.notebook.someSundays)`). |
+| `notebook.annotate(text, note, {hand}?)` | `Promise` | Writes a small note after an entry (`annotate(items.run, L.notebook.someSundays)`). `hand: 'jo'` writes it in Jo's hand (`annotate(N.fineLine, L.notebook.notes.badly, {hand: 'jo'})`). |
 | `notebook.open(secs=3)` | | Open full size for `secs`, then dock. `open(0)` stays open until `dock()`. |
 | `notebook.dock()` / `notebook.hide()` | | Dock top-right / hide (entries kept). |
 | `notebook.entries` / `.visible` / `.isOpen` | getters | A copy of the entries; state flags. |
@@ -550,6 +554,7 @@ Uses real time, so it is unaffected by `timeScale`.
   - `marker` (default `!auto`)
   - `ringColor=0xc9b48a` (the floor ring's tint) and `ringOpacity=1` (multiplies its pulse and proximity opacity). Ch1 passes a darker `ringColor` so the chalk ring doesn't glare on the dark boards.
   - `onInteract: async (spot) => {}`
+  - **Items** (§7.2): `needs: id | [ids]`, `needsLine`, `accepts: id | [ids]`, `onUse: async (item, spot) => {}`, `person: 'odile'`, `object: 'door'`, `onGift: async (item, spot) => {}`, `usePrompt`.
 - **Prompts:** the nearest enabled spot in range shows `[E] prompt`. E fires `onInteract` only when `director.state === 'play'` and no dialogue or card is open. The spot is busy until `onInteract` resolves.
 - **`once`:** the spot is removed after firing. `once:false` spots can fire again.
 - **`auto: true`:** a **zone**. It fires `onInteract` as soon as the player enters `radius` (in `play`), with no prompt or marker by default. Use it for proximity beats (Ch5 reaching Odile). For the Ch2 street beats, prefer z-thresholds in one `d.until` chain.
@@ -613,11 +618,11 @@ const dry = ctx.look.surface('street.pavement', { wet: 0, grime: 0.4 });        
 
 - Recipes default to **world mapping** (`mapping: 'world'`): a box projection from the world normal, so the texture scale is right on any box, wall or merged mesh without UV work. Pass `{ mapping: 'uv', worldSize: [w, h] }` for meshes whose UVs span the surface once.
 - Every recipe is normalised to a target mean albedo (`level`), so a black asphalt and a pale render sit in the value band the grade was tuned for. Pull the hue with `tint`.
-- **Weather comes from the chapter** (`CHAPTER_LOOKS` in look.js): Ch2 wet 1 and grime 1; Ch3 wet 0.7; Ch5 wet 0.25 ("puddles drying"); interiors dry. Override per call with `{ wet, grime }`.
+- **Weather comes from the scene's look** (look.js): `LOOKS` by name (`flat`, `evening` (Ch2), `dawnrun` (Ch3), `workshop`, `wall` (Ch7), `day` and `night` (the R4 street variants, also `STREET_LOOKS`)), and `CHAPTER_LOOKS[i]` (7 entries: flat, evening, dawnrun, workshop, **day, day**, wall) for each chapter's own build unless the chapter names `look`. Ch2 wet 1 and grime 1; Ch3 wet 0.7; Ch7 wet 0.25 ("puddles drying"); the R4 day street 0.4, night 1; interiors dry. Override per call with `{ wet, grime }`. `resolveLook(ref)` takes a chapter index, a name or a look object.
 - `look.surface()` materials are **cached and shared** (`userData.shared`, never disposed by the chapter). **Don't mutate them**; ask for another variant with different opts instead, or use `look.enhance(myMaterial, name)` on a material you own.
 - `look.enhance(material, name, opts)` layers a recipe's normal, AO, roughness variation and (normalised) colour over a material you own, keeping its `map` (e.g. a `grimeTexture` canvas with posters and tags) and its mean value. opts: `{ albedo=1 (0..1 how much of the detail colour), normalScale, ao, scale, roughnessVar, grime, wet, groundY, level }`.
   - **Watch the value:** `enhance` normalises the detail to the recipe's `level` (target mean albedo), which can pull a pale material you own down to the recipe's brightness. For example, `interior.fabric` is a dark wool (level 0.1), so cream canvas drop cloths go near-black unless you pass your own `level` (Ch5 does). The same holds for `materials.enhance(material, id, opts)`.
-- `look.recipe(name)`, `look.chapter` (the active chapter look), `SURFACES`, `CHAPTER_LOOKS` and `LIGHTING` are exported for reference.
+- `look.recipe(name)`, `look.chapter` (the active scene look), `look.begin(ref)`, `look.materialIds(ref)`, `SURFACES`, `LOOKS`, `STREET_LOOKS`, `CHAPTER_LOOKS`, `resolveLook` and `LIGHTING` are exported for reference.
 
 #### `ctx.materials` (Materials)
 
@@ -643,7 +648,7 @@ const dry = ctx.look.surface('street.pavement', { wet: 0, grime: 0.4 });        
 
 HDRIs (`public/assets/hdri/<id>.hdr`: `night_street`, `dawn_fog`, `golden_street`, `interior_dim`, `workshop`) are chosen by the Mood preset (`env`, §6). Mood sets `scene.environment`, `environmentIntensity` and `environmentRotation`. They load lazily: main.js preloads the chapter's HDRIs (`CHAPTER_LOOKS[i].hdris`) with the build and the next chapter's in the background, and frees the rest. Each HDRI's peak is capped at 24 when it loads, so a sodium lamp or the sun can't put white-hot dots into every puddle. `env.load(id)` → `Promise<texture | null>`, `env.get(id)`.
 
-**What the first pass did** (main.js, around every chapter build; the chapter files are untouched): the active chapter look is set, so untagged big surfaces from `ground()`, `box()` and `mat({map: grimeTexture})` get its ground / facade / slab / wall recipe (see §8); Kenney props are restyled; soft light cones are added under street lamps and spot lights (Ch2, Ch3, Ch4; `r.lightCones` lists them); and the sun's shadow box is fitted to the bounds. Tag a surface with `surface: '<name>'` to choose, or `surface: false` to opt out.
+**What the first pass did** (main.js `loadSet`, around every chapter build and every `d.scene()` swap, as `ctx.loadSet(lookRef, build, {nextLook, bounds})`): the active chapter look is set, so untagged big surfaces from `ground()`, `box()` and `mat({map: grimeTexture})` get its ground / facade / slab / wall recipe (see §8); Kenney props are restyled; soft light cones are added under street lamps and spot lights (Ch2, Ch3, Ch4; `r.lightCones` lists them); and the sun's shadow box is fitted to the bounds. Tag a surface with `surface: '<name>'` to choose, or `surface: false` to opt out.
 
 ---
 
@@ -700,7 +705,7 @@ Set these directly:
 | `on(event, fn) → off()` | Events: `'stumble'(line)`, `'firstJog'` (first jog in the whole game), `'jog'` (each time jogging starts), `'step'(badLeg)`. All listeners are cleared between chapters. |
 
 - **Ch1 hint:** `d.after(10, () => !ctx.player.hasJogged && ctx.ui.hint(L.hints.jog))`.
-- **Per-chapter "first jog"** (Ch5): `hasJogged` is game-global, so track it yourself: `let jogged = false; ctx.player.on('jog', () => { if (!jogged) { jogged = true; ctx.ui.thought(L.ch5.walk.firstJog); } })`.
+- **Per-chapter "first jog"** (Ch5): `hasJogged` is game-global, so track it yourself: `let jogged = false; ctx.player.on('jog', () => { if (!jogged) { jogged = true; ctx.ui.thought(L.ch7.walk.firstJog); } })`.
 
 ---
 
@@ -801,8 +806,8 @@ Every blocking beat is **gated**: the debug `skip()` resolves the innermost one.
 | `think(textOrArray)` | `Promise` | Blocking inner-monologue line(s) given as plain strings (`who: 'Hugo'`, `inner: true`). Use it for STRIDE replies (`L.ch3.weeks[i].stride.options[k].reply` may be a string or an array). |
 | `thought(text, secs, {who}?)` | `void` | Non-blocking line (= `ui.thought`): inner without `who`, a bark with it. |
 | `card(lines, opts)` | `Promise` | Gated `ui.card`. |
-| `choose(menu)` | `Promise<index \| 'skipped'>` | Gated `ui.choices`. On skip it resolves with the first `correct` option's index (or 0). STRIDE menus have no `correct`, so a skip picks option 0. |
-| `correct(menu)` | `Promise<{tries}>` | Loops until the correct option is chosen. `menu = {who='Odile', prompt, options:[{text, correct, reply}]}`. Each reply is spoken by `menu.who` (`who` defaults to Odile; Ch5's Teach menu passes `who: 'Sami'`). Wrong options loop back to the menu, and the correct one's reply plays before it resolves. |
+| `choose(menu)` | `Promise<index \| 'skipped'>` | Gated `ui.choices`. On skip it resolves with the first `correct` option's index (or 0). STRIDE menus have no `correct`, so a skip picks option 0. **Never loops.** A menu **with `who`** (`{who: 'Jo', prompt, options: [{text, reply, who?}]}`, SCRIPT-R4 `d.choose (who: 'Jo')`) plays the picked option's `reply` as dialogue before resolving, said by **`option.who ?? menu.who`** (per-option speaker: Odile answering in Jo's menu, `ch6.week7.stayMenu`). A reply is a string, a string[] (several lines, same speaker) or line objects; `null` plays nothing. A menu **without `who`** (STRIDE) plays nothing: the chapter plays its replies (`d.think(opt.reply)`). |
+| `correct(menu)` | `Promise<{tries}>` | Loops until the correct option is chosen. `menu = {who='Odile', prompt, options:[{text, correct, reply, who?}]}`. Each reply is spoken by `option.who ?? menu.who` (`who` defaults to Odile; Ch7's Teach menu passes `who: 'Sami'`). Wrong options loop back to the menu, and the correct one's reply plays before it resolves. |
 | `interact(id)` | `Promise` | Sets `state='play'` and waits for hotspot `id`. On skip it **triggers** the hotspot (its `onInteract` runs, so story state stays consistent). |
 | `wait(s, {scaled=false})` | `Promise` | Gated timer (pauses with the game). |
 | `until(fn)` | `Promise<value \| 'skipped'>` | Calls `fn(dt)` every frame until it returns truthy. **Use this for per-frame beats** (the Ch2 z-threshold chain, the line). Skip ends the loop with `'skipped'`, so handle that (jump state to the end). |
@@ -812,6 +817,14 @@ Every blocking beat is **gated**: the debug `skip()` resolves the innermost one.
 | `cinematic(async fn, {letterbox=true})` | `Promise` | `state='cutscene'`, player frozen, hotspots off, letterbox bars, then everything is restored. |
 | `hope(h, secs=2)` | `void` | Hope to `h` over ~`secs` (0 = snap). |
 | `after(sec, fn)` | `cancel()` | Chapter-scoped timer, auto-cancelled at chapter end. |
+| `give(id, {toast=true})` | `bool` | `item+ id`: into the pocket, with the « + Papier de verre » toast. False if the pocket is full (12) or `id` is a clue. |
+| `take(id, {toast=true})` | `bool` | `item− id`: out of the pocket (put away first if held), toast « − Papier de verre ». |
+| `has(id \| [ids])` | `bool` | The pocket holds it (any of the list). |
+| `clue(id, {toast})` / `clueNote(id)` | `bool` | `clue+ id` (case tab, written on; opens the case first) / `clueNote id` (its `noteLater` replaces `note`). |
+| `suspect(id, {status, as, later})` / `openCase()` | | A suspect pin in the case tab; turning the exercise book over (the L’AFFAIRE tab appears). |
+| `game(id, opts)` | `Promise<result>` | A Revision 4 minigame (`src/story/games/`, = `playGame(id, ctx, d, opts)`). The held pocket item is put away first. Text through `opts.text` from `L.games.<id>` (the key ring: game id `'keyring'`, text `L.games.keyRing`). |
+| `scene(set, {card, cardOpts, out=0.6, inn=0.9, fadeIn=true})` | `Promise<W>` | **Swap the scene mid-chapter.** `set` from `src/story/sets.js`: `SETS.workshop(opts)`, `SETS.street('day' \| 'night' \| 'evening' \| 'wall', opts)`, `SETS.flat({corkboard=true, ...opts})`; opts override `player` (spawn, facing, limp: merged over the chapter's `player`), `camera`, `preset`, `overrides`, `hope`, `look`. Fades to black (gated); clears hotspots, runner walks, world hooks, live canvas text, the prompt and every colour focus slot; unloads the old world (characters included); builds the new one through `ctx.loadSet` (its look: materials, props, HDRIs, light cones, shadow box, boot weather); moves Hugo to the spawn; points the camera (`set.camera`); applies the set's mood preset (a street variant's is scene2.js `STREET_MOODS`) and step surface (`set.surface` → `audio.surface`: street `'street'`, flat `'wood'`, workshop `null`); keeps hope unless `set.hope`; shows `card` on black; fades in (`fadeIn: false` leaves it black for a `cut()`). Chapter timers (`d.after`), the HUD, the objective and the pocket survive. Resolves with the new `ctx.world.current`. |
+| `preset(p, secs=2)` | | Change the mood preset without a rebuild (night falling, an evening caption): a Mood preset name, a street variant (`'day'` / `'night'`: its `STREET_MOODS` preset and overrides) or `{preset, overrides}`. Blends over `secs`; hope is kept. |
 | `flags` | `Set` | Free-form story flags (for example `d.flags.add('jogged')`). |
 | `skip()` | | Debug only. |
 
@@ -822,6 +835,59 @@ import { rhythm, timing, makeSteer, memory } from './minigames.js';
 ```
 
 All of them finish on their own with no input (idle assists), end immediately on `debug.skip()`, and clean up the gauge / prompt they used. HOLD STILL (Ch2), TRUING and LETTERING (Ch4) and THE LINE (Ch5) are written in their chapter files on top of these.
+
+### 7.2 Items: the pocket and L’AFFAIRE (`src/story/items.js`)
+
+docs/DESIGN-R4.md « Items system », docs/SCRIPT-R4.md §1. Three parts:
+
+- **The registry** `ITEMS[id] = { id, kind: 'tool' | 'gift' | 'clue', paint(pen), worn? }`. Text lives in `L.items.<id> = { name, def, desc }` (`text/items.js`; `name` is the label and the toast, `def` has its article for prompts, `desc` shows when the item is hovered). Clues use `L.caseFile.clues.<id> = { name, note, noteLater?, noteWindow? }` (`text/caseFile.js`). Ids follow SCRIPT-R4:
+  - tools: `keys`, `phone`, `watch` (worn), `pencil`, `sandpaper`, `tape`, `spokeKey`, `chalk`, `keyRing`, `thermos`
+  - gifts: `croissant`, `rags`, `kebab`, `soup`
+  - clues: `cleanKey`, `photoHinge`, `slat52`, `blueChip`, `slipperPrint`, `louPhoto`, `segmentD52`, `receipts`, `freewheelClick`, `shopPhoto`
+
+  Icons are painted on a canvas at run time (`itemIcon(id, size=96)` returns a cached data URL), in pencil strokes with a light watercolour wash. To add an item: add a `def(kind, (p) => ...)` entry with a few `p.line / path / rect / circle / ellipse / text` strokes, plus its text keys.
+- **The pocket** (`pocket`): 12 tools and gifts, kept in pick-up order. Methods: `add(id, {toast})`, `remove(id, {toast})`, `give(id, person)`, `has(id | [ids])`, `list()`, `selected()` (the held item), `select(id | null)`, `clear()`, `firstTime(hintKey)`, and `onChange(fn)` (= `onItems`). Events are `{type, id?, ...}` with these types: `add`, `remove`, `give`, `select`, `full`, `clear`, `restore`, and `case:open | case:clue | case:note | case:suspect`.
+- **The case file** (`caseFile`): stored in `mem.caseFile` (memory.js; owner chapter 4, so `beginChapter` clears it like the flags). Methods: `open()`, `add(id)`, `update(id)`, `has`, `clues()`, `suspect(id, {status: 'checked' | 'toCheck' | 'none', as, later})`, `suspects()`, `clueText(id)`.
+
+**Saving.** The pocket is saved in localStorage under `'hairline.items'` (`{v, list, snaps, hints}`). On every chapter start, `Director.start(i)` calls `beginChapterItems(i, ch.id)`, which sets the pocket from `L.items.atChapter[i]`:
+- An id list: the pocket becomes that list.
+- `null`: the pocket is put away for the chapter (the Ch3 flashback) and comes back afterwards.
+- No entry: the pocket goes back to the snapshot taken when chapter i first began. If there is no snapshot, it is kept as it is and snapshotted.
+
+Snapshots of later chapters are dropped, so replaying a chapter replays it clean. Nothing is held at a chapter start.
+
+**Hotspots.** E on a spot (`_press`) does the following:
+1. **An item is held:**
+   - It is one the spot `needs`: the spot fires with it (`onUse(item)` if given, else `onInteract`). The prompt is the spot's own (or `usePrompt`), with the item's icon.
+   - It is one the spot `accepts`: `onUse(item)` runs without firing the spot.
+   - It is a gift on a `person` spot with a reply (`L.items.give.<item>.<person>`) or an `onGift`: the gift leaves the pocket with the « Croissant (lune) → Jo » toast, and the reply plays.
+   - Anything else: a refusal line. The prompt reads « Utiliser les clés » / « Donner le croissant ».
+2. **Nothing is held:** a spot that `needs` an item the pocket holds uses it by itself, so the main path never needs the pocket UI. Without it, the spot says `needsLine` (default `L.items.needs.generic`) and does not fire.
+3. **Refusals** (`L.items.refuse`) are checked in this order:
+   1. Item-specific lines: the watch on anything (plus its buzz); the phone, tape or soup on a person; the keys on an `object: 'door'`.
+   2. The person's bag.
+   3. On objects, the item kind's bag plus the generic bag.
+
+   Bags draw in a random order with no repeat. All item lines go through `d.say` (`hotspots.bindDirector(d)`, set by the Director), so they freeze the player and `skip()` ends them.
+4. `debug.trigger(id)` and `d.interact` skips fire a needs spot as if its item were used.
+
+```js
+// Ch4 Day 5: the sandpaper from the pegboard, then the door needs it.
+await required('pegboard', S.pegboard, T4.prompts.pegboard, async () => { ...; d.give('sandpaper'); });
+await required('door', S.door, T4.prompts.door, null, { needs: 'sandpaper', needsLine: T4.needs?.door, object: 'door' });
+// ... SANDING ...
+d.take('sandpaper'); // used up
+// A person who takes gifts (replies come from L.items.give.<item>.jo) and gets Jo's refusals otherwise:
+hotspots.add({ id: 'jo', pos, prompt: T.prompts.jo, person: 'jo', once: false, onInteract: talkToJo });
+```
+
+**UI** (`src/ui/Inventory.js`, `inventory.css`, an engine system added in main.js):
+- **The pocket:** a button and a strip of paper tags at the bottom left. Opening and closing it:
+  - It opens with {Tab} or a click on the button, but only in `'play'`, with no dialogue or menu up. Opening it frees the mouse pointer.
+  - {Escape} closes it. With the strip closed and an item held, {Escape} puts the item away.
+- **Choosing an item:** the arrows or the mouse wheel move along the strip, and {Enter} or a click holds the item. A held item shows by the cursor and next to the prompt as « En main : … ». The `useItem` hint shows the first time an item is held.
+- **Toasts:** gained, lost, given, and pocket full. The `pocket` hint shows on the first item gained.
+- **L’AFFAIRE:** a second notebook tab (`ui.notebook.caseSet(data, {write, writeHead})`, `ui.notebook.page('skills' | 'case')`, `ui.notebook.currentPage`). The docked notebook always shows CE QUE JE SAIS FAIRE. When it opens full size, the tabs flip between the two pages. A new clue opens the case page with a pencil write-on and the « Nouvel indice : … » toast.
 
 #### `rhythm(ctx, d, opts) → Promise<{skipped, state}>`
 
@@ -883,6 +949,31 @@ A steerable tip with smooth-noise drift (Ch4 lettering, Ch5 the line). Call `ste
 A plain object for cross-chapter hand-offs. Ch4 stores the lettered board as `memory.openSign` (a canvas); Ch5 shows it (or a generic OPEN if it is missing, e.g. when jumping straight to Ch5).
 
 ---
+
+### 7.3 Workshop kit and scene sets (Revision 4)
+
+**`src/story/workshop.js`** (Odile's workshop, scene4, used by Ch4, Ch5 and Ch6):
+
+- Constants: `CAM`, `LOOK` (the workshop mood preset), `SOUNDS`, `BED`, `RAIN`, `SND`, `CHAPTER_CAMERA`, `CHAPTER_PLAYER`.
+- `workshopKit(ctx, d, W)` → `{ follow(snap), followShot(), shot(s, dur), back(dur), faceTo(char, x, z), put(char, [x, z], look), act(char, clip), pose(clip | null), putHugo([x, z], look), hugoXZ(), walk(char, to, opts), nb(promise), cut(setup, {out, inn, card}), required(id, pos, prompt, onInteract, extra), roaming(), kettleOn(), kettleOff(), addRoomSpots() }`: the staging helpers Ch4 has always used (all gated). `addRoomSpots()` adds the optional old signs and radio (`L.ch4.oldSigns`, `L.ch4.radio`), live while a `required()` spot waits.
+- `dressWorkshop(ctx, W, 'day8' | 'week4' | 'week7')`: a fresh scene4 build dressed as an earlier chapter left it (sandpaper gone, the door sanded, painted in `mem.doorGrey`, hung and holding its colour in focus slot 0; `'week7'`: the tube fixed, no rain).
+- **The pegboard (scene4, R4):** `W.setPegTape(on)` (Odile's tape on its painted outline; Ch4 shows it on Day 5 and takes it at `ch4.day8.tapeTake`), `W.setSpokeKey(on)` (the spoke key on the outline beside it; missing at the Ch4 hook, Ch5 hangs it back / takes it / hangs it back), `W.peg.{tape, spokeKey}` (world points), shot `W.shots.pegboard` (the two outlines, from the vice side so Hugo at `spots.pegboard` stays out of frame). **Every scene4 build starts with both hidden** (the tape is in Hugo's pocket from Ch5 on).
+
+**`src/story/sets.js`** `SETS` (for `d.scene`): `workshop(opts)`, `street(variant, opts)` (scene2: `'day'`, `'night'`, `'evening'`, `'wall'`; the R4 extras are on the returned W: `fixes`, `bakery`, `durand`, `neon`, `gerard`, `marks`, `paths`, `encre`, spots and shots per docs/DESIGN.md's STREET CONTRACT), `flat({corkboard=true})` (scene1 with the Ch6 evidence board). `streetMood(variant)` returns a variant's `{preset, overrides}`.
+
+```js
+import { SETS } from './sets.js';
+import { dressWorkshop, workshopKit } from './workshop.js';
+
+let W = await d.scene(SETS.street('night', { player: { spawn: [-1.5, -18], facing: 0 } }), { card: L.ch5.cards.week3 });
+W.bakery.setLit(true);
+W.bakery.setOpen(0.5);
+// ... back to the workshop, black, then a Ch4-style cut with a week card:
+W = await d.scene(SETS.workshop(), { fadeIn: false });
+dressWorkshop(ctx, W, 'week4');
+const k = workshopKit(ctx, d, W);
+await k.cut(() => { /* stage */ }, { card: L.ch5.cards.week4 });
+```
 
 ## 8. Shared builders (`src/world/build.js`)
 
@@ -1046,7 +1137,7 @@ ctx.mood.focusOn(doorMesh, { slot: 0, strength: 1, decay: 0.15, floor: 0.5, offs
 d.hope(0.35);
 ```
 
-### Truing by ear (Ch4 Week 4, Ch5 Ines's wheel)
+### Truing by ear (Ch4 Week 4, Ch5 Lou's wheel)
 
 ```js
 import { rigBike } from '../world/bikeRig.js';            // scene side: rig = rigBike(B.bicycle(...)); call rig.update(dt) each frame
@@ -1054,7 +1145,7 @@ import { trueWheel } from './crafts/truing.js';
 import { reveal } from './crafts/finish.js';
 // A / D (or a drag) turn spoke by spoke, Space / click plucks the one at 12 o'clock, W / S (or the
 // scroll wheel) give it a quarter turn. Idle assist: a chalk mark at 8 s, then it trues itself.
-const res = await trueWheel(ctx, d, { rig, faults: [[3, 0.7], [10, 1.3]], text: L.ch5.jobs.wheel.truing });
+const res = await trueWheel(ctx, d, { rig, faults: [[3, 0.7], [10, 1.3]], text: L.ch7.jobs.wheel.truing });
 await reveal(ctx, d, { hold: 1.0 });                       // the wheel is already spinning free
 ```
 
@@ -1072,19 +1163,21 @@ Other craft modules (`src/story/crafts/`, docs/DESIGN.md R3.1):
 | `truing.js` | `trueWheel`, `pluck`, `spokeFreq` | Truing by ear. One quarter turn per scroll gesture; the rub (pad flash and puff) comes when the guilty spoke is under the chalk tick. |
 | `radio.js` | `tuneRadio`, `radioVoice`, `STATIONS`, `signalAt` | Odile's radio (R3.8b). |
 
-Ch5's street jobs (R3.8) are `src/story/ch5jobs.js`: `setupJobs(ctx, d, W, {bark, followDefault, isRoaming,
+Ch7's street jobs (R3.8) are `src/story/ch7jobs.js`: `setupJobs(ctx, d, W, {bark, followDefault, isRoaming,
 taught}) → {close(), dispose(), busy(), pending(), callShutter()}`, called after `meet`, over the props in
-`scene5/jobs.js` (`W.jobs`). The shutter and the board open at once; the radio and Ines's wheel once
+`scene5/jobs.js` (`W.jobs`). The shutter and the board open at once; the radio and Lou's wheel once
 `taught()` (Sami's Teach is done). Hugo is put back where he started a job. Each writes `mem.jobs.<id>`.
 Hotspot ids `shutter`, `radio`, `board`, `wheel` (`debug.trigger(id)` runs one whether open or not).
-Hugo's panel and the wet line are `src/story/ch5panel.js` (`hugoPanelBeat`, `linePreroll`, `wetRibbon`,
+Hugo's panel and the wet line are `src/story/ch7panel.js` (`hugoPanelBeat`, `linePreroll`, `wetRibbon`,
 `wetPanels`).
 
 ### Story memory (`src/story/memory.js`) and the ending
 
 What the player did, carried across chapters (docs/DESIGN.md R3.0), saved in
 `localStorage['hairline.mem']` so a reload keeps it (the saved chapter is `localStorage['hairline.save']`,
-`src/story/save.js`: written by `Director.start` at each chapter, cleared at the end card and by New game). `Director.start(i)` calls `beginChapter(i)`, which
+`src/story/save.js`: written by `Director.start` at each chapter, cleared at the end card and by New game). The save is
+**v2** (seven chapters); a v1 save (five chapters) is migrated when read: its chapter 4 (the old « Le Mur ») becomes 6,
+the others keep their index (`V1_TO_V2`). `Director.start(i)` calls `beginChapter(i)`, which
 resets chapter i's flags and every later one (jumping to or restarting a chapter replays it clean).
 
 ```js
@@ -1095,14 +1188,27 @@ if (mem.teachFirst) { /* ... */ }
 
 | Flag | Default | Set in | Meaning |
 |---|---|---|---|
-| `seeds.table` / `seeds.ghost` | false | Ch1 / Ch2 | Shimmed the table; lingered on the ghost sign. |
-| `doorGrey` | `'#8d877c'` | Ch4 | The grey he mixed (No. 14's door in Ch5). |
-| `grey` | `{tries: 0, assisted: false}` | Ch4 | Dones at the colour toy; whether Odile finished it. |
-| `measure` | `{readings: [], agreed: 81.5, assisted: false}` | Ch4 | The tape. |
-| `wheel` | `{secs, plucks, assisted, overTight}` | Ch4 | Truing Sami's wheel. |
-| `teachFirst` | true | Ch5 | Sami's chain right first time. |
-| `panel` | null | Ch5 | `'wheel'`, `'door'` or `'hand'`. |
-| `jobs` | all false | Ch5 | `shutter`, `radio`, `board`, `wheel`. |
+Owners are chapter indices (0 = Ch1 … 6 = Ch7; SCRIPT-R4 §10.5).
+
+| Flag | Default | Owner | Set in | Meaning |
+|---|---|---|---|---|
+| `seeds.table` / `seeds.ghost` / `seeds.window` | false | 0 / 1 / 0 | Ch1 / Ch2 / Ch1 | Shimmed the table; lingered on the ghost sign; heard the clicking bike from the window (`ch1.window`). |
+| `doorGrey` | `'#8d877c'` | 3 | Ch4 | The grey he mixed (No. 14's door from Ch5 on; `workshop.js dressWorkshop()` repaints it). |
+| `grey` | `{tries: 0, assisted: false}` | 3 | Ch4 | Dones at the colour toy; whether Odile finished it. |
+| `measure` | `{readings: [], agreed: 81.5, assisted: false}` | 3 | Ch4 | The tape. |
+| `wheel` | `{secs, plucks, assisted, overTight}` | 4 | Ch5 | Truing Sami's wheel (Week 4). |
+| `caseFile` | `{open, clues, later, suspects, wrong, accused}` | 4 | Ch5–Ch6 | L’AFFAIRE (§7.2); Ch6 adds, never clears. |
+| `joSign` | false | 1 | Ch2 | `ch2.jo.menu` option 1 (warmth). |
+| `joLearned` / `joCroissant` | false | 4 | Ch5 | `ch5.week3.joMenu` options 2–3; the croissant given to Jo (warmth). |
+| `ragsKept` | false | 4 | Ch5 end | The rags still in the pocket: Ch6 (index 5) starts with them (items.js `SEED_IF`). |
+| `joStay` / `joProud` | false | 5 | Ch6 | `ch6.week7.stayMenu` option 1; `ch6.week9.cuteMenu` option 2 (warmth). |
+| `stencil` | null | 5 | Ch6 | STENCIL tier: `'good'`, `'middle'` or `'poor'`. |
+| `durandKudos` | null | 5 | Ch6 | `ch6.week9.bravo`: the option index picked. |
+| `teachFirst` | true | 6 | Ch7 | Sami's chain right first time. |
+| `panel` | null | 6 | Ch7 | `'wheel'`, `'door'` or `'hand'`. |
+| `jobs` | all false | 6 | Ch7 | `shutter`, `radio`, `board`, `wheel`. |
+
+`joWarmth(m = mem)` → 0–5, the number of true `WARMTH_KEYS` (`joSign`, `joLearned`, `joCroissant`, `joStay`, `joProud`); **warm is ≥ 3** (SCRIPT-R4 §11.2: `ch7.jo.supper`, `ch7.walk.jo.*`, the `jo` ending card).
 
 Also `DEFAULTS`, `restoreMem()` (main.js, at boot) and `memSnapshot()`. `src/story/ending.js`:
 `endingLines(mem) → string[7]` picks the end card from `L.ending.cards` (street by panel, Sami by
@@ -1187,17 +1293,17 @@ With `?debug=1`, `window.__game` exposes:
   - `advance(ms, {choose, step, spots, rhythm, key})`: autoplay for `ms`. Presses E whenever a dialogue is open, picks choice `choose` when a menu is open, triggers the first required hotspot in `'play'` (unless `spots: false`), and otherwise taps a steady A/D rhythm (`rhythm: true`) or `key`. Resolves to the dialogue lines seen. It waits with MessageChannel yields, so it keeps pace in a hidden tab, where `setTimeout` is throttled to about 1 s.
   - `shot(holdMs)`: renders one frame and shows it in an overlay `<img>` for `holdMs`, so a page screenshot of an occluded window still shows the 3D view
   - `look(yawDeg, pitchDeg, zoom)`, `view()`, `pointer()`: camera look without a mouse (see 4.6, Camera rig)
-  - `lang(code?)`: returns the language; with a code, switches to it (as Options does)
-  - `mem()`: a copy of the story memory (above: `seeds`, `doorGrey`, `grey`, `measure`, `wheel`, `teachFirst`, `panel`, `jobs`)
+  - `mem()`: a copy of the story memory (above: `seeds`, `doorGrey`, `grey`, `measure`, `wheel`, `caseFile`, the `jo*` warmth flags, `ragsKept`, `stencil`, `durandKudos`, `teachFirst`, `panel`, `jobs`)
+  - `games()` / `game(id, opts)`: the R4 minigames (list; run one on the current scene)
+  - `items`: the pocket and the case file: `list()`, `give(id, opts)` (a clue id goes to the case tab), `take(id)`, `select(id | null)`, `held()`, `clear()`, `suspect(id, opts)`, `ids()`, `state()`
   - `textLog`: every string the UI has shown (dialogue, speaker labels, thoughts, objectives, prompts, cards, menus, HUD labels, hints), capped at 2000, for diffing against the text files
 
 **Query flags:**
 
-- `?chapter=N` (0–4)
+- `?chapter=N` (0–6)
 - `?autostart=1` skips the title; audio stays silent until a real click.
 - `?skipcards=1` makes cards auto-close and hides chapter titles.
 - `?quality=low|medium|high` forces a quality tier (§4.1).
-- `?lang=en|fr` forces the language (not remembered).
 - With `?debug=1` the game keeps running in a hidden or occluded browser window (automation): the loop is driven from a `MessageChannel` instead of `requestAnimationFrame`, and the tab never auto-pauses. Page screenshots of a hidden window come out black, so capture the canvas instead: `__game.engine.tick(performance.now()); __game.renderer.domElement.toDataURL()`.
 
 **Also on `window.__game`:** `minigames` (the module: `rhythm`, `timing`, `makeSteer`, `memory`).

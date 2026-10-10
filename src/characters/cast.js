@@ -55,6 +55,8 @@ export const CLIP_ALIASES = {
   nod: { clip: 'agree' },
   sit: { clip: 'sit_idle' },
   sad_idle: { clip: 'slump', timeScale: 0.5 },
+  // The plain library idle, for a character whose recipe remaps 'idle' (Jo's is arms_crossed).
+  stand: { clip: 'idle' },
   // Sami on his bike (ch5 puts the model +0.43 m up): seated, lifted the rest of the way to the saddle.
   ride: { clip: 'sit_idle', y: 0.215 },
 };
@@ -80,10 +82,18 @@ export const CLIP_RETIME = { walk: 1.06, run: 0.8 };
  */
 export const CLIP_STRIDE = { run: { legs: 0.6, lift: 0.069 } };
 /**
+ * An old man's walk (M. Durand), derived from `walk` at load: a slower cycle (`cycle`, s) and a
+ * shorter stride (`legs`, as CLIP_STRIDE), the pelvis raised by `lift` (m) so the planted foot
+ * stays on the ground (it sank 19 mm). Measured with .cache/tools/chars-r4/gait.js: 0.67 m/s at
+ * timeScale 1, ball of the foot at +5 mm in stance (the walk: 1.30 m/s, +5 mm).
+ */
+export const WALK_OLD = { cycle: 1.3, legs: 0.62, lift: 0.019 };
+const WALK_OLD_SPEED = 0.67;
+/**
  * Ground speed (m/s) of a scale-1 character at timeScale 1, after the retime and the stride
  * reduction. A character covers CLIP_SPEED x model.scale.z (scale x slim): use Character.strideRate().
  */
-export const CLIP_SPEED = { walk: 1.3, run: 4.66, sprint: 8.8, walk_formal: 1.04, crouch_walk: 0.8, shamble: 1.1, carry: 0.7 };
+export const CLIP_SPEED = { walk: 1.3, run: 4.66, sprint: 8.8, walk_formal: 1.04, crouch_walk: 0.8, shamble: 1.1, carry: 0.7, walk_old: WALK_OLD_SPEED };
 
 /**
  * Foot contacts in the walk loop (phase 0..1 when each heel strikes), measured on the scale-1
@@ -114,6 +124,15 @@ const pick = (rng, a) => a[Math.floor(rng() * a.length) % a.length];
 //   kit      painted running kit on an athletic body: { top, sleeves: 'none'|'short'|'long',
 //            legs: 'short'|'long', bottom, shoes }
 //   scale, head (Head bone scale), stoop (rad added to spine_03 and neck_01), slim (x/z squash)
+//   age      0..1 aged skin on the face (female and male heads)
+//   inner    { color, w: [half width at the waist, at the neck] (m), buttons? }: the top is an open
+//            jacket / cardigan over an inner top of `color` (tintInner: setTint recolours that top)
+//   trim     { part: [min |x|, max |x|, min y, max y] } bind-pose metres: fragments outside are discarded
+//            (Jo: sleeves rolled to the elbow, only the athletic forearms under them)
+//   tattoo   sleeve design on the forearms and hands (tattoo.js: 'jo')
+//   rings    finger bones that get a ring; pencil (behind the right ear); cap (flat cap colour)
+//   clips    { asked: played } per-character clip remap ('walk' -> 'walk_old', 'idle' -> ...)
+//   pace     natural walking speed (m/s, Character.pace) for callers that drive the walk
 
 const hugoBase = { skin: '#f0d8c8', hair: '#2e2420' };
 // The athletic rig is a superhero build; distance runners are whippets: every runner (Hugo's kits,
@@ -251,10 +270,57 @@ export const CAST = {
     colors: { f_blouse: '#5d4450', f_sleeves: '#6b5a60', f_trousers: '#2c2a2e', f_shoes: '#2b2622' },
     primary: ['f_blouse'],
   }),
+  // Revision 4 (docs/DESIGN-R4.md). Josianne "Jo" Lavoie, 34, a fine-line tattoo artist from
+  // Hochelaga: a black jacket open over an oxblood top (`inner`; her tint recolours the top, not the
+  // jacket), the sleeves shoved up to the elbow (`trim` keeps only the athletic body's forearms and
+  // hands under them), both forearms and the backs of her hands sleeved in fine black linework
+  // (`tattoo`: tattoo.js), silver rings, a pencil behind her ear, and a confident idle.
+  jo: () => ({
+    rig: 'f_regular',
+    scale: 0.97,
+    stoop: -0.05, // chest up, chin up
+    parts: ['f_head', 'f_eyes', 'f_brows', 'hair_buns', 'f_blouse', 'f_sleeves', 'f_body', 'f_trousers2', 'f_boots'],
+    skin: '#e6c6ae',
+    hair: '#161214',
+    colors: { f_blouse: '#1d1d20', f_sleeves: '#1d1d20', f_trousers2: '#26272b', f_boots: '#1e1a18' },
+    inner: { color: '#6b2430', w: [0.045, 0.085] },
+    tintInner: true,
+    trim: { f_sleeves: [0, 0.432], f_body: [0.424, 9] },
+    tattoo: 'jo',
+    rings: ['index_01_l', 'ring_01_l', 'middle_01_r', 'index_01_r', 'pinky_01_l'],
+    pencil: true,
+    clips: { idle: 'arms_crossed' },
+    primary: [],
+  }),
+  // M. Albert Durand, 81: CYCLES DURAND for 52 years. Stooped, aged, cropped grey hair under a tweed
+  // flat cap, a brown cardigan over a pale shirt (a V opening with buttons), and a slow, short walk
+  // (`clips.walk`; `pace` is the speed to drive him at, m/s).
+  durand: () => ({
+    rig: 'm_regular',
+    scale: 0.95,
+    slim: 0.95,
+    stoop: 0.22,
+    age: 1,
+    parts: ['m_head', 'm_eyes', 'm_brows', 'hair_buzzed', 'hair_beard', 'm_shirt', 'm_sleeves', 'm_trousers', 'm_shoes'],
+    trim: { hair_beard: [0, 0.042, 1.615, 1.66] }, // the beard cut down to a moustache
+    skin: '#ead2c4',
+    hair: '#5f5a54',
+    brows: '#5a554f',
+    colors: { m_shirt: '#6e5a44', m_sleeves: '#6e5a44', m_trousers: '#4a463e', m_shoes: '#2b2622' },
+    inner: { color: '#cfcabd', w: [0.03, 0.08], buttons: '#3a2e22' },
+    cap: '#9a8f7c',
+    clips: { walk: 'walk_old' },
+    pace: 0.6,
+    primary: ['m_shirt', 'm_sleeves'],
+  }),
   runner: (rng, v) => athlete(rng, v.has('f') || (!v.has('m') && rng() < 0.4), v.has('long')),
   spectator: (rng, v) => civilian(rng, v.has('f') || (!v.has('m') && rng() < 0.45), v.has('rain')),
   passerby: (rng, v) => civilian(rng, v.has('f') || (!v.has('m') && rng() < 0.5), v.has('rain')),
 };
+
+// The Revision 4 renames: Lou was Ines, Gérard was Marco. The old ids stay (the chapters use them).
+CAST.lou = CAST.ines;
+CAST.gerard = CAST.marco;
 
 /** Small deterministic RNG (mulberry32) seeded from a string, so a named extra looks the same every run. */
 export function seededRandom(seed) {

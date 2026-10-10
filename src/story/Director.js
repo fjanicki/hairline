@@ -2,8 +2,12 @@ import * as THREE from 'three';
 import { ground } from '../world/build.js';
 import { releaseChapterListeners } from './i18n.js';
 import { beginChapter } from './memory.js';
+import { pocket, caseFile, beginChapterItems } from './items.js';
 import { saveChapter, clearSave } from './save.js';
 import { endingLines } from './ending.js';
+import { playGame } from './games/index.js';
+import { PRESETS } from '../render/Mood.js';
+import { STREET_MOODS } from '../world/scenes/scene2.js';
 
 /** True for a light CSS hex colour ('#fff', '#f4efe6', ...). */
 function isLightColor(css) {
@@ -133,6 +137,16 @@ export class Director {
     });
   }
 
+  /**
+   * Let the bark or thought on screen be said and go before the next line (a game's tier line, a
+   * board thought): at least `min` s, at most `max` s. Gated. (R4: punchlines were stepped on.)
+   */
+  thoughtDone(min = 0.6, max = 5) {
+    const { ui } = this.ctx;
+    let w = 0;
+    return this.until((dt) => (w += dt) >= max || (w >= min && !ui.thoughtSpeaking?.() && !ui.thoughtEl?.classList.contains('show')));
+  }
+
   /** Resolve when pred() is true (checked each frame). Gated. */
   waitUntil(pred) {
     return this.until(() => (pred() ? true : false));
@@ -176,8 +190,8 @@ export class Director {
     this.ctx.ui.thought(text, secs, opts);
   }
 
-  /** Blocking choice menu. Resolves with the picked index (or the correct one on skip). */
-  async choose(menu) {
+  /** The menu itself (no replies): resolves with the picked index (or the correct one on skip). */
+  async _menu(menu) {
     // Like say(): Hugo can't walk off (or jog into a stumble) while a menu is open.
     const { player } = this.ctx;
     const wasFrozen = player.frozen;
@@ -193,18 +207,35 @@ export class Director {
   }
 
   /**
+   * Blocking choice menu. Resolves with the picked index (or the correct one on skip). Never loops.
+   * A menu with a `who` (SCRIPT-R4 `d.choose (who: 'Jo')`) also plays the picked option's `reply` as dialogue,
+   * said by `option.who ?? menu.who` (a string, a string[] or line objects; null = no reply), before it
+   * resolves. A menu without `who` (STRIDE) plays nothing: the chapter handles its replies (d.think).
+   */
+  async choose(menu) {
+    const r = await this._menu(menu);
+    const o = menu.who && typeof r === 'number' ? menu.options?.[r] : null;
+    if (o?.reply != null) {
+      const who = o.who ?? menu.who;
+      const lines = (Array.isArray(o.reply) ? o.reply : [o.reply]).map((x) => (typeof x === 'string' ? { who, text: x } : x));
+      if (lines.length) await this.say(lines);
+    }
+    return r;
+  }
+
+  /**
    * Correction menu: loops until the correct option is picked. Wrong options play their reply.
-   * menu: { who='Odile', prompt, options:[{ text, correct, reply }] }. Resolves { tries }.
+   * menu: { who='Odile', prompt, options:[{ text, correct, reply, who? }] }. Resolves { tries }.
    */
   async correct(menu) {
     const who = menu.who || this.ctx.L?.names?.odile || 'Odile';
     let tries = 0;
     for (;;) {
       tries++;
-      const r = await this.choose(menu);
+      const r = await this._menu(menu);
       const i = typeof r === 'number' ? r : -1;
       const o = menu.options[i] ?? menu.options.find((x) => x.correct);
-      if (o.reply) await this.say([{ who, text: o.reply }]);
+      if (o.reply) await this.say([{ who: o.who ?? who, text: o.reply }]);
       if (o.correct) return { tries };
       o._used = true;
     }
@@ -252,6 +283,124 @@ export class Director {
     return cancel;
   }
 
+  // ------------------------------------------------------------- items (story/items.js)
+
+  /** `item+ id`: put an item in the pocket. opts: { toast=true } (« + Mètre ruban »). False if full. */
+  give(id, opts) {
+    return pocket.add(id, opts);
+  }
+
+  /** `item− id`: take it out of the pocket. opts: { toast=true } (« − Papier de verre »). */
+  take(id, { toast = true } = {}) {
+    return pocket.remove(id, { toast });
+  }
+
+  /** True if the pocket holds the item (or any of a list). */
+  has(id) {
+    return pocket.has(id);
+  }
+
+  /** `clue+ id`: a clue in the case tab (written on; opens the case on first use). opts: { toast=true }. */
+  clue(id, opts) {
+    return caseFile.add(id, opts);
+  }
+
+  /** `clueNote id`: the clue's note is replaced by its noteLater. */
+  clueNote(id, opts) {
+    return caseFile.update(id, opts);
+  }
+
+  /** Pin or update a suspect in the case tab: opts { status: 'checked'|'toCheck'|'none', as, later }. */
+  suspect(id, opts) {
+    return caseFile.suspect(id, opts);
+  }
+
+  /** `caseFile.open()`: the notebook gets its back pages (the L’AFFAIRE tab). */
+  openCase() {
+    return caseFile.open();
+  }
+
+  // ------------------------------------------------------------- minigames (story/games/)
+
+  /** Run a Revision 4 minigame (= playGame(id, ctx, d, opts)); the held item is put away first. */
+  game(id, opts) {
+    return playGame(id, this.ctx, this, opts);
+  }
+
+  // ------------------------------------------------------------- scenes and looks (Revision 4)
+
+  /**
+   * Swap the scene mid-chapter (Ch5 and Ch6 move between the workshop, the street by day and at night and
+   * the flat). set: { build(ctx), look, preset, overrides, player, camera, hope, name } (story/sets.js:
+   * SETS.workshop(), SETS.street('night'), SETS.flat()). Fades to black (gated), clears the old scene's
+   * hotspots, walks, world hooks, live canvas text and colour focus, builds the new one through the look
+   * pipeline (main.js ctx.loadSet: materials, props, HDRIs, light cones, shadow box, boot weather), moves Hugo
+   * to set.player.spawn (the chapter's `player` options under set.player), points the camera, applies the
+   * set's mood preset (hope kept unless set.hope) and step surface, shows an optional `card` on black, and fades back in
+   * (fadeIn: false leaves the screen black for the caller). Timers (d.after) and the HUD survive.
+   * Resolves with the new world (= ctx.world.current).
+   */
+  async scene(set, { card = null, cardOpts = { big: true }, out = 0.6, inn = 0.9, fadeIn = true } = {}) {
+    const ctx = this.ctx;
+    const { ui, hotspots, runner, world, player, cam, mood } = ctx;
+    const prev = this.state;
+    this.state = 'transition';
+    try {
+      await this.gate(ui.fade(1, out));
+      hotspots.clear();
+      runner.clear();
+      ui.prompt(null);
+      world.unload();
+      releaseChapterListeners(); // the old scene's live canvas text
+      mood.clearFocus();
+      const ch = this.chapter || {};
+      const build = async (c) => {
+        try {
+          const r = await set.build(c);
+          if (r?.group) return r;
+          console.warn('[director] scene build returned no group', set.name);
+          return { group: new THREE.Group(), ...(r || {}) };
+        } catch (err) {
+          console.error('[director] scene build failed', set.name, err);
+          const group = new THREE.Group();
+          group.add(ground({ size: 60 }));
+          return { group, bounds: [{ minX: -25, maxX: 25, minZ: -25, maxZ: 25 }], spots: {}, shots: {} };
+        }
+      };
+      const built = ctx.loadSet ? await ctx.loadSet(set.look ?? null, build, { bounds: set.player?.bounds }) : await build(ctx);
+      world.load(built);
+      const pc = { ...(ch.player || {}), ...(set.player || {}) };
+      player.configure({ ...pc, bounds: pc.bounds ?? built.bounds ?? [] });
+      const camOpts = set.camera || ch.camera || {};
+      cam.follow(player.root, { offset: camOpts.offset ?? [0, 2.6, 4.2], look: camOpts.look ?? [0, 1.1, 0], lerp: camOpts.lerp ?? 6 });
+      cam.setRoll(0);
+      cam.fov(camOpts.fov ?? 55);
+      cam.snap();
+      if (set.surface !== undefined && ctx.audio) ctx.audio.surface = set.surface; // the step sounds
+      if (set.preset) mood.applyPreset(set.preset, set.overrides || {});
+      if (typeof set.hope === 'number') mood.set(set.hope, { snap: true });
+      await ctx.engine.precompile?.();
+      if (card) await this.card(card, cardOpts);
+      if (fadeIn) await this.gate(ui.fade(0, this.skipCards ? 0.3 : inn));
+      return world.current;
+    } finally {
+      this.state = prev === 'cutscene' ? 'cutscene' : 'play';
+    }
+  }
+
+  /**
+   * Change the mood preset without a rebuild (an evening caption in the workshop, the night falling on the
+   * street). p: a Mood preset name ('street', 'wall', ...), a street variant ('day' | 'night': scene2.js
+   * STREET_MOODS), or { preset, overrides } / a preset object. Blends over `secs` (0 = cut). Hope is kept.
+   */
+  preset(p, secs = 2) {
+    const { mood } = this.ctx;
+    const m = typeof p === 'string' && STREET_MOODS[p] ? STREET_MOODS[p] : p;
+    if (m && typeof m === 'object' && 'preset' in m) mood.applyPreset(m.preset, { ...(m.overrides || {}), blend: secs });
+    else if (typeof m === 'string' && !PRESETS[m]) console.warn('[director] unknown preset', p);
+    else mood.applyPreset(m, { blend: secs });
+  }
+
   // ------------------------------------------------------------- flow
 
   _resetBetweenChapters() {
@@ -277,6 +426,7 @@ export class Director {
   }
 
   async _build(ch) {
+    this.ctx.waypoint = null; // a chapter's place pointer (ObjectivePointer) never outlives it
     try {
       const r = await ch.build(this.ctx);
       if (r && r.group) return r;
@@ -319,6 +469,8 @@ export class Director {
       await ui.fade(1, 0.8);
       this._resetBetweenChapters();
       beginChapter(this.index); // replaying a chapter clears its own flags and later ones
+      ctx.hotspots?.bindDirector?.(this); // item lines (wrong item, gifts, needs) go through say()
+      beginChapterItems(this.index, ch.id); // the pocket for this chapter (its seed, or its first start's)
       saveChapter(this.index); // a reload resumes here (Continue on the title screen)
       // The title's pale ink needs a dark screen: over a white cut (Ch2 -> Ch3) show it after the fade-in.
       const showTitle = ch.title && !this.skipCards ? () => ui.chapterTitle(this.index + 1, ch.title) : null;
@@ -374,8 +526,6 @@ export class Director {
   /** Debug: reload at chapter i with debug flags. */
   goto(i) {
     const q = new URLSearchParams({ debug: '1', autostart: '1', skipcards: '1', chapter: String(i) });
-    const lang = new URLSearchParams(location.search).get('lang');
-    if (lang) q.set('lang', lang);
     location.href = `${location.pathname}?${q}`;
   }
 }

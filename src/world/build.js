@@ -260,7 +260,7 @@ export function sign(text, w = 2, h = 1, opts = {}) {
 
 /**
  * Keep a sign() (or anything with userData.redraw) in the current language: text() is read again
- * after every i18n.setLang. Chapter-scoped: the Director drops it between chapters. Returns obj.
+ * whenever i18n.js re-resolves L. Chapter-scoped: the Director drops it between chapters. Returns obj.
  */
 export function relabel(obj, text) {
   onLangChange(() => obj.userData.redraw?.(text()), { chapter: true });

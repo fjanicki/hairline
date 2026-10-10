@@ -20,7 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: French text is complete
-        run: node scripts/i18n-check.mjs fr
+      - name: French text (typography, key tokens, UI limits, no English)
+        run: node scripts/text-check.mjs
       - name: Every French line has a voice clip
         run: node scripts/voice/extract-lines.mjs --check

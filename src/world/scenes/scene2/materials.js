@@ -5,13 +5,22 @@ import * as THREE from 'three';
 // the same world-space weathering through ctx.materials.weather so they sit in the same world.
 
 /**
- * opts: { evening, env (equirect texture for glass), windowTex, decalTex, posterTex }
+ * opts: { evening (dark: night glass), env (equirect texture for glass), windowTex, decalTex, posterTex,
+ *         weather: { wet, ground, grime } (R4 variants: the street's own weather instead of the chapter's;
+ *         ground = the street surfaces' wetness, default wet) }
  * Returns { [key]: { material, opts } } for Batch.material(key, material, opts).
  */
-export function streetMaterials(ctx, { evening, env, windowTex, decalTex, posterTex }) {
+export function streetMaterials(ctx, { evening, env, windowTex, decalTex, posterTex, weather: sky = null }) {
   const look = ctx.look;
-  const wet = look?.chapter?.wet ?? (evening ? 1 : 0.25);
-  const S = (name, o = {}) => (look ? look.surface(name, o) : new THREE.MeshStandardMaterial({ color: '#8a8580', roughness: 0.9 }));
+  const wet = sky?.wet ?? look?.chapter?.wet ?? (evening ? 1 : 0.25);
+  // With a variant weather, each recipe's own wet / grime multipliers scale it (as look.weather does).
+  const vw = (name) => {
+    if (!sky || !look) return {};
+    const r = look.recipe(name) || {};
+    const w = name.startsWith('street.') ? sky.ground ?? sky.wet : sky.wet; // the ground can hold puddles longer
+    return { wet: (r.wet ?? 1) * w, grime: (r.grime ?? 1) * (sky.grime ?? look.chapter?.grime ?? 0.8) };
+  };
+  const S = (name, o = {}) => (look ? look.surface(name, { ...vw(name), ...o }) : new THREE.MeshStandardMaterial({ color: '#8a8580', roughness: 0.9 }));
   const weather = (m, o) => (ctx.materials ? ctx.materials.weather(m, o) : m);
   const detail = { noOcclude: true };
   const flatOnly = { noOcclude: true, castShadow: false };
@@ -51,6 +60,7 @@ export function streetMaterials(ctx, { evening, env, windowTex, decalTex, poster
     polygonOffsetUnits: -1,
   });
   const underlay = new THREE.MeshStandardMaterial({ color: '#27292a', roughness: 1 });
+  const roomCeil = new THREE.MeshStandardMaterial({ color: '#4a4640', roughness: 1 });
 
   return {
     // Facade masses (the camera rig's occluders: boxes only, cheap to raycast).
@@ -82,5 +92,10 @@ export function streetMaterials(ctx, { evening, env, windowTex, decalTex, poster
     underlay: { material: underlay, opts: flatOnly },
     decal: { material: decal, opts: { ...flatOnly, renderOrder: 1 } },
     poster: { material: poster, opts: { ...flatOnly, renderOrder: 1 } },
+    // R4 rooms (scene2/rooms.js): the insides of ENCRE FINE and CYCLES DURAND.
+    roomPlaster: { material: S('interior.plaster', { wet: 0 }), opts: { castShadow: false } },
+    roomBoards: { material: S('interior.floorboards', { wet: 0 }), opts: { castShadow: false } },
+    roomConcrete: { material: S('workshop.concrete', { wet: 0, grime: 1 }), opts: { castShadow: false } },
+    roomCeil: { material: roomCeil, opts: { castShadow: false } },
   };
 }

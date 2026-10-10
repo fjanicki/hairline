@@ -1,0 +1,19 @@
+/* GAMES-B stage layer (lib/games-b-stage.js): under the HUD (z 10), over the 3D canvas. */
+.gb-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gb-layer.show { opacity: 1; }
+.gb-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* While a game is up, the docked notebook, the objective and the watch step aside (they sit over the art). */
+#ui:has(> .gb-layer.show) .hud .notebook:not(.open),
+#ui:has(> .gb-layer.show) .hud .objective,
+#ui:has(> .gb-layer.show) > .watch:not(.over):not(.buzzing) { opacity: 0 !important; }

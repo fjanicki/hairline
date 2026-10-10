@@ -1,25 +1,25 @@
-// Ch2 "Never Stop": Rue des Tanneurs, late evening, rain. Owned by the Ch2 agent. Source: docs/DESIGN.md.
+// Ch2 « Ne t’arrête jamais »: Rue des Tanneurs, late evening, rain. Owned by the Ch2 agent. Source: docs/DESIGN.md.
 // scene2.js also builds the Ch5 'wall' variant, so `signs` here are shared with Ch5.
-import { think, hugo, odile, bastien } from './common.js';
+import { think, hugo, odile, bastien, jo, stage, NAMES } from './common.js';
 
 export default {
-  title: 'Never Stop',
-  objectives: { start: 'Walk.', hold: 'Hold the scaffold.' },
+  title: 'Ne t’arrête jamais',
+  objectives: { start: 'Marcher.', hold: 'Tenir l’échafaudage.' },
   prompts: {
-    ghost: 'Look',
-    billboard: 'Look up',
-    shop: 'Look',
-    bench: 'Sit',
-    stand: 'Stand',
+    ghost: 'Regarder',
+    billboard: 'Lever les yeux',
+    shop: 'Regarder',
+    bench: 'S’asseoir',
+    stand: 'Se lever',
   },
 
   signs: {
-    billboard: 'STRIDE — NEVER STOP',
+    billboard: 'STRIDE — NE T’ARRÊTE JAMAIS',
     ghost: 'MARCHAL & FILLE — ENSEIGNES — DORURE',
-    shop: 'CYCLES DURAND — CLOSED — THANK YOU FOR 52 YEARS',
-    kebab: "MARCO'S",
+    shop: 'CYCLES DURAND — FERMÉ — MERCI POUR CES 52 ANS',
+    kebab: 'CHEZ GÉRARD',
     bakery: 'BOULANGERIE BENALI',
-    number: 'No. 14',
+    number: 'N° 14',
     fasciaStart: 'RÉPARATI',
     fascia: 'RÉPARATIONS.',
   },
@@ -29,85 +29,117 @@ export default {
   lapEnd: '41:10',
 
   // Non-blocking, at chapter start.
-  start: 'Thirty-eight minutes. Three hundred and twenty metres. Three flights of stairs, one at a time, in a boot.',
+  start: 'Trente-huit minutes. Trois cent vingt mètres. Trois étages, une marche à la fois, avec une botte.',
 
   // z < -6
-  pauseBuzz: 'PACE TOO SLOW TO RECORD. PAUSE ACTIVITY?',
-  pauseReply: 'No.',
+  pauseBuzz: 'ALLURE TROP LENTE. METTRE EN PAUSE ?',
+  pauseReply: 'Non.',
 
   ghost: [
-    think("Somebody painted that by hand, before I was born. The shop's long gone. The letters didn't get the message."),
+    think('Quelqu’un a peint ça à la main, avant ma naissance. La boutique a disparu depuis longtemps. Les lettres, personne ne les a prévenues.'),
   ],
   // Non-blocking, if he stays put by the ghost sign after `ghost`.
-  ghostLinger: "The thin strokes have lasted best. You'd think it'd be the other way round.",
-  billboard: [think('Never stop. I took it as advice. It was a slogan for a shoe.')],
+  ghostLinger: 'Ce sont les déliés qui ont le mieux tenu. On aurait cru l’inverse.',
+  billboard: [think('Ne t’arrête jamais. Je l’ai pris comme un conseil. C’était un slogan pour des baskets.')],
 
   // z < -24
   club: [
-    bastien("Hugo! Mate! How's the leg?"),
-    hugo('Stress fracture.'),
-    bastien('The classic! Too many kilometres, eh?'),
-    hugo('Is there another kind?'),
-    bastien("Ha! Rest up, legend. The leaderboard's boring without you."),
+    bastien('Hugo ! Mon pote ! Et cette jambe ?'),
+    hugo('Fracture de fatigue.'),
+    bastien('La classique ! Trop de bornes, hein ?'),
+    hugo('Il y en a d’autres ?'),
+    bastien('Ha ! Repose-toi, la légende. Le classement s’ennuie sans toi.'),
   ],
   // After Bastien fades out at z -46.
   clubAfter: [
-    think("He jogged on the spot the whole time, so his watch wouldn't pause."),
-    think("I'd have done the same. I'd have done exactly the same."),
+    think('Il a trottiné sur place tout du long, pour que sa montre ne se mette pas en pause.'),
+    think('J’aurais fait pareil. J’aurais fait exactement pareil.'),
   ],
 
   shop: [
-    think("Fifty-two years and they got a thank-you sign. When I retired, the team sent a fruit basket. The card said 'Hugh'."),
+    think('Cinquante-deux ans, et ils ont eu droit à une pancarte de remerciement. Quand j’ai arrêté, l’équipe m’a envoyé une corbeille de fruits. Sur la carte, c’était écrit « Hugues ».'),
   ],
-  bench: [think("Wet bench, in the dark. If the club comes back, I'm stretching.")],
+  bench: [think('Banc mouillé, dans le noir. Si le club repasse, je m’étire.')],
 
   // z < -42
-  arrivalLoop: [think('Once round the block. Forty-one minutes. Back where I started.')],
+  arrivalLoop: [think('Un tour de pâté de maisons. Quarante et une minutes. Retour à la case départ.')],
   arrival: [
-    odile('You. In the boot.'),
-    hugo('Me?'),
-    odile("No, the other man in a boot. The wheel lock's gone. Hold the scaffold before I come down faster than I'd like."),
-    odile('Can you stand still?'),
-    think('Honestly? Not since I was nineteen.'),
+    odile('Vous. Avec la botte.'),
+    hugo('Moi ?'),
+    odile('Non, l’autre bonhomme en botte. Le frein de roue a lâché. Tenez l’échafaudage avant que je descende plus vite que prévu.'),
+    odile('Vous savez ne pas bouger ?'),
+    think('Franchement ? Plus depuis mes dix-neuf ans.'),
   ],
 
   // HOLD STILL minigame.
   hold: {
-    gauge: 'STILL',
+    gauge: 'IMMOBILE',
     barks: {
       who: 'Odile',
-      bag: ['Still.', 'Stiller.', "You're a lamppost. Lampposts don't fidget.", "I'm doing an S up here. Esses are personal."],
+      bag: ['Bougez pas.', 'Bougez plus.', 'Vous êtes un réverbère. Un réverbère, ça gigote pas.', 'Je fais un S, là-haut. Les S, c’est personnel.'],
     },
-    buzz: 'TIME TO MOVE!',
-    buzzReply: 'Not now.',
+    buzz: 'ON BOUGE !',
+    buzzReply: 'Pas maintenant.',
   },
 
   after: [
-    odile("Réparations. Eleven letters and a full stop. You're a decent lamppost."),
-    odile("You're third floor. Four every morning, down the stairs like a dropped wardrobe."),
-    hugo('I was going running. Twice on Sundays.'),
-    odile('Hm.'),
-    { who: null, text: '*She looks at the boot for a long moment.*' },
-    odile("I've got a door in there that needs stripping back. And you've got, by the look of you, nothing to do."),
-    hugo("I've got plenty to do."),
-    odile('Name one thing.'),
+    odile('Réparations. Onze lettres et un point. Vous faites un réverbère tout à fait correct.'),
+    odile('Vous êtes au troisième. Tous les matins à quatre heures, dans l’escalier comme une armoire qu’on aurait lâchée.'),
+    hugo('J’allais courir. Et deux fois le dimanche.'),
+    odile('Hum.'),
+    { who: null, text: '*Elle regarde longuement la botte.*' },
+    odile('J’ai une porte, là-dedans, à décaper. Et vous, à vous voir, vous n’avez rien à faire.'),
+    hugo('J’ai plein de choses à faire.'),
+    odile('Citez-en une.'),
   ],
 
   nameOne: {
     who: 'Odile',
-    prompt: 'Name one thing.',
+    prompt: 'Citez-en une.',
     options: [
-      { text: 'Physio. Ankle circles, three by twenty.', correct: false, reply: "That's not a thing to do. That's a thing to count." },
-      { text: "Training. I've got a plan.", correct: false, reply: "In that boot? What's the plan, aggressive sitting?" },
-      { text: '...Nothing.', correct: true, reply: "Ten o'clock tomorrow. Bring your own coffee. Mine's a crime." },
+      { text: 'Kiné. Rotations de cheville, trois séries de vingt.', correct: false, reply: 'Ça, c’est pas une chose à faire. C’est une chose à compter.' },
+      { text: 'L’entraînement. J’ai un plan.', correct: false, reply: 'Avec cette botte ? C’est quoi, le plan ? Du fractionné assis ?' },
+      { text: '…Rien.', correct: true, reply: 'Demain, dix heures. Apportez votre café. Le mien est un crime.' },
     ],
   },
 
   leaving: [
-    odile('What did you do to it? The leg.'),
-    hugo("Nothing. That's the stupid part. Nothing happened. I just ran."),
-    odile('How far?'),
+    odile('Vous lui avez fait quoi ? À la jambe.'),
+    hugo('Rien. C’est ça, le plus bête. Il ne s’est rien passé. J’ai juste couru.'),
+    odile('Jusqu’où ?'),
   ],
-  howFarLap: 'LAST WEEK 212.4', // watch lap line during "How far?"
+  howFarLap: 'SEM. PRÉC. 212,4', // watch lap line during "How far?"
   flare: '#c6f432', // ui.watchFocus(true, { flare }) before the cut to white
+
+  // ------------------------------------------------------------ Revision 4 (docs/SCRIPT-R4.md §3)
+  // z < -9, non-blocking: Mme Benali pulls her shutter down (it screams, in three jerks); her bark, then his thought.
+  shutter: {
+    bark: { who: NAMES.benali, text: 'Pardon ! Il crie. Treize ans qu’il crie.' },
+    thought: 'Je rentrais de mes sorties sur ce cri. Six heures pile. Il me servait de ligne d’arrivée.',
+  },
+  // After the club, at ENCRE FINE (spots.joLadder): Jo on her stepladder with a crooked sign. Blocking, short.
+  jo: {
+    call: [jo('Hey, le grand avec la botte ! C’est-tu droit ?')],
+    // d.choose (who: Jo): the reply is played by the Director. Option 1 = remember('joSign', true).
+    menu: {
+      who: NAMES.jo,
+      prompt: 'L’enseigne penche nettement à gauche.',
+      options: [
+        { text: 'C’est de travers.', reply: 'Ben non. C’est parfait.' },
+        { text: 'C’est parfait.', reply: 'Voyons donc. C’est tout croche.' },
+      ],
+    },
+    // [0] she straightens the sign; [1..6] the exchange; [7] she climbs down and goes in; [8] his thought.
+    after: [
+      stage('Elle redresse l’enseigne d’un coup de paume, sans niveau, du premier coup.'),
+      jo('Tiguidou.'),
+      jo('Belle botte. Très mode.'),
+      hugo('C’est une botte médicale.'),
+      jo('Ça empêche pas.'),
+      hugo('Vous ouvrez quand ?'),
+      jo('Tu. On est pas à la banque. Lundi.'),
+      stage('Elle descend de l’échelle et rentre. La porte claque.'),
+      think('Encre fine. Je ne savais même pas qu’il y avait une boutique, là. Je passais devant à quinze kilomètres-heure.'),
+    ],
+  },
 };

@@ -76,7 +76,8 @@ export class ObjectivePointer {
     }
     if (best) return best;
     const id = this.getDirector?.()?.chapter?.id;
-    const w = WAYPOINTS[id]?.(this.ctx || { player: this.player });
+    // A chapter can point at a place for a while: ctx.waypoint = [x, z] (null when it's reached).
+    const w = this.ctx?.waypoint ?? WAYPOINTS[id]?.(this.ctx || { player: this.player });
     return w ? { id: `waypoint:${id}`, x: w[0], y: 0, z: w[1], radius: 1.5 } : null;
   }
 

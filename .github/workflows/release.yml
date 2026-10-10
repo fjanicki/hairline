@@ -27,7 +27,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: node scripts/i18n-check.mjs fr
+      - run: node scripts/text-check.mjs
       - run: node scripts/voice/extract-lines.mjs --check
       - name: Zip the build
         run: cd dist && zip -qr "../hairline-${GITHUB_REF_NAME}.zip" .

@@ -1,83 +1,102 @@
-// Ch1 "No Impact": the flat, night (boot day 4). Owned by the Ch1 agent. Source: docs/DESIGN.md.
+// Ch1 « Sans impact »: the flat, night (boot day 4). Owned by the Ch1 agent. Source: docs/DESIGN.md, docs/SCRIPT-R4.md §2.
 import { think } from './common.js';
 
 export default {
-  title: 'No Impact',
-  objectives: { start: 'Look around.', leave: 'Go for a walk.' },
+  title: 'Sans impact',
+  objectives: { start: 'Regarder autour de soi.', leave: 'Aller marcher.' },
   prompts: {
-    tv: 'Watch',
-    tvOff: 'Turn it off',
-    phone: 'Check phone',
-    watch: 'Take the watch',
-    xray: 'Look',
-    bike: 'Look',
-    bibs: 'Look',
-    door: 'Go out',
-    table: 'Steady it',
-    start: '[{KeyE}] Start',
+    tv: 'Regarder',
+    tvOff: 'Éteindre',
+    phone: 'Lire les messages',
+    watch: 'Prendre la montre',
+    xray: 'Regarder',
+    bike: 'Regarder',
+    bibs: 'Regarder',
+    door: 'Sortir',
+    table: 'Caler la table',
+    keys: 'Prendre les clés',
+    window: 'Regarder dehors',
+    start: '[{KeyE}] Démarrer',
   },
 
   // Non-blocking, on the first hammer burst (t = 8 s).
-  hammer: 'Somebody downstairs is hammering. Nine at night. Same rhythm for an hour. No hurry at all. I sort of hate them.',
+  hammer: 'Quelqu’un tape au marteau, en bas. Neuf heures du soir. Le même rythme depuis une heure. Pas pressé du tout. Je le déteste un peu.',
 
-  tvTicker: 'STAGE 17 — COL DU GRAND FERRAND',
+  tvTicker: 'ÉTAPE 17 — COL DU GRAND FERRAND',
   tv: [
     {
       who: 'TV',
-      text: "...and that's the work done for the domestiques. One by one they peel off the front, empty. Job finished.",
+      text: '…et voilà, le travail des équipiers est fait. Un à un, ils se relèvent, vidés. Mission accomplie.',
     },
   ],
   tvOff: [
-    think('Nobody films them after. They drift back through the team cars and ride down to the bus on their own.'),
+    think('Personne ne les filme, après. Ils redescendent entre les voitures suiveuses et rentrent au bus tout seuls.'),
   ],
 
   phone: [
-    { who: 'Phone', text: '12 unread.' },
-    { who: 'Mum', text: "Are you eating? Don't answer. Just eat." },
-    { who: 'STRIDE', text: "Weekly summary: 0.0 km. Let's get back on track!" },
-    { who: 'Bastien (Run Club)', text: 'Heard about the leg mate!! Rest up legend. Sunday long run NOT the same without you' },
+    { who: 'Téléphone', text: '12 messages non lus.' },
+    { who: 'Maman', text: 'Tu manges, au moins ? Réponds pas. Mange.' },
+    { who: 'STRIDE', text: 'Bilan de la semaine : 0,0 km. Allez, on s’y remet !' },
+    { who: 'Bastien (club)', text: 'Appris pour ta jambe mec !! Repose toi la légende. La sortie longue du dimanche c’est PAS pareil sans toi' },
     {
-      who: "Dr Okafor's office",
-      text: "Mr Revel, Dr Okafor's office. A reminder that the boot stays on, including in bed, and no impact of any kind for twelve weeks. Dr Okafor asked me to add, and I'm reading this out, 'That includes a little jog to see how it feels.'",
+      who: 'Dr Okafor (cabinet)',
+      text: 'Monsieur Revel, ici le cabinet du docteur Okafor. Je vous rappelle que la botte reste en place, y compris au lit, et aucun impact d’aucune sorte pendant douze semaines. Le docteur Okafor m’a demandé d’ajouter, et je cite : « Ça inclut le petit footing pour voir ce que ça donne. »',
       voicemail: true,
     },
-    think("Twelve unread. I'll answer them when I've got something to report."),
+    think('Douze non lus. J’y répondrai quand j’aurai quelque chose à signaler.'),
   ],
 
   // REQUIRED. The watch HUD appears after `watch`.
-  watch: [think("Still on the charger. Still counting. It doesn't know.")],
-  signs: { tvLive: 'LIVE', xrayMark: 'L' },
-  watchHud: { face: '0.0 km', label: 'THIS WEEK', lap: 'LAST WEEK 212.4' },
+  watch: [think('Toujours sur le chargeur. Toujours en train de compter. Elle ne sait pas.')],
+  signs: { tvLive: 'DIRECT', xrayMark: 'G' },
+  watchHud: { face: '0,0 km', label: 'CETTE SEMAINE', lap: 'SEM. PRÉC. 212,4' },
   watchAfter: [
-    think('Two hundred and twelve point four. Eleven point two of that on a broken leg.'),
-    think('It counted them the same.'),
+    think('Deux cent douze virgule quatre. Dont onze virgule deux sur une jambe cassée.'),
+    think('Elle les a comptés pareil.'),
   ],
-  buzz: "TIME TO MOVE! You've been still for 1 hr.",
-  buzzReply: [think('Thanks.')],
+  buzz: 'ON BOUGE ! Immobile depuis 1 h.',
+  buzzReply: [think('Merci.')],
 
   xray: [
-    think('Dr Okafor circled it in biro. I still had to ask where.'),
-    think("He called it 'the dreaded black line'. Then he said sorry, that's just what it's called."),
-    think('He said I could swim, if I needed to move. I said I sink. He wrote that down.'),
+    think('Le docteur Okafor l’a entourée au Bic. J’ai quand même dû demander où.'),
+    think('Il l’a appelée « la redoutable ligne noire ». Puis il s’est excusé : c’est son nom, c’est tout.'),
+    think('Il a dit que je pouvais nager, si j’avais besoin de bouger. J’ai dit que je coule. Il l’a noté.'),
   ],
 
   bike: [
-    think("Twelve years I kept that chain cleaner than my teeth. Four years on a hook and it's gone orange."),
-    think("The doctor says I'm allowed this one. No impact. I told him I've done my twelve years."),
-    think("I keep meaning to sell it. But someone would ask what it's won."),
+    think('Douze ans, j’ai gardé cette chaîne plus propre que mes dents. Quatre ans au crochet, et elle a viré à l’orange.'),
+    think('Le médecin dit que j’ai droit à celui-là. Sans impact. Je lui ai dit que j’avais déjà purgé mes douze ans.'),
+    think('Je me dis toujours que je vais le vendre. Mais on me demanderait ce qu’il a gagné.'),
   ],
 
   bibs: [
-    think('Thirty-eight race bibs. I kept every one.'),
-    think("I couldn't tell you what a single course looked like. I can tell you every split."),
+    think('Trente-huit dossards. Je les ai tous gardés.'),
+    think('Je serais incapable de décrire un seul parcours. Mais je connais chaque temps de passage.'),
   ],
   bibCount: 38,
 
-  door: [think('Walk, if you must, he said.'), think('I must.')],
+  door: [think('Marchez, si vous y tenez, il a dit.'), think('J’y tiens.')],
+
+  // R4 (SCRIPT-R4 §2): the keys in the bowl by the door (required: the door needs them), then item+ keys.
+  keys: [
+    think('Clé de l’appart. Clé de la boîte aux lettres. Et une troisième, dont personne ne se souvient.'),
+    think('Je la garde. Un jour, une porte quelque part va se sentir bête.'),
+  ],
+  needs: {
+    // The door before the keys.
+    door: [think('Les clés. Douze ans de vestiaires, et j’oublie encore les clés.')],
+  },
+  // R4, optional: the window (remember('seeds.window', true)). The clue sound, planted as a memory.
+  window: [
+    think('Hier, trois heures du matin. Je ne dormais pas, évidemment.'),
+    think('Quelqu’un poussait un vélo dans la rue. Clic. Clic. Clic. Pas pressé du tout.'),
+    think('Un clic par tour de roue. Un cliquet de roue libre fatigué. Je ne sais pas pourquoi je sais ça.'),
+    think('Si. Je sais pourquoi.'),
+  ],
 
   // Optional, after the phone (the table rocks): the paper shim under its leg.
-  table: [think("Sunday's race number. Folded in four, it's exactly the right thickness.")],
-  startBuzz: 'START WALK?',
-  walkFace: '0.00 km',
-  walkLabel: 'WALK',
+  table: [think('Le dossard de dimanche. Plié en quatre, il fait exactement la bonne épaisseur.')],
+  startBuzz: 'DÉMARRER UNE MARCHE ?',
+  walkFace: '0,00 km',
+  walkLabel: 'MARCHE',
 };

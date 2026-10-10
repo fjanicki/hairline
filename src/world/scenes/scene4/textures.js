@@ -200,6 +200,10 @@ export const PEG_TOOLS = [
   { id: null, u: 0.43, v: 0.86, size: [0.04, 0.22], shape: 'brush' },
   { id: 'sandpaper', u: 1.22, v: 0.86, size: [0.15, 0.18], shape: 'rect' },
   { id: 'watch', u: 1.63, v: 1.0, size: [0.045, 0.15], shape: 'watch' },
+  // R4 (SCRIPT-R4 §5): Odile's tape (taken on Day 8, then his to keep) and, right beside it, the spoke key's
+  // outline, empty since someone « borrowed » it (Ch5 hangs it back). No painted shadow: both come and go.
+  { id: 'tape', u: 0.76, v: 0.9, size: [0.085, 0.085], shape: 'tape', noShadow: true },
+  { id: 'spokeKey', u: 0.88, v: 0.9, size: [0.06, 0.06], shape: 'spokekey', noShadow: true },
 ];
 
 export function pegboardTexture() {
@@ -263,6 +267,23 @@ export function pegboardTexture() {
       g.lineTo(w * 0.3, h * 0.05);
       g.lineTo(w * 0.5, h * 0.5);
       g.closePath();
+    } else if (t.shape === 'tape') {
+      // A rounded case and the blade's hook tab.
+      const r = w * 0.22;
+      g.moveTo(-w * 0.5 + r, -h * 0.5);
+      g.arcTo(w * 0.5, -h * 0.5, w * 0.5, h * 0.5, r);
+      g.arcTo(w * 0.5, h * 0.5, -w * 0.5, h * 0.5, r);
+      g.arcTo(-w * 0.5, h * 0.5, -w * 0.5, -h * 0.5, r);
+      g.arcTo(-w * 0.5, -h * 0.5, w * 0.5, -h * 0.5, r);
+      g.closePath();
+      g.rect(w * 0.42, h * 0.3, w * 0.2, h * 0.14);
+    } else if (t.shape === 'spokekey') {
+      // A ring spoke key: a disc with four notched lugs.
+      g.ellipse(0, 0, w * 0.36, w * 0.36, 0, 0, Math.PI * 2);
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2 + Math.PI / 4;
+        g.rect(Math.cos(a) * w * 0.38 - w * 0.09, Math.sin(a) * w * 0.38 - w * 0.09, w * 0.18, w * 0.18);
+      }
     } else if (t.shape === 'watch') {
       g.ellipse(0, 0, w * 0.5, w * 0.5, 0, 0, Math.PI * 2);
       g.rect(-w * 0.32, -h * 0.5, w * 0.64, h * 0.4);
@@ -297,7 +318,7 @@ export function pegboardTexture() {
   g.fillRect(0, 0, CW, 120);
   // Soft drop shadows where the tools hang (the tube light has no shadow map).
   for (const t of PEG_TOOLS) {
-    if (!t.id || t.id === 'watch') continue;
+    if (!t.id || t.id === 'watch' || t.noShadow) continue;
     const [x, y] = P(t.u, t.v);
     const w = t.size[0] * k;
     const h = t.size[1] * k;

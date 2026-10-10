@@ -59,6 +59,7 @@ done
 echo "Kenney RPG Audio + Impact Sounds (CC0)"
 get "$DL/kenney/rpg.zip" https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip
 F=(); for n in bookFlip1 bookFlip2 bookFlip3 bookOpen bookClose creak1 creak2 creak3 metalClick metalLatch; do F+=("Audio/$n.ogg"); done
+for n in knifeSlice knifeSlice2 handleCoins handleCoins2 cloth1 cloth2 cloth3 cloth4 doorClose_1 doorClose_3 doorClose_4; do F+=("Audio/$n.ogg"); done  # R4
 unpack "$DL/kenney/rpg.zip" "$DL/kenney/rpg" "${F[@]}"
 get "$DL/kenney/impact.zip" https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip
 F=()

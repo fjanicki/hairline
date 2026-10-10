@@ -10,6 +10,9 @@ import { duckUnderVoice } from './crafts/sound.js';
 // after the phone, the rocking table (a folded race bib under its leg: mem.seeds.table).
 // Required: the GPS watch on its charger, which switches on the door; the door gives START WALK?,
 // E starts the walk and the screen fades to black with the hammering still coming through the floor.
+// Revision 4 (docs/SCRIPT-R4.md §2): the pocket. The phone and the watch go into it when read / taken; the
+// keys wait in a bowl by the door (required: the door needs them, `ch1.needs.door` without); the window
+// (optional, once the watch is off its sill) plants the 3 a.m. click (mem.seeds.window).
 
 const MUSIC = { name: 'contemplation', volume: 0.32 };
 
@@ -47,6 +50,8 @@ const DEFAULT_SPOTS = {
   bibs: [-1.4, -1.3],
   door: [2.23, -1.85],
   table: [1.78, -0.38],
+  keys: [2.42, -1.24],
+  window: [-1.25, -1.95],
 };
 
 // Odile's hammering through the floor (docs/assets/sfx.md, Ch1): recorded, pre-muffled blows on the bus
@@ -82,6 +87,8 @@ const SOUNDS = [
   'step_wood',
   'boot_step_wood',
   'body_thud',
+  'keys_jingle',
+  'key_insert',
 ];
 const RAIN = { name: 'amb_rain_window', volume: 0.35 }; // rain on the window, from inside (not rain.ogg)
 // Hugo's clip for each look beat: [clip, play options].
@@ -90,6 +97,8 @@ const CLIPS = {
   xray: ['arms_crossed'],
   bike: null, // he just looks up at it
   bibs: ['reach', { once: true }],
+  keys: ['reach', { once: true }],
+  window: ['arms_crossed'],
 };
 // The phone in his right hand: offset along the hand bone (+Y runs to the fingers) and turn.
 const PHONE_GRIP = {
@@ -372,6 +381,7 @@ export default {
           await d.say(L.ch1.phone);
           call('phoneMode', 'read');
           drop();
+          d.give('phone'); // item+ phone (R4): « + Téléphone », and the pocket hint the first time
           release();
           back();
         }).then(tableRocks),
@@ -423,6 +433,46 @@ export default {
     addSpot({ id: 'bike', pos: S.bike, radius: 1.0, prompt: L.ch1.prompts.bike, onInteract: () => look('bike', L.ch1.bike, { clip: CLIPS.bike }) });
     addSpot({ id: 'bibs', pos: S.bibs, radius: 1.0, prompt: L.ch1.prompts.bibs, onInteract: () => look('bibs', L.ch1.bibs, { clip: CLIPS.bibs }) });
 
+    // ---- R4: the keys in the bowl by the door. Required in effect: the door needs them.
+    addSpot({
+      id: 'keys',
+      pos: S.keys,
+      radius: 0.95,
+      prompt: L.ch1.prompts.keys,
+      required: true,
+      onInteract: () =>
+        beat(async () => {
+          shot('keys', 1.1);
+          await approach('keys');
+          const release = pose(CLIPS.keys[0], CLIPS.keys[1]);
+          await d.wait(0.45);
+          takeKeys();
+          await d.say(L.ch1.keys);
+          release();
+          back();
+        }),
+    });
+    function takeKeys() {
+      if (d.has('keys')) return;
+      call('takeKeys');
+      audio.sfx('keys_jingle', { volume: 0.3, jitter: 0.04 });
+      d.give('keys');
+    }
+
+    // ---- R4, optional: the window, once the watch is off its sill. Last night, 3 a.m.: clic, clic, clic.
+    let watchTaken = false;
+    addSpot({
+      id: 'window',
+      pos: S.window,
+      radius: 0.95,
+      prompt: L.ch1.prompts.window,
+      enabled: () => watchTaken,
+      onInteract: async () => {
+        remember('seeds.window', true);
+        await look('window', L.ch1.window, { clip: CLIPS.window });
+      },
+    });
+
     // ---- The GPS watch (required): still on its charger, still counting.
     addSpot({
       id: 'watch',
@@ -441,6 +491,8 @@ export default {
           await d.say(L.ch1.watch);
           const W = L.ch1.watchHud;
           ui.watch(W.face, { label: W.label, lap: W.lap });
+          d.give('watch'); // item+ watch (R4): worn, « au poignet » in the pocket
+          watchTaken = true;
           await d.wait(0.7);
           await d.say(L.ch1.watchAfter);
           d.hope(0.06, 3);
@@ -463,8 +515,14 @@ export default {
       radius: 1.05,
       prompt: L.ch1.prompts.door,
       required: true,
+      // R4: the door needs the keys (used from the pocket by themselves); without them, `ch1.needs.door`.
+      needs: 'keys',
+      needsLine: L.ch1.needs.door,
+      object: 'door',
       onInteract: () =>
         beat(async () => {
+          takeKeys(); // a skip fires the door without them: the bowl empties all the same
+          hotspots.remove('keys');
           shot('door', 1.3);
           await approach('door');
           await d.say(L.ch1.door);
@@ -508,6 +566,8 @@ export default {
         hammerPattern(true).forEach((t, i) => d.after(0.4 + t, () => blow(i, false)));
         audio.music(MUSIC.name, { volume: 0.16, fade: 2 });
         // The door shuts behind him 1.2 s into the fade: the flat drops away, the stairwell comes up.
+        // ...and he locks it behind him (R4: the keys).
+        d.after(1.85, () => audio.sfx('key_insert', { volume: 0.28, lowpass: 2400 }));
         d.after(1.2, () => {
           audio.sfx('door_flat_close', { volume: 0.45 });
           call('soundsOff', 0.35);

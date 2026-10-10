@@ -17,12 +17,15 @@
   --c-bastien: #d6e04a;
   --c-stride: #c6f432;
   --c-dr: #9fc8c0;
-  --c-ines: #c9a0d8;
-  --c-marco: #f08aa6;
+  --c-lou: #c9a0d8;
+  --c-gerard: #f08aa6;
   --c-mme: #e6c79a;
   --c-tv: #9fb7d6;
   --c-phone: #b8c0c8;
   --c-mum: #e0b0a0;
+  --c-jo: #c25a6c;
+  --c-durand: #b39a7a;
+  --c-radio: #a9b29a;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 18px rgba(0, 0, 0, 0.45);
 }
 
@@ -419,6 +422,8 @@ body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 11
 
 /* ---------------------------------------------------------- notebook: WHAT I CAN DO */
 .notebook {
+  /* Docked size: readable at a glance (19 px handwriting shows at about 15 px). */
+  --nb-dock: 0.8;
   position: absolute;
   top: 64px;
   right: 30px;
@@ -437,11 +442,11 @@ body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 11
   font-family: var(--hand);
   opacity: 0;
   transform-origin: top right;
-  transform: translateY(-10px) scale(0.56) rotate(1.5deg);
+  transform: translateY(-10px) scale(var(--nb-dock)) rotate(1.5deg);
   transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
   filter: saturate(0.85);
 }
-.notebook.show { opacity: 0.9; transform: scale(0.56) rotate(1.5deg); }
+.notebook.show { opacity: 0.96; transform: scale(var(--nb-dock)) rotate(1.5deg); }
 /* Open: an insert pinned to the top-left corner (under the objective), clear of Hugo and the
    action, which the cameras keep in the middle of the frame. */
 .notebook.show.open { opacity: 1; transform: translate(calc(340px - 100vw), 7vh) scale(0.92) rotate(-0.8deg); }
@@ -457,10 +462,10 @@ body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 11
 }
 .notebook .nb-head {
   font-family: var(--font);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.26em;
-  color: #5a564c;
+  letter-spacing: 0.22em;
+  color: #4d4a42;
   margin: 0 0 6px;
   line-height: 20px;
   text-decoration: underline;
@@ -501,6 +506,22 @@ body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 11
 .notebook .nb-note { font-size: 15px; color: #55534c; }
 .notebook .nb-row.sami { font-size: 25px; color: #2d4a8c; }
 .notebook .nb-row.sami .ink { transform: rotate(-5deg) skewX(-8deg); transform-origin: left bottom; letter-spacing: 0.04em; }
+/* Jo's hand (Revision 4): small, upright, black felt-tip, a touch bolder than the pencil. A whole line
+   (« Cuisiner. ») or just a note (« (mal) » under Hugo's « Tracer un trait fin. »). */
+.notebook .nb-row.jo,
+.notebook .nb-note.jo {
+  font-family: 'Marker Felt', 'Chalkboard SE', 'Noteworthy', var(--hand);
+  color: #1f1d1b;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.notebook .nb-row.jo { font-size: 17px; }
+.notebook .nb-row.jo .ink { text-shadow: 0 0 0.6px rgba(20, 18, 16, 0.9); }
+.notebook .nb-note.jo { font-size: 14px; }
+.notebook .nb-row.jo .nb-note:not(.jo) { font-family: var(--hand); font-weight: 400; color: #55534c; }
+.notebook .nb-note.sami { font-size: 17px; color: #2d4a8c; }
+/* Open, the page holds the whole list (15 lines in R4) when the screen allows, and scrolls when it doesn't. */
+.notebook.open .nb-list { max-height: calc((93vh - 150px) / 0.92); overflow: hidden auto; scrollbar-width: thin; }
 
 /* ---------------------------------------------------------- gauge (bottom-centre, above the prompt) */
 .gauge {
@@ -626,12 +647,15 @@ body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 11
 .who.bastien { color: var(--c-bastien); }
 .who.stride { color: var(--c-stride); }
 .who.dr { color: var(--c-dr); }
-.who.ines { color: var(--c-ines); }
-.who.marco { color: var(--c-marco); }
+.who.lou { color: var(--c-lou); }
+.who.gerard { color: var(--c-gerard); }
 .who.mme { color: var(--c-mme); }
 .who.tv { color: var(--c-tv); }
 .who.phone { color: var(--c-phone); }
 .who.mum { color: var(--c-mum); }
+.who.jo { color: var(--c-jo); }
+.who.durand { color: var(--c-durand); }
+.who.radio { color: var(--c-radio); }
 .dialogue .text {
   width: min(820px, 88vw);
   text-align: center;
@@ -984,10 +1008,21 @@ body:has(.gauge.show) .caption { bottom: calc(max(23vh, calc(15vh + 124px)) + 11
   transition: opacity 1.2s ease;
 }
 
+/* Short screens: the docked notebook would reach the watch. */
+@media (max-height: 720px) {
+  .notebook { --nb-dock: 0.68; }
+}
+/* Landscape phones: the open page shrinks to hold the whole final list (15 lines, Ch7) without
+   scrolling, near the top edge and right of the pocket button (PT57 #3). */
+@media (max-height: 500px) {
+  .notebook.show.open { transform: translate(calc(320px - 100vw), -56px) scale(0.64) rotate(-0.8deg); }
+  .notebook.open .nb-list { max-height: none; overflow: visible; }
+}
+
 @media (max-width: 640px) {
   .objective { left: 18px; top: 18px; }
   .pain { left: 18px; }
   .watch { right: 18px; transform-origin: bottom right; scale: 0.8; }
-  .notebook { right: 18px; }
+  .notebook { right: 18px; --nb-dock: 0.62; }
   .title .controls { grid-template-columns: 1fr; }
 }

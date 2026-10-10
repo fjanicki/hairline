@@ -60,6 +60,8 @@ import {
   paperBalls,
 } from './scene1/props.js';
 import { drawBroadcast } from './scene1/broadcast.js';
+import { evidenceBoard } from '../props/r4.js';
+import { buildKeysShelf, KEYS } from './scene1/keys.js';
 
 // Ch1 "No Impact": Hugo's third-floor flat, night, boot day 4. A 6 x 5 m dollhouse room (the +Z
 // wall is omitted so the follow camera sits outside it), dressed as a real, neglected flat:
@@ -290,7 +292,17 @@ function dustMotes(count, tvPos) {
 
 // ------------------------------------------------------------------ builder
 
-export async function buildScene1(ctx) {
+// R4 Ch6 Week 9 (docs/SCRIPT-R4.md §7.5): the cork evidence board, hung over the ghost of the team photo
+// above the TV ("Trente-huit dossards au mur. Et maintenant, à côté, un tableau en liège.").
+const CORK = { x: TV_POS[0], y: 1.76, w: 1.0, h: 0.7 };
+
+/**
+ * @param ctx  the game ctx
+ * @param opts { corkboard: false | true | evidenceBoard opts ({cards, strings, seed}; the card text comes
+ *               from L.*) } -- R4 Ch6: the deduction board on the back wall (spot / stand / focus / shot
+ *               `corkboard`, and `corkboard` on the result: the props/r4.js handles plus setVisible(v)).
+ */
+export async function buildScene1(ctx, { corkboard = false } = {}) {
   const { assets } = ctx;
   const group = new THREE.Group();
   group.name = 'scene1';
@@ -384,6 +396,9 @@ export async function buildScene1(ctx) {
   group.add(lamp.shade, lamp.bulb, lamp.light);
   buildDeadPlant(batch, mats, [1.5, -2.2]);
   buildOddments(batch, mats);
+  // R4 Ch1: the keys in their bowl on the shelf by the door (scene1/keys.js).
+  const keysShelf = buildKeysShelf(batch, mats);
+  group.add(keysShelf.group);
 
   // Rug under the table: threadbare, its corner kicked up.
   const rugMat = new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 0.95 });
@@ -527,6 +542,15 @@ export async function buildScene1(ctx) {
   group.add(xray);
 
   group.add(buildBibs(bibs));
+  // The evidence board (R4 Ch6 only): over the team photo's ghost, its nail reused.
+  let cork = null;
+  if (corkboard) {
+    cork = evidenceBoard({ width: CORK.w, height: CORK.h, ...(corkboard === true ? {} : corkboard) });
+    cork.group.position.set(CORK.x, CORK.y, BACK_Z + 0.004);
+    cork.group.rotation.z = -0.012; // hung by eye
+    group.add(cork.group);
+    cork.setVisible = (v) => (cork.group.visible = !!v);
+  }
   buildMedals(batch, mats);
   bikeHooks(batch, mats);
   const bike = hangingBike(ctx.materials, mats);
@@ -906,6 +930,9 @@ export async function buildScene1(ctx) {
       bibs: [-1.4, -1.3],
       door: [DOOR_X, -1.85],
       table: [1.78, -0.38], // after the phone: the table rocks (Ch1 seed)
+      keys: [2.42, -1.24], // R4: the bowl on the shelf by the door
+      window: [-1.25, -1.95], // R4: the window (3 a.m., the click); Ch1 offers it once the watch is off the sill
+      ...(cork ? { corkboard: [1.72, -1.45] } : {}), // R4 Ch6: the deduction board (phone side, facing it)
     },
     // Where Hugo stands for each close-up ([x, z]), and what he looks at (Vector3).
     stand: {
@@ -917,6 +944,9 @@ export async function buildScene1(ctx) {
       bibs: [-1.35, -1.25],
       door: [DOOR_X, -1.78],
       table: [1.82, -0.9],
+      keys: [2.45, -1.0],
+      window: [-1.12, -2.08],
+      ...(cork ? { corkboard: [1.72, -1.5] } : {}),
     },
     focus: {
       tv: new THREE.Vector3(TV_POS[0], 0.85, -1.92),
@@ -927,6 +957,9 @@ export async function buildScene1(ctx) {
       bibs: new THREE.Vector3(-IN_X, 1.45, -1.5),
       door: new THREE.Vector3(DOOR_X, 1.2, -D / 2),
       table: new THREE.Vector3(1.03, 0.1, -0.78),
+      keys: keysShelf.focus,
+      window: new THREE.Vector3(-1.05, 1.6, BACK_Z - 0.5),
+      ...(cork ? { corkboard: new THREE.Vector3(CORK.x, CORK.y, BACK_Z + 0.02) } : {}),
     },
     // Close-up camera shots in world coordinates, composed for the stand points above.
     shots: {
@@ -938,6 +971,14 @@ export async function buildScene1(ctx) {
       bibs: { pos: [-0.6, 1.7, -0.25], look: [-2.75, 1.5, -1.6], fov: 46 },
       door: { pos: [DOOR_X - 0.95, 1.6, -0.35], look: [DOOR_X, 1.15, -2.5], fov: 46 },
       table: { pos: [0.7, 1.55, 0.75], look: [1.35, 0.35, -0.85], fov: 46 },
+      keys: { pos: [1.72, 1.66, -2.05], look: [KEYS.x - 0.08, KEYS.y - 0.02, KEYS.z + 0.12], fov: 44 }, // from the doorway corner: the bowl past his shoulder
+      window: { pos: [0.05, 1.68, -0.7], look: [-1.1, 1.52, -2.5], fov: 46 },
+      ...(cork
+        ? {
+            corkboard: { pos: [0.85, 1.62, -0.6], look: [CORK.x, CORK.y - 0.04, BACK_Z], fov: 44 },
+            corkboardWide: { pos: [1.6, 1.75, 0.6], look: [-0.6, 1.45, -2.42], fov: 52 }, // the bibs beside it
+          }
+        : {}),
     },
     update,
     /** Switch the TV off: the picture collapses and the key light dies. */
@@ -986,6 +1027,10 @@ export async function buildScene1(ctx) {
       jig.t = 0;
       jig.amp = amp;
     },
+    /** R4: Hugo takes the keys out of the bowl. */
+    takeKeys() {
+      keysShelf.keys.visible = false;
+    },
     /** The folded bib goes under the near leg. */
     tableShim() {
       shim.visible = true;
@@ -994,6 +1039,8 @@ export async function buildScene1(ctx) {
     knock() {
       knock = 1;
     },
+    /** R4 Ch6: the evidence board (props/r4.js evidenceBoard handles + setVisible), or null. */
+    corkboard: cork,
     tvLight,
     bike,
     phoneMesh: phone.group,

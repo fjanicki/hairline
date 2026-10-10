@@ -231,7 +231,7 @@ export async function dressWallside(ctx, parent, { wallX, groundAt, spots, panel
           g.stroke();
           g.fillStyle = 'rgba(40,70,110,0.7)';
           g.font = '14px "Bradley Hand", cursive';
-          g.fillText(ctx.L.ch5.signs.sketch, 12, 24);
+          g.fillText(ctx.L.ch7.signs.sketch, 12, 24);
         }),
       );
     const sketch = sketchTex();

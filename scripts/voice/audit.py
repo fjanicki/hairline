@@ -54,7 +54,7 @@ CAST = json.load(open(HERE / "cast.json"))
 STATE = json.load(open(ROOT / ".cache/tts/gen/state.json"))
 OUT = ROOT / CAST["output"]["dir"]
 MAN = json.load(open(OUT / "manifest.json"))
-SPOT = re.compile(r"Revel|Odile|Marchal|Okafor|Sami|Bastien|Benali|STRIDE|Tanneurs|H\. ?R\.|Hugues|Durand|Ines|Marco|"
+SPOT = re.compile(r"Revel|Odile|Marchal|Okafor|Sami|Bastien|Benali|STRIDE|Tanneurs|H\. ?R\.|Hugues|Durand|Lou|Gérard|"
                   r"\b(deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quinze|vingt|trente|quarante|"
                   r"cinquante|soixante|cent|cents|mille|virgule)\b", re.I)
 
@@ -301,6 +301,8 @@ for f, (spk, e, m, f0) in emb_dry.items():
     if m == "mac":
         continue
     mac = [(e2, f02) for f2, (s2, e2, m2, f02) in emb_dry.items() if s2 == spk and m2 == "mac"]
+    if not mac:  # a speaker with no Mac clip (Jo, M. Durand: R4, generated on auriga only) has no reference
+        continue
     c = np.mean([x for x, _ in mac], 0)
     c /= np.linalg.norm(c)
     mac_cos = [float(x @ c) for x, _ in mac]

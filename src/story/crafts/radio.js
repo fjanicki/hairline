@@ -259,7 +259,7 @@ export function radioVoice(audio) {
 /**
  * tuneRadio(ctx, d, {radio, voice, text}) -> Promise<{skipped, found}>
  * radio: the prop (scene5/jobs.js: setDial(u), setSignal(k), flare(), mark(u), group). voice: a
- * radioVoice. text: L.ch5.jobs.radio ({hint, stations.{who, fishing, music, football, forecast}}).
+ * radioVoice. text: L.ch7.jobs.radio ({hint, stations.{who, fishing, music, football, forecast}}).
  * A / D (arrows) turn the dial at 0.22/s, a drag 0.0012 per px, a scroll notch 0.012. A station is
  * found when the needle rests within 0.02 of it for 0.8 s: a chime, the lamp flares, a chalk tick, its
  * caption. Fishing is found from the start. Idle 6 s: the needle creeps to the nearest unfound one;

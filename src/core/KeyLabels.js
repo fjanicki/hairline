@@ -3,11 +3,11 @@
 // Source, in order: real keydowns (e.code -> e.key, letter keys, no modifiers or dead keys),
 // navigator.keyboard.getLayoutMap() (Chromium), US QWERTY. Named keys (Space, Shift, Escape, Enter,
 // Arrows) come from the text (L.keyNames, registered by i18n.js). Text writes keys as tokens,
-// '{KeyA}' / '{Space}', resolved by keyText() (docs/API.md, i18n). Node-safe (scripts/i18n-lib.mjs).
+// '{KeyA}' / '{Space}', resolved by keyText() (docs/API.md, i18n). Node-safe (scripts/text-check.mjs).
 
 /** A key token in text: a physical letter code or a named key. */
-export const KEY_TOKEN = /\{(Key[A-Z]|Space|Shift|Escape|Enter|Arrows)\}/g;
-const NAMED = { Space: 'Space', Shift: 'Shift', Escape: 'Esc', Enter: 'Enter', Arrows: 'Arrows' }; // fallback
+export const KEY_TOKEN = /\{(Key[A-Z]|Space|Shift|Escape|Enter|Arrows|Tab)\}/g;
+const NAMED = { Space: 'Space', Shift: 'Shift', Escape: 'Esc', Enter: 'Enter', Arrows: 'Arrows', Tab: 'Tab' }; // fallback
 // Keys whose action also accepts the character they type (main.js: mute is KeyM or a typed 'm').
 const TYPED = { KeyM: 'm' };
 

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { CLIP_RETIME, CLIP_STRIDE, castRecipes } from './cast.js';
+import { CLIP_RETIME, CLIP_STRIDE, WALK_OLD, castRecipes } from './cast.js';
+import { INK, inkTexture } from './tattoo.js';
+import { cap, pencil, rings } from './accessories.js';
 
 // Builds characters from the Quaternius "Universal" set (docs/assets/characters.md):
 //   parts.glb  one 65-bone skeleton + 31 skinned parts, each with its own inverse bind matrices
@@ -93,6 +95,16 @@ export class CharacterKit {
       if (CLIP_STRIDE[name]) shortenStride(clip, CLIP_STRIDE[name]);
       clip.name = name;
       this.clips[name] = clip;
+    }
+    // An old man's walk (cast.js WALK_OLD): the walk, slower and with a shorter stride.
+    if (this.clips.walk) {
+      const old = this.clips.walk.clone();
+      old.name = 'walk_old';
+      const k = WALK_OLD.cycle / old.duration;
+      for (const t of old.tracks) t.times = Float32Array.from(t.times, (x) => x * k);
+      old.duration = WALK_OLD.cycle;
+      shortenStride(old, WALK_OLD);
+      this.clips.walk_old = old;
     }
 
     // Kit masks (RGBA, linear). ImageBitmap with premultiplyAlpha 'none' keeps RGB where alpha is 0.
@@ -188,7 +200,11 @@ export class CharacterKit {
           arm.add(mesh);
           meshes.push(mesh);
           materials.push(mat);
-          chunk.forEach((p, s) => slots.push({ material: mat, slot: s, part: p.part, kind, lum: p.lum, boneOffset: entry.offsets[s] }));
+          chunk.forEach((p, s) => {
+            slots.push({ material: mat, slot: s, part: p.part, kind, lum: p.lum, boneOffset: entry.offsets[s] });
+            const tr = recipe.trim?.[p.part];
+            if (tr) mat.userData.hl.trim.value[s].set(tr[0], tr[1], tr[2] ?? -99, tr[3] ?? 99);
+          });
         }
       }
       // Odile's apron: a real garment over the blouse, skinned to the spine, pelvis and thighs.
@@ -200,6 +216,15 @@ export class CharacterKit {
           meshes.push(apron);
           materials.push(apron.material);
         }
+      }
+      // Revision 4 accessories (accessories.js): Jo's rings and pencil, M. Durand's flat cap.
+      for (const make of [rings, pencil, cap]) {
+        const m = make(this, recipe, bones);
+        if (!m) continue;
+        if (make === cap) m.castShadow = castShadow;
+        arm.add(m);
+        meshes.push(m);
+        materials.push(m.material);
       }
       // Distance cull for the eyes, driven by the head mesh (always drawn). Shadow cameras have no
       // parent; the main camera lives in the scene (Engine), so only it decides.
@@ -240,7 +265,14 @@ export class CharacterKit {
       // shaft above the ankle takes the trousers' colour (a trouser leg over a shoe, not a knee boot).
       const shoe = s.kind === 'cloth' && /shoes|boots/.test(part);
       const top = s.kind === 'cloth' && /shirt|blouse/.test(part); // z: the toggle placket, the corset / belt
-      hl.slot.value[s.slot].set(s.lum, shoe ? 1 : 0, top ? 1 : 0, 0);
+      // w: an open jacket / cardigan over an inner top (recipe.inner), whose colour rides in `shaft`.
+      const inner = top && recipe.inner;
+      hl.slot.value[s.slot].set(s.lum, shoe ? 1 : 0, top ? 1 : 0, inner ? 1 : 0);
+      if (inner) {
+        partColor(hl.shaft.value[s.slot], recipe.inner.color, s.lum);
+        hl.inner.value.set(recipe.inner.w[0], recipe.inner.w[1], recipe.inner.buttons ? 1 : 0, 0);
+        hl.innerB.value.set(recipe.inner.buttons || '#000000');
+      }
       if (shoe) {
         const legs = recipe.parts.find((p) => /trousers/.test(p));
         partColor(hl.shaft.value[s.slot], (legs && recipe.colors?.[legs]) || '#34363a', s.lum);
@@ -497,6 +529,7 @@ export class CharacterKit {
     const cloth = kind === 'cloth';
     const age = kind === 'skin' && !recipe.kit ? recipe.age || 0 : 0;
     const sex = recipe.rig?.startsWith('f') ? 'f' : 'm';
+    const ink = kind === 'skin' && recipe.tattoo ? inkTexture(recipe.tattoo) : null;
     const useKit = kind === 'skin' && !!recipe.kit && !!this.kitMaps[sex] && /athletic/.test(recipe.rig);
     const hl = {
       tint: { value: Array.from({ length: MAX_SLOTS }, () => new THREE.Color(1, 1, 1)) },
@@ -516,6 +549,13 @@ export class CharacterKit {
       slot: cloth ? { value: Array.from({ length: MAX_SLOTS }, () => new THREE.Vector4(0.42, 0, 0, 0)) } : null,
       shaft: cloth ? { value: Array.from({ length: MAX_SLOTS }, () => new THREE.Color(0, 0, 0)) } : null,
       age: { value: age },
+      // The age patch is drawn on the female head; the male face sits 4.3 cm higher and 8 mm forward.
+      ageOff: { value: new THREE.Vector3(0, sex === 'm' ? 0.0425 : 0, sex === 'm' ? 0.008 : 0) },
+      ink: { value: ink },
+      // Per slot: keep fragments with trim.x <= |x| <= trim.y and trim.z <= y <= trim.w (bind metres; recipe.trim).
+      trim: { value: Array.from({ length: MAX_SLOTS }, () => new THREE.Vector4(0, 99, -99, 99)) },
+      inner: cloth ? { value: new THREE.Vector4(0, 0, 0, 0) } : null,
+      innerB: cloth ? { value: new THREE.Color(0, 0, 0) } : null,
       hideSlot: { value: -1 }, // one part slot whose left-leg vertices are discarded (under the walking boot)
       hideBones: { value: new THREE.Vector4(-1, -1, -1, -1) },
     };
@@ -527,6 +567,7 @@ export class CharacterKit {
       shader.uniforms.hlHideSlot = hl.hideSlot;
       shader.uniforms.hlHideBones = hl.hideBones;
       shader.uniforms.hlBindQ = hl.bindQ;
+      shader.uniforms.hlTrim = hl.trim;
       shader.vertexShader = shader.vertexShader
         .replace(
           '#include <common>',
@@ -534,10 +575,12 @@ export class CharacterKit {
 attribute float partSlot;
 uniform vec3 hlTint[${MAX_SLOTS}];
 uniform mat4 hlBindQ[${MAX_SLOTS}];
+uniform vec4 hlTrim[${MAX_SLOTS}];
 uniform float hlHideSlot;
 uniform vec4 hlHideBones;
 varying vec3 vHlTint;
 varying vec3 vHlPos;
+varying vec4 vHlTrim;
 varying float vHlHide;
 float hlIn( float j ) { vec4 d = abs( hlHideBones - j ); return step( min( min( d.x, d.y ), min( d.z, d.w ) ), 0.5 ); }`,
         )
@@ -546,29 +589,31 @@ float hlIn( float j ) { vec4 d = abs( hlHideBones - j ); return step( min( min( 
           `#include <begin_vertex>
 	vHlTint = hlTint[ int( partSlot + 0.5 ) ];
 	vHlPos = ( hlBindQ[ int( partSlot + 0.5 ) ] * vec4( position, 1.0 ) ).xyz; // bind space, metres
+	vHlTrim = hlTrim[ int( partSlot + 0.5 ) ];
 	vHlHide = 0.0;
 	#ifdef USE_SKINNING
 	if ( abs( partSlot - hlHideSlot ) < 0.5 ) vHlHide = dot( skinWeight, vec4( hlIn( skinIndex.x ), hlIn( skinIndex.y ), hlIn( skinIndex.z ), hlIn( skinIndex.w ) ) );
 	#endif`,
         );
       let frag = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vHlTint;\nvarying vec3 vHlPos;\nvarying float vHlHide;\n' + HL_NOISE)
-        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n\tif ( vHlHide > 0.5 ) discard;')
+        .replace('#include <common>', '#include <common>\nvarying vec3 vHlTint;\nvarying vec3 vHlPos;\nvarying vec4 vHlTrim;\nvarying float vHlHide;\n' + HL_NOISE)
+        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n\tif ( vHlHide > 0.5 || abs( vHlPos.x ) < vHlTrim.x || abs( vHlPos.x ) > vHlTrim.y || vHlPos.y < vHlTrim.z || vHlPos.y > vHlTrim.w ) discard;')
         .replace('#include <map_fragment>', '#include <map_fragment>\n\tdiffuseColor.rgb *= vHlTint;\n\tfloat hlKit = 0.0;');
       if (cloth) {
-        Object.assign(shader.uniforms, { hlSlot: hl.slot, hlShaft: hl.shaft });
+        Object.assign(shader.uniforms, { hlSlot: hl.slot, hlShaft: hl.shaft, hlInner: hl.inner, hlInnerB: hl.innerB });
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', `#include <common>\nuniform vec4 hlSlot[${MAX_SLOTS}];\nuniform vec3 hlShaft[${MAX_SLOTS}];\nvarying vec4 vHlSlot;\nvarying vec3 vHlShaft;`)
           .replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvHlSlot = hlSlot[ int( partSlot + 0.5 ) ];\n\tvHlShaft = hlShaft[ int( partSlot + 0.5 ) ];');
         frag = frag
-          .replace('#include <common>', '#include <common>\nvarying vec4 vHlSlot;\nvarying vec3 vHlShaft;\nfloat hlShaftK = 0.0;')
+          .replace('#include <common>', '#include <common>\nvarying vec4 vHlSlot;\nvarying vec3 vHlShaft;\nuniform vec4 hlInner;\nuniform vec3 hlInnerB;\nfloat hlShaftK = 0.0;')
           .replace('\tdiffuseColor.rgb *= vHlTint;\n', CLOTH_FRAG)
           .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n\troughnessFactor = max( roughnessFactor, 0.8 );')
           .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n\tnormal = normalize( mix( normal, nonPerturbedNormal, hlShaftK * 0.75 ) );');
       }
       if (age) {
         shader.uniforms.hlAge = hl.age;
-        frag = frag.replace('#include <common>', '#include <common>\nuniform float hlAge;').replace('\tdiffuseColor.rgb *= vHlTint;\n', '\tdiffuseColor.rgb *= vHlTint;\n' + AGE_FRAG);
+        shader.uniforms.hlAgeOff = hl.ageOff;
+        frag = frag.replace('#include <common>', '#include <common>\nuniform float hlAge;\nuniform vec3 hlAgeOff;').replace('\tdiffuseColor.rgb *= vHlTint;\n', '\tdiffuseColor.rgb *= vHlTint;\n' + AGE_FRAG);
       }
       if (hl.kit) {
         Object.assign(shader.uniforms, { hlKitMap: hl.kitMap, hlKitTop: hl.kitTop, hlKitTrim: hl.kitTrim, hlKitBands: hl.kitBands, hlKitLegs: hl.kitLegs, hlKitShoes: hl.kitShoes, hlKitCut: hl.kitCut, hlKitQ: hl.kitQ, hlKitK: hl.kitK, hlKitNeck: hl.kitNeck });
@@ -641,9 +686,15 @@ float hlIn( float j ) { vec4 d = abs( hlHideBones - j ); return step( min( min( 
 	}`,
           );
       }
+      if (ink) {
+        shader.uniforms.hlInk = hl.ink;
+        frag = frag
+          .replace('#include <common>', '#include <common>\nuniform sampler2D hlInk;')
+          .replace('\tdiffuseColor.rgb *= vHlTint;\n', '\tdiffuseColor.rgb *= vHlTint;\n' + INK_FRAG);
+      }
       shader.fragmentShader = frag;
     };
-    m.customProgramCacheKey = () => (hl.kit ? 'hl-char-kit' : cloth ? 'hl-char-cloth' : age ? 'hl-char-age' : 'hl-char');
+    m.customProgramCacheKey = () => (hl.kit ? 'hl-char-kit' : cloth ? 'hl-char-cloth' : (age ? 'hl-char-age' : 'hl-char') + (ink ? '-ink' : ''));
     return m;
   }
 }
@@ -671,21 +722,43 @@ const CLOTH_FRAG = /* glsl */ `
 		float placket = vHlSlot.z * ( 1.0 - smoothstep( 0.03, 0.05, abs( vHlPos.x ) ) ) * step( 0.0, vHlPos.z ) * step( 1.0, vHlPos.y );
 		float waist = vHlSlot.z * ( 1.0 - smoothstep( 1.2, 1.24, vHlPos.y ) );
 		hlShaftK = max( hlShaftK, placket );
+		// An open jacket / cardigan (recipe.inner): the inner top down the front, a V that widens to the
+		// neck, a soft shadow just outside the jacket's edges and, on a cardigan, buttons down one edge.
+		float inner = 0.0;
+		float hlEdge = 0.0;
+		float hlBtn = 0.0;
+		if ( vHlSlot.w > 0.5 ) {
+			float ax = abs( vHlPos.x );
+			float w = mix( hlInner.x, hlInner.y, smoothstep( 1.1, 1.46, vHlPos.y ) );
+			float front = smoothstep( 0.0, 0.035, vHlPos.z ) * step( 0.99, vHlPos.y );
+			inner = ( 1.0 - smoothstep( w - 0.002, w + 0.002, ax ) ) * front;
+			hlEdge = exp( -pow( ( ax - w - 0.005 ) / 0.005, 2.0 ) ) * front;
+			float by = ( vHlPos.y - 1.03 ) / 0.075;
+			vec2 bq = vec2( vHlPos.x - ( w + 0.011 ), ( fract( by ) - 0.5 ) * 0.075 );
+			hlBtn = hlInner.z * front * step( 0.0, by ) * step( by, 4.0 ) * ( 1.0 - smoothstep( 0.0045, 0.0062, length( bq ) ) );
+		}
+		hlShaftK = max( hlShaftK, inner );
 		float keep = mix( 0.4, 0.14, max( hlShaftK, waist ) );
 		diffuseColor.rgb = max( vec3( pivot ) + ( diffuseColor.rgb - pivot ) * keep, vec3( 0.0 ) );
 		float heather = hlNoise( vHlPos * 260.0 ) * 0.6 + hlNoise( vHlPos * 90.0 ) * 0.4;
 		float blotch = hlNoise( vHlPos * 9.0 + 3.7 );
 		float hem = smoothstep( 0.5, 0.04, vHlPos.y );
 		diffuseColor.rgb *= ( 0.93 + 0.14 * heather ) * ( 1.0 - 0.1 * blotch ) * ( 1.0 - 0.22 * hem * ( 0.5 + blotch ) );
-		diffuseColor.rgb *= mix( vHlTint, vHlShaft, shaft );
+		diffuseColor.rgb *= mix( mix( vHlTint, vHlShaft, shaft ), vHlShaft, inner ) * ( 1.0 - 0.45 * hlEdge );
+		diffuseColor.rgb = mix( diffuseColor.rgb, hlInnerB, hlBtn );
+		// Rolled sleeves (a trimmed sleeve, recipe.trim): a turned-back cuff, a fold line at its top.
+		if ( vHlTrim.y < 5.0 ) {
+			float d = vHlTrim.y - abs( vHlPos.x );
+			diffuseColor.rgb *= 1.0 + 0.12 * smoothstep( 0.035, 0.02, d ) - 0.4 * exp( -pow( ( d - 0.037 ) / 0.003, 2.0 ) ) - 0.25 * smoothstep( 0.004, 0.0, d );
+		}
 	}
 `;
 
 // Age (Odile): a paler, less rosy skin, shadows under the eyes and down from the nose, a few forehead
 // lines and crow's feet, and faint age spots. Female head, bind-space metres (eyes at y 1.64-1.67).
 const AGE_FRAG = /* glsl */ `
-	if ( hlAge > 0.0 && vHlPos.y > 1.55 ) {
-		vec3 q = vHlPos;
+	if ( hlAge > 0.0 && vHlPos.y - hlAgeOff.y > 1.55 ) {
+		vec3 q = vHlPos - hlAgeOff;
 		float ax = abs( q.x );
 		float g = dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
 		diffuseColor.rgb = mix( diffuseColor.rgb, vec3( g ) * vec3( 1.06, 1.0, 0.95 ), 0.14 * hlAge );
@@ -698,6 +771,36 @@ const AGE_FRAG = /* glsl */ `
 		float dark = ( 0.26 * bag + 0.3 * fold + 0.2 * crow + 0.14 * brow ) * front + 0.1 * spots;
 		diffuseColor.rgb *= 1.0 - dark * hlAge;
 		diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vec3( 0.9, 0.84, 0.86 ), bag * front * hlAge * 0.4 );
+	}
+`;
+
+// Ink (Jo's sleeves, tattoo.js): the map is read through a cylinder round each forearm in bind
+// metres, flattened over the hand. The seam (little-finger side) has its own gradients, and fine lines
+// darken a little as they shrink with distance, so the sleeves still read as sleeves at street range.
+const INK_FRAG = /* glsl */ `
+	if ( abs( vHlPos.x ) > ${INK.x0 + 0.015} && vHlPos.y > 1.28 ) {
+		float ax = abs( vHlPos.x );
+		float right = step( vHlPos.x, 0.0 );
+		float dy = vHlPos.y - ${INK.y};
+		float dz = vHlPos.z - (${INK.z});
+		float th = atan( dy, dz );
+		float th2 = th < 0.0 ? th + 6.2831853 : th;
+		float sh = ( dy >= 0.0 ? 1.0 : -1.0 ) * ( ${(INK.r * Math.PI / 2).toFixed(5)} - dz );
+		float kh = smoothstep( 0.645, 0.685, ax );
+		float flip = 1.0 - 2.0 * right;
+		float sA = mix( th * ${INK.r.toFixed(5)}, sh, kh ) * flip;
+		float sB = mix( th2 * ${INK.r.toFixed(5)}, sh, kh ) * flip;
+		vec2 gA = vec2( length( vec2( dFdx( sA ), dFdy( sA ) ) ), 0.0 );
+		vec2 gB = vec2( length( vec2( dFdx( sB ), dFdy( sB ) ) ), 0.0 );
+		float s = gB.x < gA.x ? sB : sA;
+		vec2 tuv = vec2( ( ax - ${INK.x0} ) / ${INK.len}, ( clamp( fract( 0.5 - s / ${INK.circ} ), 0.002, 0.998 ) + right ) * 0.5 );
+		vec2 sc = vec2( 1.0 / ${INK.len}, -0.5 / ${INK.circ} );
+		vec2 tdx = vec2( dFdx( ax ), gB.x < gA.x ? dFdx( sB ) : dFdx( sA ) ) * sc;
+		vec2 tdy = vec2( dFdy( ax ), gB.x < gA.x ? dFdy( sB ) : dFdy( sA ) ) * sc;
+		float a = textureGrad( hlInk, tuv, tdx, tdy ).r;
+		float lod = log2( max( max( length( tdx ), length( tdy ) ) * ${INK.size}.0, 1.0 ) );
+		a = min( 1.0, a * mix( 1.0, 7.0, smoothstep( 1.0, 5.0, lod ) ) );
+		diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 0.13, 0.14, 0.17 ), a * 0.92 );
 	}
 `;
 
@@ -811,10 +914,11 @@ function kindOf(materialName) {
 
 /** Caller overrides on a recipe (scale, tint of the primary garment or kit top). */
 function applyOverrides(recipe, { tint, scale } = {}) {
-  const r = { ...recipe, colors: { ...(recipe.colors || {}) }, kit: recipe.kit ? { ...recipe.kit } : undefined };
+  const r = { ...recipe, colors: { ...(recipe.colors || {}) }, kit: recipe.kit ? { ...recipe.kit } : undefined, inner: recipe.inner ? { ...recipe.inner } : undefined };
   if (scale !== undefined) r.scale = scale;
   if (tint !== undefined && tint !== null) {
     if (r.apron) r.apron = tint; // Odile: callers' "ochre" tint is the apron
+    else if (r.tintInner && r.inner) r.inner.color = tint; // Jo: the top under the jacket
     else if (r.kit) r.kit.top = tint;
     else for (const p of r.primary || []) r.colors[p] = tint;
   }

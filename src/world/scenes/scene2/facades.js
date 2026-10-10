@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { boxGeo, cbox, cyl, compose } from './kit.js';
 import { cellUV } from './art.js';
+import { rng as seeded } from '../../build.js';
 
 // Procedural street facades for Rue des Tanneurs (replaces the Kenney city blocks). Every building is
 // a mass box in a look recipe (brick, render...) plus trims, windows with surrounds, casements,
@@ -17,14 +18,18 @@ export const heightOf = (n) => GF + n * FLOOR + ATTIC;
 
 // side -1 = left (facade faces +X), +1 = right (faces -X). z0 > z1. n = storeys above the ground
 // floor. gf: 'door' | 'shop' | 'garage' | 'blank' | 'named' (scene2.js dresses the named shops).
+// R4: 'encre' (ENCRE FINE) was B1, a door-and-window front: `was: 'door'` keeps its random draws so
+// the rest of the street keeps its shutters. Gérard's building grew to five levels for Lou's 4th-floor
+// window: `rngStoreys` keeps the street's draws for the first two, the others use their own seed;
+// `windows` forces single windows ('storey,column').
 export const BUILDINGS = [
   // Left
   { id: 'A1', side: -1, z0: 14, z1: 7.4, n: 3, recipe: 'render', gfRecipe: 'brickPlaster', gf: 'door', door: 1, balcony: 0, seed: 11 },
   { id: 'A2', side: -1, z0: 7.4, z1: 1.2, n: 2, recipe: 'brickPlaster', gf: 'shop', shop: 'LAVERIE', seed: 12 },
   { id: 'A3', side: -1, z0: 1.2, z1: -5.6, n: 3, recipe: 'brick', gfRecipe: 'render', gf: 'door', door: 0, balcony: 1, seed: 13 },
   { id: 'bakery', side: -1, z0: -5.7, z1: -11.95, n: 2, recipe: 'painted', gf: 'named', seed: 14 },
-  { id: 'marco', side: -1, z0: -32.05, z1: -36.35, n: 2, recipe: 'render', gfRecipe: 'brickPlaster', gf: 'named', seed: 15 },
-  { id: 'B1', side: -1, z0: -36.5, z1: -42.2, n: 3, recipe: 'brickPlaster', gf: 'door', door: 1, balcony: 0, seed: 16 },
+  { id: 'marco', side: -1, z0: -32.05, z1: -36.35, n: 4, rngStoreys: 2, windows: { '3,0': { shutters: 'open' } }, recipe: 'render', gfRecipe: 'brickPlaster', gf: 'named', seed: 15 },
+  { id: 'encre', side: -1, z0: -36.5, z1: -42.2, n: 3, recipe: 'brickPlaster', gf: 'named', was: 'door', door: 1, balcony: 0, seed: 16 },
   { id: 'B2', side: -1, z0: -42.2, z1: -47.9, n: 2, recipe: 'brick', gfRecipe: 'render', gf: 'shop', shop: null, seed: 17 },
   // Right
   { id: 'C1', side: 1, z0: 14, z1: 7.8, n: 2, recipe: 'brick', gf: 'shop', shop: 'QUINCAILLERIE', seed: 21 },
@@ -180,9 +185,11 @@ export function addShopfront(batch, parent, { w, h = 2.75, tint = '#b4b4b0', fas
 
 /**
  * One building. Adds its mass, trims, windows, ground floor and a downpipe to the batch.
- * opts: { evening, rng, litCells, shopSigns: [] (filled with {text, parent, w}) }
+ * opts: { evening, rng, litCells, shopSigns: [] (filled with {text, parent, w}),
+ *         lights = true (false: the night layout with every window dark; the draws are the same),
+ *         hollow: Set of ids whose ground-floor mass scene2/rooms.js replaces with a room }
  */
-export function addBuilding(batch, b, { evening, rng, litCells, shopSigns }) {
+export function addBuilding(batch, b, { evening, rng, litCells, shopSigns, lights = true, hollow = null }) {
   const s = b.side;
   const W = b.z0 - b.z1;
   const zc = (b.z0 + b.z1) / 2;
@@ -192,7 +199,7 @@ export function addBuilding(batch, b, { evening, rng, litCells, shopSigns }) {
   // Mass: the ground floor and the upper storeys can differ (render over brick, brick over render).
   const upper = b.recipe;
   const lower = b.gfRecipe || b.recipe;
-  batch.add(lower, boxGeo(depth, GF, W), { pos: [mx, 0, zc] });
+  if (!hollow?.has(b.id)) batch.add(lower, boxGeo(depth, GF, W), { pos: [mx, 0, zc] });
   batch.add(upper, boxGeo(depth, H - GF, W), { pos: [mx, GF, zc] });
   // Trims: plinth, string course, cornice, coping, party-wall strips.
   batch.add('trim', boxGeo(0.1, 0.45, W), { pos: [s * FRONT_X, 0, zc] });
@@ -211,17 +218,21 @@ export function addBuilding(batch, b, { evening, rng, litCells, shopSigns }) {
   const cols = b.blind ? 0 : Math.max(1, Math.floor(W / 2.45));
   const step = W / Math.max(1, cols);
   const tint = SHUTTER_TINTS[(b.seed * 7) % SHUTTER_TINTS.length];
+  const extra = b.rngStoreys !== undefined ? seeded(b.seed * 97) : null;
   for (let k = 0; k < b.n; k++) {
     const yb = GF + k * FLOOR;
     const balcony = b.balcony === k;
+    const rng2 = extra && k >= b.rngStoreys ? extra : rng;
     for (let i = 0; i < cols; i++) {
       const z = b.z0 - step * (i + 0.5);
       const h = balcony ? 2.3 : 1.7;
       const y = balcony ? yb + 0.2 + h / 2 : yb + 0.95 + h / 2;
-      const r = rng();
+      const r = rng2();
       const shutters = r < 0.18 ? 'closed' : r < 0.32 ? 'half' : r < 0.85 ? 'open' : null;
-      const lit = evening && shutters !== 'closed' && rng() < 0.16 ? { cell: litCells[(rng() * litCells.length) | 0], color: litColor(rng) } : null;
-      addWindow(batch, facadeFrame(s, z, y), { w: 1.0, h, shutters, shutterTint: rng() < 0.85 ? tint : SHUTTER_TINTS[(rng() * SHUTTER_TINTS.length) | 0], lit, balcony, keystone: b.recipe === 'brick' && k === 0 });
+      let lit = evening && shutters !== 'closed' && rng2() < 0.16 ? { cell: litCells[(rng2() * litCells.length) | 0], color: litColor(rng2) } : null;
+      if (!lights) lit = null;
+      const o = { w: 1.0, h, shutters, shutterTint: rng2() < 0.85 ? tint : SHUTTER_TINTS[(rng2() * SHUTTER_TINTS.length) | 0], lit, balcony, keystone: b.recipe === 'brick' && k === 0 };
+      addWindow(batch, facadeFrame(s, z, y), { ...o, ...(b.windows?.[`${k},${i}`] || {}) });
     }
   }
 
@@ -232,7 +243,8 @@ export function addBuilding(batch, b, { evening, rng, litCells, shopSigns }) {
     for (let i = 0; i < gcols; i++) {
       const z = b.z0 - (W / gcols) * (i + 0.5);
       if (i === doorCol) {
-        addDoor(batch, facadeFrame(s, z, 0), { tint: DOOR_TINTS[(b.seed + i) % DOOR_TINTS.length], lit: evening && rng() < 0.5 ? { cell: litCells[3], color: '#b89a70' } : null });
+        const lit = evening && rng() < 0.5 && lights ? { cell: litCells[3], color: '#b89a70' } : null;
+        addDoor(batch, facadeFrame(s, z, 0), { tint: DOOR_TINTS[(b.seed + i) % DOOR_TINTS.length], lit });
       } else if (b.gf === 'door') {
         addWindow(batch, facadeFrame(s, z, 1.85), { w: 1.0, h: 1.6, grille: true, shutters: rng() < 0.4 ? 'closed' : null, shutterTint: tint });
       }
@@ -250,6 +262,10 @@ export function addBuilding(batch, b, { evening, rng, litCells, shopSigns }) {
     // A door beside the shop if there is room.
     const dz = zShop - (w / 2 + 0.9);
     if (dz - 0.75 > b.z1 + 0.35) addDoor(batch, facadeFrame(s, dz, 0), { w: 1.0, h: 2.25, fan: 0.4, tint: DOOR_TINTS[b.seed % DOOR_TINTS.length] });
+  } else if (b.gf === 'named' && b.was === 'door') {
+    // The draws its old door-and-window front made (see BUILDINGS).
+    const doorCol = Math.min(cols - 1, b.door ?? 0);
+    for (let i = 0; i < Math.max(1, cols); i++) if (i !== doorCol || evening) rng();
   }
 
   // Downpipe at the low end, with brackets, a hopper and a shoe.

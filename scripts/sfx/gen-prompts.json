@@ -587,6 +587,352 @@
     "replaces": "new (alternative to pencil_erase)",
     "bus": "fx, volume 0.35"
    }
+  },
+  {
+   "name": "shutter_scream",
+   "prompt": "Metal screeching loudly as a rolling steel shutter is pulled down in three jerks",
+   "duration": 1.8,
+   "loop": false,
+   "variants": 3,
+   "cat": "heavy",
+   "ch": 1,
+   "cue": "R4 Ch2 z < -9: Mme Benali pulls her shutter down, a 1.6 s rolling scream in three jerks; new",
+   "recipe": {
+    "what": "Steel roller shutter pulled down with a loud metal shriek, in jerks",
+    "ch": "R4 Ch2 the shutter beat (z < -9), before « Pardon ! Il crie. »",
+    "replaces": "new (Ch2 had no shutter sound)",
+    "bus": "fx, volume 0.6, positional at the bakery (ref 3 m); the three judders of the shutter are its twin"
+   },
+   "extra_takes": 6,
+   "exclude": {
+    "s47389.wav": "R4 QA: 1.2 s of near-silence before the scream",
+    "s47394.wav": "R4 QA: 1.65 s of near-silence, one clank"
+   }
+  },
+  {
+   "name": "amb_bakery_night",
+   "prompt": "Quiet bakery kitchen at night, the low hum of an oven fan and a refrigerator, occasional soft clink of metal trays, no voices",
+   "duration": 30,
+   "loop": true,
+   "variants": 1,
+   "cat": "amb_int",
+   "ch": 2,
+   "cue": "R4 Ch5 Week 3 4 h 10: the lit bakery behind the half-raised shutter (CROISSANT close shot); new",
+   "recipe": {
+    "what": "Bakery at night: oven fan and fridge hum, soft clinks of trays (loop)",
+    "ch": "R4 Ch5 Week 3 4 h 10, the bakery and CROISSANT",
+    "replaces": "new",
+    "bus": "bus, volume 0.3 (0.15 heard from the pavement, lowpass 1.5 kHz)"
+   }
+  },
+  {
+   "name": "oven_door",
+   "prompt": "A heavy metal oven door is opened and then shut with a clank",
+   "duration": 1.5,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "R4 Ch5 CROISSANT: Benali's oven before and after the game (« Six fournées par nuit »); new",
+   "recipe": {
+    "what": "Heavy bakery oven door opened and shut with a metal clank",
+    "ch": "R4 Ch5 Week 3 bakery: the trays go in after CROISSANT",
+    "replaces": "new",
+    "bus": "fx, volume 0.4"
+   },
+   "exclude": {
+    "s52091.wav": "R4 QA: 1.1 s lead-in before the door"
+   }
+  },
+  {
+   "name": "dough_slap",
+   "prompt": "Dough being slapped and kneaded on a wooden table",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "R4 Ch5 CROISSANT: a dough triangle laid/slapped on the floured board; replaces body_thud in croissant.js",
+   "recipe": {
+    "what": "Soft dough slapped down on a floured wooden board",
+    "ch": "R4 Ch5 CROISSANT: each triangle laid down; the fold pressed shut",
+    "replaces": "body_thud (croissant.js stand-in)",
+    "bus": "fx, volume 0.35"
+   }
+  },
+  {
+   "name": "spit_sizzle",
+   "prompt": "Meat sizzling on a hot grill while a gas burner hisses",
+   "duration": 20,
+   "loop": true,
+   "variants": 1,
+   "cat": "amb_int",
+   "ch": 2,
+   "cue": "R4 Ch6 Week 6 1 h: the vertical kebab spit behind Gérard's counter (KEBAB WRAP); replaces the highpass noise() crackle in kebab.js; new",
+   "recipe": {
+    "what": "Kebab spit: meat sizzling, gas burner hiss (loop)",
+    "ch": "R4 Ch6 Week 6 CHEZ GÉRARD at 1 a.m. and KEBAB WRAP",
+    "replaces": "the random highpass noise() crackle in kebab.js",
+    "bus": "bus, volume 0.3"
+   }
+  },
+  {
+   "name": "foil_wrap",
+   "prompt": "Aluminum foil being crinkled and wrapped around food",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch6 KEBAB WRAP: the fold and wrap; replaces page_flip in kebab.js",
+   "recipe": {
+    "what": "Foil and paper crinkled tight around a wrap",
+    "ch": "R4 Ch6 KEBAB WRAP: the galette folded and wrapped",
+    "replaces": "page_flip (kebab.js stand-in)",
+    "bus": "fx, volume 0.35"
+   }
+  },
+  {
+   "name": "till_drawer",
+   "prompt": "A cash register rings and the drawer slides open",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "R4 Ch6 Week 6: Gérard's till (the tea paid in dimes; closing at 2 a.m.); new",
+   "recipe": {
+    "what": "Cash register: the drawer springs open with a bell",
+    "ch": "R4 Ch6 Week 6 KEBAB WRAP (the tea beat) and `receipts`",
+    "replaces": "new",
+    "bus": "fx, volume 0.3"
+   },
+   "prompt_v1": "A cash register drawer opens with a ding",
+   "extra_takes": 6
+  },
+  {
+   "name": "door_bell_shop",
+   "prompt": "A door opens and a small bell rings",
+   "duration": 1.8,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "R4 Ch6 Week 6: « La porte s'ouvre. Trois clients. » at CHEZ GÉRARD; CYCLES DURAND's door after KEY RING; new",
+   "recipe": {
+    "what": "Shop door opened under a small jingling bell",
+    "ch": "R4 Ch6 kebabIntro (customers come in), the tea leaving, CYCLES DURAND opened after KEY RING",
+    "replaces": "new",
+    "bus": "fx, volume 0.35"
+   },
+   "exclude": {
+    "s71522.wav": "R4 QA: 2 s of near-silence, the bell cut off at the end"
+   },
+   "prompt_v1": "A shop door opens and a small bell jingles above it",
+   "extra_takes": 6
+  },
+  {
+   "name": "keys_jingle",
+   "prompt": "A bunch of keys jingling",
+   "duration": 1.0,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch1 keys hotspot, Ch6 Jo « fait tinter un trousseau énorme », KEY RING turning; replaces jingle() in keyring.js",
+   "recipe": {
+    "what": "A bunch of keys jingling on a ring",
+    "ch": "R4 Ch1 `keys` (item+ keys), Ch6 Week 6 Jo's key ring, KEY RING ring turns",
+    "replaces": "games-a-kit jingle() (keep it as the fallback)",
+    "bus": "fx, volume 0.3 (0.15 per KEY RING notch, rate 1.1)"
+   }
+  },
+  {
+   "name": "key_insert",
+   "prompt": "A metal key is pushed into a door lock",
+   "duration": 0.6,
+   "loop": false,
+   "variants": 3,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "R4 Ch6 KEY RING: a key goes into the lock (each try); Ch1 the flat door with `keys`; replaces tool_hook in keyring.js",
+   "recipe": {
+    "what": "Key pushed into a pin-tumbler lock: short metallic scrape",
+    "ch": "R4 Ch6 KEY RING, every try; Ch1 door with the keys",
+    "replaces": "tool_hook (keyring.js stand-in)",
+    "bus": "fx, volume 0.35"
+   }
+  },
+  {
+   "name": "lock_turn",
+   "prompt": "A key turns in a door lock and the bolt clicks open",
+   "duration": 0.9,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "R4 Ch6 KEY RING: the right key turns, the bolt goes; replaces clack() in keyring.js",
+   "recipe": {
+    "what": "Key turned in a lock, the bolt clicks open",
+    "ch": "R4 Ch6 KEY RING success (« La porte ne se sent pas bête du tout » is the wrong key: use key_stuck)",
+    "replaces": "games-a-kit clack() on success",
+    "bus": "fx, volume 0.45"
+   }
+  },
+  {
+   "name": "key_stuck",
+   "prompt": "A key rattles in a lock but does not turn",
+   "duration": 0.8,
+   "loop": false,
+   "variants": 3,
+   "cat": "tick",
+   "ch": 1,
+   "cue": "R4 Ch6 KEY RING wrong key; Ch6 the mystery key (Hugo's third key); replaces the tin_tap clack + rattle in keyring.js",
+   "recipe": {
+    "what": "Wrong key rattled in a lock: it goes in but won't turn",
+    "ch": "R4 Ch6 KEY RING wrong key, keyRing.mystery",
+    "replaces": "tin_tap (keyring.js stand-in)",
+    "bus": "fx, volume 0.35"
+   }
+  },
+  {
+   "name": "water_slosh",
+   "prompt": "Hands moving a rubber tube through water in a bucket, gentle splashing",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch5 PUNCTURE: the tube fed through the bucket; replaces paint_slosh in puncture.js",
+   "recipe": {
+    "what": "Inner tube drawn through a bucket of water: gentle slosh",
+    "ch": "R4 Ch5 Week 3 PUNCTURE (feed the tube)",
+    "replaces": "paint_slosh (puncture.js stand-in)",
+    "bus": "fx, volume 0.2, rate 0.9-1.1"
+   }
+  },
+  {
+   "name": "pump_stroke",
+   "prompt": "A bicycle hand pump being pumped, air hissing with each stroke",
+   "duration": 3.5,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley",
+   "ch": 1,
+   "cue": "R4 Ch5 PUNCTURE: the tube inflated before the dunk / after the patch (optional); new",
+   "recipe": {
+    "what": "Track pump: a few strokes, air hissing into the tube",
+    "ch": "R4 Ch5 Week 3 PUNCTURE, before or after the game (optional)",
+    "replaces": "new",
+    "bus": "fx, volume 0.35 (continuous: 3.5 s, several strokes)"
+   },
+   "extra_takes": 3
+  },
+  {
+   "name": "liquid_pour",
+   "prompt": "Hot coffee being poured into a mug",
+   "duration": 3.5,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch5 Jo « already pouring »; Ch6 the tea glass; Ch6 Week 9 the thermos cap of soup; new",
+   "recipe": {
+    "what": "Hot drink poured into a mug",
+    "ch": "R4 Ch5 Week 3 `jo` (coffee), Ch6 KEBAB tea, Ch6 Week 9 `offer` (soup into the thermos cap)",
+    "replaces": "new",
+    "bus": "fx, volume 0.3"
+   },
+   "extra_takes": 3,
+   "exclude": {
+    "s13162.wav": "R4 QA: 1.2 s of near-silence before the pour"
+   }
+  },
+  {
+   "name": "thermos_cap",
+   "prompt": "A thermos lid is unscrewed",
+   "duration": 1.0,
+   "loop": false,
+   "variants": 2,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch6 Week 9 « Jo dévisse le thermos »; new",
+   "recipe": {
+    "what": "Thermos cap unscrewed: plastic thread, a small pop",
+    "ch": "R4 Ch6 Week 9 `offer` (and `stakeoutIntro`, optional)",
+    "replaces": "new",
+    "bus": "fx, volume 0.3"
+   }
+  },
+  {
+   "name": "felttip_write",
+   "prompt": "A felt tip marker squeaking as it writes on paper",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Jo's hand: Ch6 « (mal) », Ch7 « Cuisiner. (en cours) »; Ch6 STENCIL line; replaces pencil_write for hand 'jo' and the bandpass noise() in stencil.js",
+   "recipe": {
+    "what": "Felt-tip pen writing on paper: squeaky marker strokes",
+    "ch": "R4 notebook hand 'jo' (Ch6 Week 7, Ch7 supper); Ch6 STENCIL trace",
+    "replaces": "pencil_write for hand 'jo'; stencil.js bandpass 4200 Hz noise()",
+    "bus": "fx, volume 0.3; STENCIL: a slice per stroke, gain from the pen speed"
+   },
+   "exclude": {
+    "s30337.wav": "R4 QA: one click, no writing"
+   }
+  },
+  {
+   "name": "amb_night_still",
+   "prompt": "A quiet empty city street at three in the morning, distant traffic hum, a street lamp buzzing faintly, no voices",
+   "duration": 30,
+   "loop": true,
+   "variants": 1,
+   "cat": "amb",
+   "ch": 2,
+   "cue": "R4 the street at night with no rain: Ch5 4 h 10, Ch6 2 h 10 walk home, Ch6 Week 9 STAKEOUT; new",
+   "recipe": {
+    "what": "Empty street at 3 a.m.: distant traffic hum, a lamp buzzing (loop)",
+    "ch": "R4 Ch5 Week 3 4 h 10, Ch6 Week 6 2 h 10 walk, Ch6 Week 9 stakeout (the clicks must carry over it)",
+    "replaces": "new (amb_street_night is the rainy evening)",
+    "bus": "bus, volume 0.3"
+   }
+  },
+  {
+   "name": "breath_exhale",
+   "prompt": "A man exhales slowly after holding his breath",
+   "duration": 1.2,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch6 STAKEOUT: letting the held breath go; replaces the lowpass noise() exhale in games-a-kit.js; new",
+   "recipe": {
+    "what": "A man lets out a held breath, slow and quiet",
+    "ch": "R4 Ch6 Week 9 STAKEOUT (release the right button; breath_tired stays the gasp)",
+    "replaces": "games-a-kit exhale() lowpass noise",
+    "bus": "fx, volume 0.3"
+   },
+   "exclude": {
+    "s23078.wav": "R4 QA: 1 s lead-in"
+   }
+  },
+  {
+   "name": "sauce_squirt",
+   "prompt": "A plastic squeeze bottle squirting sauce",
+   "duration": 0.8,
+   "loop": false,
+   "variants": 3,
+   "cat": "foley_soft",
+   "ch": 1,
+   "cue": "R4 Ch6 KEBAB WRAP: sauce blanche, samouraï; replaces paint_drop in kebab.js",
+   "recipe": {
+    "what": "Plastic squeeze bottle squirting sauce",
+    "ch": "R4 Ch6 KEBAB WRAP sauce bowls",
+    "replaces": "paint_drop (kebab.js stand-in)",
+    "bus": "fx, volume 0.3"
+   }
   }
  ]
 }

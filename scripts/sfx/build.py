@@ -3,7 +3,7 @@
 
     .cache/sfx/venv/bin/python -I scripts/sfx/build.py --root <repo> [--dl <dir>] [--out <dir>] [--force] [--only name,...]
 
-Reads scripts/sfx/recipes.json. For each recipe: decode the source region with ffmpeg (plus the recipe's
+Reads scripts/sfx/recipes.json (sources under synth/ are rendered first by scripts/sfx/synth.py). For each recipe: decode the source region with ffmpeg (plus the recipe's
 `af` filter chain, resampled to 48 kHz), slice it (seg / onsets / strokes / loop / concat / files), fold to
 mono for point sources, add an optional synthetic room tail, fade, make loops seamless (equal-power
 crossfade of the loop's tail into its head, so the last sample runs straight into the first), normalise
@@ -284,8 +284,8 @@ def build(r, cats, dl, out):
         x = to_channels(x, ch)
         if r.get("room"):
             x = room(fades(x, 0.003, 0.04), r["room"])  # fade the dry cut first, or it clicks inside the tail
-        if loop:
-            x = make_loop(x, r["dur"], r["xfade"])
+        if loop:  # `seamless`: the source is already a seamless loop (scripts/sfx/synth.py renders them circularly)
+            x = x[: int(SR * r["dur"])] if r.get("seamless") else make_loop(x, r["dur"], r["xfade"])
         else:
             x = fades(x, r.get("fade_in", 0.003), r.get("fade_out", min(0.08, len(x) / SR * 0.3)))
         done.append(normalise(x, cat))
@@ -373,6 +373,14 @@ def main(argv):
     except Exception:
         manifest = {}
     os.makedirs(out, exist_ok=True)
+    if any(r["src"].startswith("synth/") for r in spec["recipes"]):
+        # synthesised sources (scripts/sfx/synth.py, the project's own work): rendered here when missing, so a
+        # fresh checkout needs no download for them; rewritten only when synth.py's SYNTH_VERSION changes
+        import importlib.util
+        sp = importlib.util.spec_from_file_location("hairline_sfx_synth", os.path.join(root, "scripts/sfx/synth.py"))
+        mod = importlib.util.module_from_spec(sp)
+        sp.loader.exec_module(mod)
+        mod.ensure(dl, log=log)
     wanted = set()
     for r in spec["recipes"]:
         name = r["name"]

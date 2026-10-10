@@ -196,6 +196,8 @@ const _ws = new THREE.Vector3();
  * set it to true to make the next stumble draw from the bag instead of L.stumble.first. World-relative WASD, Shift to (try to) jog, pain meter, stumbles.
  * Flags:
  *   frozen   - no movement, idles (set by Director.say)
+ *   held     - count of hotspot actions in progress (Hotspots): no movement while > 0, like frozen,
+ *              but never restored by anyone else's save/restore of `frozen`
  *   scripted - Player does nothing at all; chapter code drives root/animations (Runner, sprint)
  *   locked   - seconds of locked input after a stumble
  *   inputAllowed() - global gate (main.js: false while the Director is in 'boot' / 'transition' / 'end')
@@ -217,6 +219,7 @@ export class Player {
     this.pain = 0;
     this.locked = 0;
     this.frozen = false;
+    this.held = 0;
     this.scripted = false;
     this.moving = false;
     this.jogging = false;
@@ -269,6 +272,7 @@ export class Player {
     this.pain = 0;
     this.locked = 0;
     this.frozen = false;
+    this.held = 0;
     this.scripted = false;
     this.root.visible = true;
     this.poseOffset.y = 0;
@@ -408,8 +412,28 @@ export class Player {
     return this.bounds.some((r) => x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ);
   }
 
+  /** Distance (m) from a point to the nearest walkable rectangle; 0 when inside. */
+  boundsGap(x, z) {
+    if (!this.bounds || !this.bounds.length) return 0;
+    let best = Infinity;
+    for (const r of this.bounds) {
+      const gx = Math.max(r.minX - x, 0, x - r.maxX);
+      const gz = Math.max(r.minZ - z, 0, z - r.maxZ);
+      best = Math.min(best, Math.hypot(gx, gz));
+    }
+    return best;
+  }
+
   tryMove(dx, dz) {
     const p = this.root.position;
+    // Safety net: a beat that parks Hugo just outside the walkable area must not freeze him there.
+    // Out of bounds, any step that brings him closer to the walkable area is allowed.
+    const gap = this.boundsGap(p.x, p.z);
+    if (gap > 0) {
+      if (this.boundsGap(p.x + dx, p.z) < gap) p.x += dx;
+      if (this.boundsGap(p.x, p.z + dz) < this.boundsGap(p.x, p.z) || this.inBounds(p.x, p.z + dz)) p.z += dz;
+      return;
+    }
     if (this.inBounds(p.x + dx, p.z)) p.x += dx;
     if (this.inBounds(p.x, p.z + dz)) p.z += dz;
   }
@@ -493,7 +517,7 @@ export class Player {
 
     const locked = this.locked > 0;
     this.locked = Math.max(0, this.locked - dt);
-    const blocked = locked || this.frozen || p.name !== 'stand' || !this.inputAllowed();
+    const blocked = locked || this.frozen || this.held > 0 || p.name !== 'stand' || !this.inputAllowed();
     const inp = blocked ? { x: 0, z: 0 } : this.input.axes();
     const moving = inp.x !== 0 || inp.z !== 0;
     this.moving = moving;

@@ -1,1 +1,3609 @@
-{"amb_city_far":{"files":["amb_city_far.ogg"],"loop":true,"channels":2,"cat":"amb_far","target_lufs":-32,"detail":[{"file":"amb_city_far.ogg","dur":50,"lufs_in":-28.3,"tp_limited_db":0}]},"amb_dawn_birds":{"files":["amb_dawn_birds.ogg"],"loop":true,"channels":2,"cat":"amb_far","target_lufs":-32,"detail":[{"file":"amb_dawn_birds.ogg","dur":45,"lufs_in":-17.8,"tp_limited_db":0}]},"amb_drips":{"files":["amb_drips.ogg"],"loop":true,"channels":2,"cat":"amb_far","target_lufs":-32,"detail":[{"file":"amb_drips.ogg","dur":30,"lufs_in":-16.7,"tp_limited_db":0}]},"amb_fridge_hum":{"files":["amb_fridge_hum.ogg"],"loop":true,"channels":1,"cat":"hum","target_lufs":-32,"detail":[{"file":"amb_fridge_hum.ogg","dur":20,"lufs_in":-16.1,"tp_limited_db":0,"opus_gain_db":0.5}]},"amb_golden_birds":{"files":["amb_golden_birds.ogg"],"loop":true,"channels":2,"cat":"amb_far","target_lufs":-32,"detail":[{"file":"amb_golden_birds.ogg","dur":49.999,"lufs_in":-25.4,"tp_limited_db":0}]},"amb_marathon_crowd":{"files":["amb_marathon_crowd.ogg"],"loop":true,"channels":2,"cat":"crowd","target_lufs":-24,"detail":[{"file":"amb_marathon_crowd.ogg","dur":41.9,"lufs_in":-23.9,"tp_limited_db":0,"note":"loop point crossfaded 2026-10-07"}]},"amb_rain_window":{"files":["amb_rain_window.ogg"],"loop":true,"channels":2,"cat":"amb_int","target_lufs":-30,"detail":[{"file":"amb_rain_window.ogg","dur":44.998,"lufs_in":-19,"tp_limited_db":0}]},"amb_stairwell":{"files":["amb_stairwell.ogg"],"loop":true,"channels":2,"cat":"amb_int","target_lufs":-30,"detail":[{"file":"amb_stairwell.ogg","dur":19.999,"lufs_in":-35,"tp_limited_db":0}]},"amb_street_day":{"files":["amb_street_day.ogg"],"loop":true,"channels":2,"cat":"amb","target_lufs":-28,"detail":[{"file":"amb_street_day.ogg","dur":59.996,"lufs_in":-16.8,"tp_limited_db":0}]},"amb_street_night":{"files":["amb_street_night.ogg"],"loop":true,"channels":2,"cat":"amb","target_lufs":-28,"detail":[{"file":"amb_street_night.ogg","dur":59.998,"lufs_in":-21.1,"tp_limited_db":0}]},"amb_street_wet":{"files":["amb_street_wet.ogg"],"loop":true,"channels":2,"cat":"amb","target_lufs":-28,"detail":[{"file":"amb_street_wet.ogg","dur":56,"lufs_in":-25.1,"tp_limited_db":0}]},"amb_workshop":{"files":["amb_workshop.ogg"],"loop":true,"channels":2,"cat":"amb_int","target_lufs":-30,"detail":[{"file":"amb_workshop.ogg","dur":26,"lufs_in":-34,"tp_limited_db":0}]},"bike_bell":{"files":["bike_bell_01.ogg","bike_bell_02.ogg","bike_bell_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"bike_bell_01.ogg","dur":1.2,"lufs_in":-17.7,"tp_limited_db":0},{"file":"bike_bell_02.ogg","dur":1.2,"lufs_in":-13.2,"tp_limited_db":0},{"file":"bike_bell_03.ogg","dur":1.2,"lufs_in":-10.2,"tp_limited_db":0}],"picked_at":[0.825,5.67,8.87]},"bike_pass":{"files":["bike_pass.ogg"],"loop":false,"channels":2,"cat":"event","target_lufs":-24,"detail":[{"file":"bike_pass.ogg","dur":6,"lufs_in":-20.3,"tp_limited_db":0}]},"bike_pass_bell":{"files":["bike_pass_bell.ogg"],"loop":false,"channels":2,"cat":"event","target_lufs":-24,"detail":[{"file":"bike_pass_bell.ogg","dur":6.4,"lufs_in":-20,"tp_limited_db":0}]},"body_thud":{"files":["body_thud_01.ogg","body_thud_02.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"body_thud_01.ogg","dur":0.527,"lufs_in":-18.8,"tp_limited_db":0},{"file":"body_thud_02.ogg","dur":0.569,"lufs_in":-18.7,"tp_limited_db":0}]},"boot_step_wet":{"files":["boot_step_wet_01.ogg","boot_step_wet_02.ogg","boot_step_wet_03.ogg","boot_step_wet_04.ogg","boot_step_wet_05.ogg","boot_step_wet_06.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"boot_step_wet_01.ogg","dur":0.63,"lufs_in":-37.7,"tp_limited_db":2.3},{"file":"boot_step_wet_02.ogg","dur":0.738,"lufs_in":-20.9,"tp_limited_db":0.5,"opus_gain_db":0.9},{"file":"boot_step_wet_03.ogg","dur":0.351,"lufs_in":-36.9,"tp_limited_db":0},{"file":"boot_step_wet_04.ogg","dur":0.454,"lufs_in":-30.8,"tp_limited_db":0,"opus_gain_db":1.8},{"file":"boot_step_wet_05.ogg","dur":0.75,"lufs_in":-30.9,"tp_limited_db":0,"opus_gain_db":1.8},{"file":"boot_step_wet_06.ogg","dur":0.75,"lufs_in":-41.9,"tp_limited_db":0,"opus_gain_db":0.8}]},"boot_step_wood":{"files":["boot_step_wood_01.ogg","boot_step_wood_02.ogg","boot_step_wood_03.ogg","boot_step_wood_04.ogg","boot_step_wood_05.ogg","boot_step_wood_06.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"boot_step_wood_01.ogg","dur":0.75,"lufs_in":-26.6,"tp_limited_db":0,"opus_gain_db":0.7},{"file":"boot_step_wood_02.ogg","dur":0.588,"lufs_in":-32.5,"tp_limited_db":0},{"file":"boot_step_wood_03.ogg","dur":0.155,"lufs_in":-25.8,"tp_limited_db":3.4,"opus_gain_db":0.7},{"file":"boot_step_wood_04.ogg","dur":0.289,"lufs_in":-39.9,"tp_limited_db":0,"opus_gain_db":0.4},{"file":"boot_step_wood_05.ogg","dur":0.309,"lufs_in":-26.5,"tp_limited_db":0},{"file":"boot_step_wood_06.ogg","dur":0.75,"lufs_in":-37,"tp_limited_db":0}]},"brake_rub":{"files":["brake_rub_01.ogg","brake_rub_02.ogg","brake_rub_03.ogg","brake_rub_04.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"brake_rub_01.ogg","dur":0.155,"lufs_in":-34,"tp_limited_db":5.3},{"file":"brake_rub_02.ogg","dur":0.379,"lufs_in":-25.9,"tp_limited_db":5},{"file":"brake_rub_03.ogg","dur":0.75,"lufs_in":-24,"tp_limited_db":4.1},{"file":"brake_rub_04.ogg","dur":0.75,"lufs_in":-32.2,"tp_limited_db":4.1}]},"breath_run_loop":{"files":["breath_run_loop_01.ogg","breath_run_loop_02.ogg"],"loop":true,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"breath_run_loop_01.ogg","dur":12,"lufs_in":-28.7,"tp_limited_db":0,"opus_gain_db":0.8},{"file":"breath_run_loop_02.ogg","dur":11.999,"lufs_in":-37.6,"tp_limited_db":0,"opus_gain_db":0.6}]},"breath_tired":{"files":["breath_tired.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"breath_tired.ogg","dur":3.17,"lufs_in":-38.6,"tp_limited_db":0,"opus_gain_db":0.8}]},"brush_stroke":{"files":["brush_stroke_01.ogg","brush_stroke_02.ogg","brush_stroke_03.ogg","brush_stroke_04.ogg","brush_stroke_05.ogg","brush_stroke_06.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"brush_stroke_01.ogg","dur":0.44,"lufs_in":-26.6,"tp_limited_db":0,"opus_gain_db":1.4},{"file":"brush_stroke_02.ogg","dur":0.42,"lufs_in":-24.7,"tp_limited_db":0,"opus_gain_db":1.5},{"file":"brush_stroke_03.ogg","dur":0.6,"lufs_in":-25.1,"tp_limited_db":0,"opus_gain_db":1.4},{"file":"brush_stroke_04.ogg","dur":0.44,"lufs_in":-23.6,"tp_limited_db":0,"opus_gain_db":1.9},{"file":"brush_stroke_05.ogg","dur":0.42,"lufs_in":-25,"tp_limited_db":0,"opus_gain_db":1.4},{"file":"brush_stroke_06.ogg","dur":0.4,"lufs_in":-25.1,"tp_limited_db":0,"opus_gain_db":1.9}],"picked_at":[13.98,19.54,34.9,44.46,56.84,72.54]},"brush_wall_loop":{"files":["brush_wall_loop.ogg"],"loop":true,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"brush_wall_loop.ogg","dur":5.3,"lufs_in":-22.3,"tp_limited_db":0,"opus_gain_db":1.8,"note":"loop point crossfaded 2026-10-07"}]},"camera_shutter":{"files":["camera_shutter.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"camera_shutter.ogg","dur":0.478,"lufs_in":-30.6,"tp_limited_db":0,"opus_gain_db":1.3}]},"camera_shutter_slr":{"files":["camera_shutter_slr.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"camera_shutter_slr.ogg","dur":1.3,"lufs_in":-23.7,"tp_limited_db":0,"opus_gain_db":1}]},"chain_drop":{"files":["chain_drop_01.ogg","chain_drop_02.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"chain_drop_01.ogg","dur":0.918,"lufs_in":-8,"tp_limited_db":1.7,"opus_gain_db":2.3},{"file":"chain_drop_02.ogg","dur":1.5,"lufs_in":-8.3,"tp_limited_db":3.3,"opus_gain_db":0.2}]},"chain_on":{"files":["chain_on_01.ogg","chain_on_02.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"chain_on_01.ogg","dur":2.25,"lufs_in":-14.6,"tp_limited_db":4.9},{"file":"chain_on_02.ogg","dur":2.25,"lufs_in":-15.3,"tp_limited_db":4.3,"opus_gain_db":1.1}]},"chalk_line":{"files":["chalk_line_01.ogg","chalk_line_02.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"chalk_line_01.ogg","dur":1,"lufs_in":-38.8,"tp_limited_db":0,"opus_gain_db":2.5},{"file":"chalk_line_02.ogg","dur":1,"lufs_in":-33.9,"tp_limited_db":0}]},"club_pass":{"files":["club_pass.ogg"],"loop":false,"channels":2,"cat":"event_peaky","target_lufs":-28,"detail":[{"file":"club_pass.ogg","dur":18.1,"lufs_in":-28,"tp_limited_db":1.5,"opus_gain_db":-0.3}]},"club_pass_wet":{"files":["club_pass_wet_01.ogg","club_pass_wet_02.ogg"],"loop":false,"channels":2,"cat":"event_peaky","target_lufs":-28,"detail":[{"file":"club_pass_wet_01.ogg","dur":9,"lufs_in":-32.1,"tp_limited_db":1},{"file":"club_pass_wet_02.ogg","dur":9,"lufs_in":-23.9,"tp_limited_db":0.5}]},"crack_pencil_lead":{"files":["crack_pencil_lead_01.ogg","crack_pencil_lead_02.ogg","crack_pencil_lead_03.ogg","crack_pencil_lead_04.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"crack_pencil_lead_01.ogg","dur":0.374,"lufs_in":-33.9,"tp_limited_db":1.3},{"file":"crack_pencil_lead_02.ogg","dur":0.17,"lufs_in":-17.9,"tp_limited_db":2.3,"opus_gain_db":0.3},{"file":"crack_pencil_lead_03.ogg","dur":0.625,"lufs_in":-25.5,"tp_limited_db":0.6},{"file":"crack_pencil_lead_04.ogg","dur":0.625,"lufs_in":-19.3,"tp_limited_db":0.6}]},"creak_wood":{"files":["creak_wood_01.ogg","creak_wood_02.ogg","creak_wood_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"creak_wood_01.ogg","dur":0.661,"lufs_in":-22.5,"tp_limited_db":0},{"file":"creak_wood_02.ogg","dur":0.83,"lufs_in":-23,"tp_limited_db":0,"opus_gain_db":0.3},{"file":"creak_wood_03.ogg","dur":0.338,"lufs_in":-22.2,"tp_limited_db":0}]},"creak_wood_alt":{"files":["creak_wood_alt_01.ogg","creak_wood_alt_02.ogg","creak_wood_alt_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"creak_wood_alt_01.ogg","dur":1.25,"lufs_in":-25.3,"tp_limited_db":1.2,"opus_gain_db":0.8},{"file":"creak_wood_alt_02.ogg","dur":1.25,"lufs_in":-22.4,"tp_limited_db":1.2},{"file":"creak_wood_alt_03.ogg","dur":1.25,"lufs_in":-15.8,"tp_limited_db":3,"opus_gain_db":0.4}]},"crowd_cheer_pass":{"files":["crowd_cheer_pass.ogg"],"loop":false,"channels":2,"cat":"crowd","target_lufs":-24,"detail":[{"file":"crowd_cheer_pass.ogg","dur":20,"lufs_in":-15.2,"tp_limited_db":0}]},"door_flat_close":{"files":["door_flat_close.ogg"],"loop":false,"channels":1,"cat":"heavy","target_lufs":-18,"detail":[{"file":"door_flat_close.ogg","dur":2.1,"lufs_in":-18.9,"tp_limited_db":0.6}]},"door_flat_open":{"files":["door_flat_open.ogg"],"loop":false,"channels":1,"cat":"heavy","target_lufs":-18,"detail":[{"file":"door_flat_open.ogg","dur":2.5,"lufs_in":-19.6,"tp_limited_db":0.9}]},"fluoro_flicker":{"files":["fluoro_flicker_01.ogg","fluoro_flicker_02.ogg","fluoro_flicker_03.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"fluoro_flicker_01.ogg","dur":1.875,"lufs_in":-11.7,"tp_limited_db":0,"opus_gain_db":1.6},{"file":"fluoro_flicker_02.ogg","dur":1.875,"lufs_in":-34,"tp_limited_db":0,"opus_gain_db":1.3},{"file":"fluoro_flicker_03.ogg","dur":1.875,"lufs_in":-7.3,"tp_limited_db":0,"opus_gain_db":0.5}]},"fluoro_hum":{"files":["fluoro_hum.ogg"],"loop":true,"channels":1,"cat":"hum","target_lufs":-32,"detail":[{"file":"fluoro_hum.ogg","dur":7.999,"lufs_in":-12.7,"tp_limited_db":0,"opus_gain_db":0.7}]},"freewheel_coastdown":{"files":["freewheel_coastdown_01.ogg","freewheel_coastdown_02.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"freewheel_coastdown_01.ogg","dur":6,"lufs_in":-8.8,"tp_limited_db":0,"opus_gain_db":2.3},{"file":"freewheel_coastdown_02.ogg","dur":5.897,"lufs_in":-14.1,"tp_limited_db":0,"opus_gain_db":0.8}]},"freewheel_tick":{"files":["freewheel_tick_01.ogg","freewheel_tick_02.ogg"],"loop":true,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"freewheel_tick_01.ogg","dur":3.999,"lufs_in":-22.3,"tp_limited_db":0},{"file":"freewheel_tick_02.ogg","dur":4,"lufs_in":-31.8,"tp_limited_db":0,"opus_gain_db":2.3}]},"garage_door_open":{"files":["garage_door_open.ogg"],"loop":false,"channels":1,"cat":"heavy","target_lufs":-18,"detail":[{"file":"garage_door_open.ogg","dur":3.6,"lufs_in":-23.3,"tp_limited_db":0.7,"opus_gain_db":0.7}]},"garage_door_shut":{"files":["garage_door_shut.ogg"],"loop":false,"channels":1,"cat":"heavy","target_lufs":-18,"detail":[{"file":"garage_door_shut.ogg","dur":2.6,"lufs_in":-16.5,"tp_limited_db":0}]},"hammer_floor":{"files":["hammer_floor_01.ogg","hammer_floor_02.ogg","hammer_floor_03.ogg","hammer_floor_04.ogg","hammer_floor_05.ogg","hammer_floor_06.ogg"],"loop":false,"channels":1,"cat":"floor","target_lufs":-21,"detail":[{"file":"hammer_floor_01.ogg","dur":0.85,"lufs_in":-23,"tp_limited_db":0},{"file":"hammer_floor_02.ogg","dur":0.85,"lufs_in":-22.6,"tp_limited_db":0},{"file":"hammer_floor_03.ogg","dur":0.85,"lufs_in":-24.5,"tp_limited_db":0},{"file":"hammer_floor_04.ogg","dur":0.9,"lufs_in":-27.8,"tp_limited_db":0},{"file":"hammer_floor_05.ogg","dur":0.8,"lufs_in":-23.1,"tp_limited_db":0,"opus_gain_db":0.3},{"file":"hammer_floor_06.ogg","dur":0.85,"lufs_in":-39.5,"tp_limited_db":0}]},"hammer_near":{"files":["hammer_near_01.ogg","hammer_near_02.ogg","hammer_near_03.ogg","hammer_near_04.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"hammer_near_01.ogg","dur":0.36,"lufs_in":-22.9,"tp_limited_db":0},{"file":"hammer_near_02.ogg","dur":0.38,"lufs_in":-22.9,"tp_limited_db":0},{"file":"hammer_near_03.ogg","dur":0.38,"lufs_in":-27.4,"tp_limited_db":0},{"file":"hammer_near_04.ogg","dur":0.38,"lufs_in":-26.9,"tp_limited_db":0,"opus_gain_db":0.5}]},"kettle_boil":{"files":["kettle_boil.ogg"],"loop":false,"channels":1,"cat":"event","target_lufs":-24,"detail":[{"file":"kettle_boil.ogg","dur":40,"lufs_in":-26.7,"tp_limited_db":1.6}]},"mug_clink":{"files":["mug_clink_01.ogg","mug_clink_02.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"mug_clink_01.ogg","dur":0.542,"lufs_in":-25.3,"tp_limited_db":0.3,"opus_gain_db":0.8},{"file":"mug_clink_02.ogg","dur":0.655,"lufs_in":-25.9,"tp_limited_db":0.5,"opus_gain_db":1}]},"mug_clink_alt":{"files":["mug_clink_alt_01.ogg","mug_clink_alt_02.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"mug_clink_alt_01.ogg","dur":0.244,"lufs_in":-9.5,"tp_limited_db":1.6,"opus_gain_db":1},{"file":"mug_clink_alt_02.ogg","dur":0.265,"lufs_in":-11.1,"tp_limited_db":3.2,"opus_gain_db":0.8}]},"neon_buzz":{"files":["neon_buzz.ogg"],"loop":true,"channels":1,"cat":"hum","target_lufs":-32,"detail":[{"file":"neon_buzz.ogg","dur":7.999,"lufs_in":-13.1,"tp_limited_db":0,"opus_gain_db":0.6}]},"notebook_close":{"files":["notebook_close.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"notebook_close.ogg","dur":0.231,"lufs_in":-22.3,"tp_limited_db":0.1}]},"notebook_open":{"files":["notebook_open.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"notebook_open.ogg","dur":0.151,"lufs_in":-38.8,"tp_limited_db":0.9,"opus_gain_db":0.7}]},"page_flip":{"files":["page_flip_01.ogg","page_flip_02.ogg","page_flip_03.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"page_flip_01.ogg","dur":0.769,"lufs_in":-24.1,"tp_limited_db":0.3},{"file":"page_flip_02.ogg","dur":0.43,"lufs_in":-34.2,"tp_limited_db":0.3,"opus_gain_db":1.5},{"file":"page_flip_03.ogg","dur":0.231,"lufs_in":-31.8,"tp_limited_db":1.5,"opus_gain_db":1.7}]},"paint_drop":{"files":["paint_drop_01.ogg","paint_drop_02.ogg","paint_drop_03.ogg","paint_drop_04.ogg","paint_drop_05.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"paint_drop_01.ogg","dur":0.254,"lufs_in":-19.7,"tp_limited_db":3},{"file":"paint_drop_02.ogg","dur":0.5,"lufs_in":-16.7,"tp_limited_db":1.6},{"file":"paint_drop_03.ogg","dur":0.5,"lufs_in":-8.2,"tp_limited_db":0},{"file":"paint_drop_04.ogg","dur":0.229,"lufs_in":-19.8,"tp_limited_db":0},{"file":"paint_drop_05.ogg","dur":0.226,"lufs_in":-18.3,"tp_limited_db":0}]},"paint_lid_open":{"files":["paint_lid_open_01.ogg","paint_lid_open_02.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"paint_lid_open_01.ogg","dur":1.5,"lufs_in":-16.4,"tp_limited_db":8.6,"opus_gain_db":2.2},{"file":"paint_lid_open_02.ogg","dur":1.5,"lufs_in":-5.3,"tp_limited_db":4.8,"opus_gain_db":0.5}]},"paint_slosh":{"files":["paint_slosh_01.ogg","paint_slosh_02.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"paint_slosh_01.ogg","dur":1.749,"lufs_in":-27.3,"tp_limited_db":2,"opus_gain_db":0.6},{"file":"paint_slosh_02.ogg","dur":1.334,"lufs_in":-16.1,"tp_limited_db":3.2,"opus_gain_db":1.5}]},"paint_stir_loop":{"files":["paint_stir_loop_01.ogg","paint_stir_loop_02.ogg"],"loop":true,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"paint_stir_loop_01.ogg","dur":6,"lufs_in":-23,"tp_limited_db":0},{"file":"paint_stir_loop_02.ogg","dur":6,"lufs_in":-23.8,"tp_limited_db":0}]},"pencil_erase":{"files":["pencil_erase.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"pencil_erase.ogg","dur":1.14,"lufs_in":-22.1,"tp_limited_db":0}]},"pencil_erase_alt":{"files":["pencil_erase_alt_01.ogg","pencil_erase_alt_02.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"pencil_erase_alt_01.ogg","dur":1.5,"lufs_in":-36.3,"tp_limited_db":3.7},{"file":"pencil_erase_alt_02.ogg","dur":1.5,"lufs_in":-28.7,"tp_limited_db":4.3,"opus_gain_db":1.3}]},"pencil_write":{"files":["pencil_write.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"pencil_write.ogg","dur":1.422,"lufs_in":-24.7,"tp_limited_db":0}]},"phone_vibrate_table":{"files":["phone_vibrate_table.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"phone_vibrate_table.ogg","dur":2,"lufs_in":-16,"tp_limited_db":0.7,"opus_gain_db":0.7}]},"plane_stroke":{"files":["plane_stroke_01.ogg","plane_stroke_02.ogg","plane_stroke_03.ogg","plane_stroke_04.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"plane_stroke_01.ogg","dur":1,"lufs_in":-15.1,"tp_limited_db":0,"opus_gain_db":1.5},{"file":"plane_stroke_02.ogg","dur":1,"lufs_in":-13.8,"tp_limited_db":0,"opus_gain_db":1.5},{"file":"plane_stroke_03.ogg","dur":1,"lufs_in":-12.4,"tp_limited_db":0,"opus_gain_db":1.4},{"file":"plane_stroke_04.ogg","dur":1,"lufs_in":-13.6,"tp_limited_db":0,"opus_gain_db":1.5}],"picked_at":[6.67,12.095,17.5,32.695]},"radio_static":{"files":["radio_static.ogg"],"loop":true,"channels":1,"cat":"radio","target_lufs":-26,"detail":[{"file":"radio_static.ogg","dur":7.999,"lufs_in":-20.4,"tp_limited_db":0,"opus_gain_db":1}]},"radio_talk_fishing":{"files":["radio_talk_fishing.ogg"],"loop":true,"channels":1,"cat":"radio","target_lufs":-26,"detail":[{"file":"radio_talk_fishing.ogg","dur":20,"lufs_in":-18.7,"tp_limited_db":0}]},"radio_tune_sweep":{"files":["radio_tune_sweep.ogg"],"loop":true,"channels":1,"cat":"radio","target_lufs":-26,"detail":[{"file":"radio_tune_sweep.ogg","dur":14,"lufs_in":-16.3,"tp_limited_db":0,"opus_gain_db":2.1}]},"run_step":{"files":["run_step_01.ogg","run_step_02.ogg","run_step_03.ogg","run_step_04.ogg","run_step_05.ogg","run_step_06.ogg","run_step_07.ogg","run_step_08.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"run_step_01.ogg","dur":0.24,"lufs_in":-27.9,"tp_limited_db":2.8,"opus_gain_db":0.5},{"file":"run_step_02.ogg","dur":0.24,"lufs_in":-28.2,"tp_limited_db":2.8,"opus_gain_db":0.7},{"file":"run_step_03.ogg","dur":0.24,"lufs_in":-28.7,"tp_limited_db":2.8,"opus_gain_db":0.5},{"file":"run_step_04.ogg","dur":0.24,"lufs_in":-29.1,"tp_limited_db":3.9},{"file":"run_step_05.ogg","dur":0.24,"lufs_in":-28.1,"tp_limited_db":3.2,"opus_gain_db":0.4},{"file":"run_step_06.ogg","dur":0.24,"lufs_in":-29.1,"tp_limited_db":3.1,"opus_gain_db":0.5},{"file":"run_step_07.ogg","dur":0.24,"lufs_in":-27.8,"tp_limited_db":3,"opus_gain_db":0.5},{"file":"run_step_08.ogg","dur":0.24,"lufs_in":-28.7,"tp_limited_db":2.8,"opus_gain_db":0.5}],"picked_at":[15.988,21.313,23.393,26.648,28.683,36.863,45.623,50.868]},"run_step_wet":{"files":["run_step_wet_01.ogg","run_step_wet_02.ogg","run_step_wet_03.ogg","run_step_wet_04.ogg","run_step_wet_05.ogg","run_step_wet_06.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"run_step_wet_01.ogg","dur":0.5,"lufs_in":-29.4,"tp_limited_db":0.3,"opus_gain_db":1.5},{"file":"run_step_wet_02.ogg","dur":0.441,"lufs_in":-34,"tp_limited_db":0,"opus_gain_db":1},{"file":"run_step_wet_03.ogg","dur":0.5,"lufs_in":-32.8,"tp_limited_db":4.8},{"file":"run_step_wet_04.ogg","dur":0.5,"lufs_in":-35.7,"tp_limited_db":0},{"file":"run_step_wet_05.ogg","dur":0.5,"lufs_in":-36.4,"tp_limited_db":0,"opus_gain_db":1},{"file":"run_step_wet_06.ogg","dur":0.5,"lufs_in":-24.4,"tp_limited_db":0,"opus_gain_db":1.5}]},"sand_loop":{"files":["sand_loop.ogg"],"loop":true,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"sand_loop.ogg","dur":6,"lufs_in":-16.9,"tp_limited_db":0}]},"sand_stroke":{"files":["sand_stroke_01.ogg","sand_stroke_02.ogg","sand_stroke_03.ogg","sand_stroke_04.ogg","sand_stroke_05.ogg","sand_stroke_06.ogg","sand_stroke_07.ogg","sand_stroke_08.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"sand_stroke_01.ogg","dur":0.34,"lufs_in":-19.9,"tp_limited_db":0,"opus_gain_db":1.7},{"file":"sand_stroke_02.ogg","dur":0.3,"lufs_in":-19,"tp_limited_db":0,"opus_gain_db":2},{"file":"sand_stroke_03.ogg","dur":0.3,"lufs_in":-18.3,"tp_limited_db":0,"opus_gain_db":2},{"file":"sand_stroke_04.ogg","dur":0.32,"lufs_in":-19.1,"tp_limited_db":0,"opus_gain_db":1.9},{"file":"sand_stroke_05.ogg","dur":0.32,"lufs_in":-19,"tp_limited_db":0,"opus_gain_db":1.9},{"file":"sand_stroke_06.ogg","dur":0.3,"lufs_in":-17.5,"tp_limited_db":0,"opus_gain_db":2},{"file":"sand_stroke_07.ogg","dur":0.3,"lufs_in":-19.5,"tp_limited_db":0,"opus_gain_db":1.7},{"file":"sand_stroke_08.ogg","dur":0.4,"lufs_in":-17.4,"tp_limited_db":0,"opus_gain_db":1.9}],"picked_at":[17.48,54.2,57.08,58.12,59.2,72.38,74.02,86.92]},"scaffold_creak":{"files":["scaffold_creak_01.ogg","scaffold_creak_02.ogg","scaffold_creak_03.ogg","scaffold_creak_04.ogg","scaffold_creak_05.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"scaffold_creak_01.ogg","dur":1.1,"lufs_in":-19.7,"tp_limited_db":0},{"file":"scaffold_creak_02.ogg","dur":1.1,"lufs_in":-19.3,"tp_limited_db":0},{"file":"scaffold_creak_03.ogg","dur":1.1,"lufs_in":-18.5,"tp_limited_db":0},{"file":"scaffold_creak_04.ogg","dur":1.1,"lufs_in":-14.7,"tp_limited_db":0,"opus_gain_db":1},{"file":"scaffold_creak_05.ogg","dur":1.1,"lufs_in":-20.7,"tp_limited_db":0,"opus_gain_db":0.3}],"picked_at":[4.15,12.805,24.21,53.5,64.015]},"shutter_roll_up":{"files":["shutter_roll_up_01.ogg","shutter_roll_up_02.ogg"],"loop":false,"channels":1,"cat":"heavy","target_lufs":-18,"detail":[{"file":"shutter_roll_up_01.ogg","dur":2.75,"lufs_in":-8.4,"tp_limited_db":2.8,"opus_gain_db":2.5},{"file":"shutter_roll_up_02.ogg","dur":2.591,"lufs_in":-8,"tp_limited_db":4.8,"opus_gain_db":1.7}]},"shutter_runner_scrape":{"files":["shutter_runner_scrape_01.ogg","shutter_runner_scrape_02.ogg","shutter_runner_scrape_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"shutter_runner_scrape_01.ogg","dur":0.698,"lufs_in":-10.1,"tp_limited_db":0},{"file":"shutter_runner_scrape_02.ogg","dur":0.524,"lufs_in":6.8,"tp_limited_db":0},{"file":"shutter_runner_scrape_03.ogg","dur":0.569,"lufs_in":-3.6,"tp_limited_db":0,"opus_gain_db":1.9}]},"spoke_key":{"files":["spoke_key_01.ogg","spoke_key_02.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"spoke_key_01.ogg","dur":0.446,"lufs_in":-31.8,"tp_limited_db":0,"opus_gain_db":1.7},{"file":"spoke_key_02.ogg","dur":0.261,"lufs_in":-20.2,"tp_limited_db":0,"opus_gain_db":1.2}]},"step_wood":{"files":["step_wood_01.ogg","step_wood_02.ogg","step_wood_03.ogg","step_wood_04.ogg","step_wood_05.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"step_wood_01.ogg","dur":0.271,"lufs_in":-26.1,"tp_limited_db":0.4},{"file":"step_wood_02.ogg","dur":0.249,"lufs_in":-24.9,"tp_limited_db":0},{"file":"step_wood_03.ogg","dur":0.248,"lufs_in":-24.3,"tp_limited_db":0},{"file":"step_wood_04.ogg","dur":0.249,"lufs_in":-27.3,"tp_limited_db":0.9},{"file":"step_wood_05.ogg","dur":0.245,"lufs_in":-24.8,"tp_limited_db":0}]},"step_wood_alt":{"files":["step_wood_alt_01.ogg","step_wood_alt_02.ogg","step_wood_alt_03.ogg","step_wood_alt_04.ogg","step_wood_alt_05.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"step_wood_alt_01.ogg","dur":0.625,"lufs_in":-43.2,"tp_limited_db":0},{"file":"step_wood_alt_02.ogg","dur":0.625,"lufs_in":-34.3,"tp_limited_db":2.3,"opus_gain_db":1.3},{"file":"step_wood_alt_03.ogg","dur":0.625,"lufs_in":-32,"tp_limited_db":3.5,"opus_gain_db":1.1},{"file":"step_wood_alt_04.ogg","dur":0.625,"lufs_in":-40.1,"tp_limited_db":0,"opus_gain_db":1.3},{"file":"step_wood_alt_05.ogg","dur":0.625,"lufs_in":-41.4,"tp_limited_db":0,"opus_gain_db":1.4}]},"table_tock":{"files":["table_tock_01.ogg","table_tock_02.ogg","table_tock_03.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"table_tock_01.ogg","dur":0.263,"lufs_in":-27,"tp_limited_db":0.2},{"file":"table_tock_02.ogg","dur":0.263,"lufs_in":-30.4,"tp_limited_db":0.2},{"file":"table_tock_03.ogg","dur":0.263,"lufs_in":-26.8,"tp_limited_db":0.6}]},"tape_pull":{"files":["tape_pull_01.ogg","tape_pull_02.ogg","tape_pull_03.ogg"],"loop":true,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"tape_pull_01.ogg","dur":1.6,"lufs_in":-18.9,"tp_limited_db":0,"opus_gain_db":2.3},{"file":"tape_pull_02.ogg","dur":1.6,"lufs_in":-21.8,"tp_limited_db":0},{"file":"tape_pull_03.ogg","dur":1.6,"lufs_in":-23.7,"tp_limited_db":3.1,"opus_gain_db":2.4}]},"tape_retract":{"files":["tape_retract_01.ogg","tape_retract_02.ogg","tape_retract_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"tape_retract_01.ogg","dur":1.125,"lufs_in":-20,"tp_limited_db":1.7,"opus_gain_db":1.7},{"file":"tape_retract_02.ogg","dur":1.125,"lufs_in":-14.9,"tp_limited_db":1.7},{"file":"tape_retract_03.ogg","dur":1.125,"lufs_in":-34.4,"tp_limited_db":5.2,"opus_gain_db":2.5}]},"tape_tock":{"files":["tape_tock.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"tape_tock.ogg","dur":0.5,"lufs_in":-11.1,"tp_limited_db":0}]},"tin_tap":{"files":["tin_tap_01.ogg","tin_tap_02.ogg","tin_tap_03.ogg","tin_tap_04.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"tin_tap_01.ogg","dur":0.156,"lufs_in":-28.5,"tp_limited_db":1.3},{"file":"tin_tap_02.ogg","dur":0.171,"lufs_in":-29.6,"tp_limited_db":0,"opus_gain_db":0.5},{"file":"tin_tap_03.ogg","dur":0.131,"lufs_in":-30.4,"tp_limited_db":0},{"file":"tin_tap_04.ogg","dur":0.212,"lufs_in":-29.5,"tp_limited_db":0,"opus_gain_db":0.5}]},"tool_hook":{"files":["tool_hook_01.ogg","tool_hook_02.ogg","tool_hook_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"tool_hook_01.ogg","dur":0.414,"lufs_in":-7.8,"tp_limited_db":5.9,"opus_gain_db":1.5},{"file":"tool_hook_02.ogg","dur":0.875,"lufs_in":-15.7,"tp_limited_db":7.5},{"file":"tool_hook_03.ogg","dur":0.389,"lufs_in":-13.1,"tp_limited_db":5.9}]},"tool_take":{"files":["tool_take_01.ogg","tool_take_02.ogg","tool_take_03.ogg","tool_take_04.ogg","tool_take_05.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"tool_take_01.ogg","dur":0.7,"lufs_in":-27.2,"tp_limited_db":0.4,"opus_gain_db":0.7},{"file":"tool_take_02.ogg","dur":0.7,"lufs_in":-17.7,"tp_limited_db":0,"opus_gain_db":0.8},{"file":"tool_take_03.ogg","dur":0.7,"lufs_in":-20,"tp_limited_db":0,"opus_gain_db":0.8},{"file":"tool_take_04.ogg","dur":0.7,"lufs_in":-31.6,"tp_limited_db":1.9,"opus_gain_db":0.8},{"file":"tool_take_05.ogg","dur":0.63,"lufs_in":-19.6,"tp_limited_db":0,"opus_gain_db":0.3}],"picked_at":[5.395,13.405,16.16,21.12,27.37]},"tv_crt_off":{"files":["tv_crt_off.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"tv_crt_off.ogg","dur":2,"lufs_in":-30.9,"tp_limited_db":0}]},"tv_race_bed":{"files":["tv_race_bed.ogg"],"loop":true,"channels":1,"cat":"tv","target_lufs":-26,"detail":[{"file":"tv_race_bed.ogg","dur":36,"lufs_in":-22.5,"tp_limited_db":0,"opus_gain_db":0.7}]},"velcro_rip":{"files":["velcro_rip_01.ogg","velcro_rip_02.ogg","velcro_rip_03.ogg"],"loop":false,"channels":1,"cat":"foley","target_lufs":-20,"detail":[{"file":"velcro_rip_01.ogg","dur":1.043,"lufs_in":-22.5,"tp_limited_db":0},{"file":"velcro_rip_02.ogg","dur":0.849,"lufs_in":-21,"tp_limited_db":0},{"file":"velcro_rip_03.ogg","dur":0.66,"lufs_in":-22.2,"tp_limited_db":0,"opus_gain_db":0.7}]},"watch_buzz_wrist":{"files":["watch_buzz_wrist.ogg"],"loop":false,"channels":1,"cat":"foley_soft","target_lufs":-24,"detail":[{"file":"watch_buzz_wrist.ogg","dur":1,"lufs_in":-20,"tp_limited_db":0}]},"watch_hang_nail":{"files":["watch_hang_nail_01.ogg","watch_hang_nail_02.ogg"],"loop":false,"channels":1,"cat":"tick","target_lufs":-26,"detail":[{"file":"watch_hang_nail_01.ogg","dur":0.649,"lufs_in":-15.5,"tp_limited_db":2,"opus_gain_db":0.5},{"file":"watch_hang_nail_02.ogg","dur":0.14,"lufs_in":-22,"tp_limited_db":1}]}}
+{
+ "air_hiss": {
+  "files": [
+   "air_hiss_01.ogg",
+   "air_hiss_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "air_hiss_01.ogg",
+    "dur": 0.5,
+    "lufs_in": -18.0,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "air_hiss_02.ogg",
+    "dur": 1.4,
+    "lufs_in": -20.4,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "amb_bakery_night": {
+  "files": [
+   "amb_bakery_night.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_int",
+  "target_lufs": -30,
+  "detail": [
+   {
+    "file": "amb_bakery_night.ogg",
+    "dur": 26.0,
+    "lufs_in": -33.4,
+    "tp_limited_db": 0.8
+   }
+  ]
+ },
+ "amb_city_far": {
+  "files": [
+   "amb_city_far.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_far",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "amb_city_far.ogg",
+    "dur": 50,
+    "lufs_in": -28.3,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_dawn_birds": {
+  "files": [
+   "amb_dawn_birds.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_far",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "amb_dawn_birds.ogg",
+    "dur": 45,
+    "lufs_in": -17.8,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_drips": {
+  "files": [
+   "amb_drips.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_far",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "amb_drips.ogg",
+    "dur": 30,
+    "lufs_in": -16.7,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_fridge_hum": {
+  "files": [
+   "amb_fridge_hum.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "hum",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "amb_fridge_hum.ogg",
+    "dur": 20,
+    "lufs_in": -16.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.5
+   }
+  ]
+ },
+ "amb_golden_birds": {
+  "files": [
+   "amb_golden_birds.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_far",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "amb_golden_birds.ogg",
+    "dur": 49.999,
+    "lufs_in": -25.4,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_marathon_crowd": {
+  "files": [
+   "amb_marathon_crowd.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "crowd",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "amb_marathon_crowd.ogg",
+    "dur": 41.9,
+    "lufs_in": -23.9,
+    "tp_limited_db": 0,
+    "note": "loop point crossfaded 2026-10-07"
+   }
+  ]
+ },
+ "amb_night_still": {
+  "files": [
+   "amb_night_still.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb",
+  "target_lufs": -28,
+  "detail": [
+   {
+    "file": "amb_night_still.ogg",
+    "dur": 25.999,
+    "lufs_in": -50.3,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "amb_rain_window": {
+  "files": [
+   "amb_rain_window.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_int",
+  "target_lufs": -30,
+  "detail": [
+   {
+    "file": "amb_rain_window.ogg",
+    "dur": 44.998,
+    "lufs_in": -19,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_stairwell": {
+  "files": [
+   "amb_stairwell.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_int",
+  "target_lufs": -30,
+  "detail": [
+   {
+    "file": "amb_stairwell.ogg",
+    "dur": 19.999,
+    "lufs_in": -35,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_street_day": {
+  "files": [
+   "amb_street_day.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb",
+  "target_lufs": -28,
+  "detail": [
+   {
+    "file": "amb_street_day.ogg",
+    "dur": 59.996,
+    "lufs_in": -16.8,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_street_night": {
+  "files": [
+   "amb_street_night.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb",
+  "target_lufs": -28,
+  "detail": [
+   {
+    "file": "amb_street_night.ogg",
+    "dur": 59.998,
+    "lufs_in": -21.1,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_street_wet": {
+  "files": [
+   "amb_street_wet.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb",
+  "target_lufs": -28,
+  "detail": [
+   {
+    "file": "amb_street_wet.ogg",
+    "dur": 56,
+    "lufs_in": -25.1,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "amb_workshop": {
+  "files": [
+   "amb_workshop.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_int",
+  "target_lufs": -30,
+  "detail": [
+   {
+    "file": "amb_workshop.ogg",
+    "dur": 26,
+    "lufs_in": -34,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "bike_bell": {
+  "files": [
+   "bike_bell_01.ogg",
+   "bike_bell_02.ogg",
+   "bike_bell_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "bike_bell_01.ogg",
+    "dur": 1.2,
+    "lufs_in": -17.7,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "bike_bell_02.ogg",
+    "dur": 1.2,
+    "lufs_in": -13.2,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "bike_bell_03.ogg",
+    "dur": 1.2,
+    "lufs_in": -10.2,
+    "tp_limited_db": 0
+   }
+  ],
+  "picked_at": [
+   0.825,
+   5.67,
+   8.87
+  ]
+ },
+ "bike_pass": {
+  "files": [
+   "bike_pass.ogg"
+  ],
+  "loop": false,
+  "channels": 2,
+  "cat": "event",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "bike_pass.ogg",
+    "dur": 6,
+    "lufs_in": -20.3,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "bike_pass_bell": {
+  "files": [
+   "bike_pass_bell.ogg"
+  ],
+  "loop": false,
+  "channels": 2,
+  "cat": "event",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "bike_pass_bell.ogg",
+    "dur": 6.4,
+    "lufs_in": -20,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "body_thud": {
+  "files": [
+   "body_thud_01.ogg",
+   "body_thud_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "body_thud_01.ogg",
+    "dur": 0.527,
+    "lufs_in": -18.8,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "body_thud_02.ogg",
+    "dur": 0.569,
+    "lufs_in": -18.7,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "boot_step_wet": {
+  "files": [
+   "boot_step_wet_01.ogg",
+   "boot_step_wet_02.ogg",
+   "boot_step_wet_03.ogg",
+   "boot_step_wet_04.ogg",
+   "boot_step_wet_05.ogg",
+   "boot_step_wet_06.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "boot_step_wet_01.ogg",
+    "dur": 0.63,
+    "lufs_in": -37.7,
+    "tp_limited_db": 2.3
+   },
+   {
+    "file": "boot_step_wet_02.ogg",
+    "dur": 0.738,
+    "lufs_in": -20.9,
+    "tp_limited_db": 0.5,
+    "opus_gain_db": 0.9
+   },
+   {
+    "file": "boot_step_wet_03.ogg",
+    "dur": 0.351,
+    "lufs_in": -36.9,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "boot_step_wet_04.ogg",
+    "dur": 0.454,
+    "lufs_in": -30.8,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.8
+   },
+   {
+    "file": "boot_step_wet_05.ogg",
+    "dur": 0.75,
+    "lufs_in": -30.9,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.8
+   },
+   {
+    "file": "boot_step_wet_06.ogg",
+    "dur": 0.75,
+    "lufs_in": -41.9,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.8
+   }
+  ]
+ },
+ "boot_step_wood": {
+  "files": [
+   "boot_step_wood_01.ogg",
+   "boot_step_wood_02.ogg",
+   "boot_step_wood_03.ogg",
+   "boot_step_wood_04.ogg",
+   "boot_step_wood_05.ogg",
+   "boot_step_wood_06.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "boot_step_wood_01.ogg",
+    "dur": 0.75,
+    "lufs_in": -26.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.7
+   },
+   {
+    "file": "boot_step_wood_02.ogg",
+    "dur": 0.588,
+    "lufs_in": -32.5,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "boot_step_wood_03.ogg",
+    "dur": 0.155,
+    "lufs_in": -25.8,
+    "tp_limited_db": 3.4,
+    "opus_gain_db": 0.7
+   },
+   {
+    "file": "boot_step_wood_04.ogg",
+    "dur": 0.289,
+    "lufs_in": -39.9,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.4
+   },
+   {
+    "file": "boot_step_wood_05.ogg",
+    "dur": 0.309,
+    "lufs_in": -26.5,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "boot_step_wood_06.ogg",
+    "dur": 0.75,
+    "lufs_in": -37,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "brake_rub": {
+  "files": [
+   "brake_rub_01.ogg",
+   "brake_rub_02.ogg",
+   "brake_rub_03.ogg",
+   "brake_rub_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "brake_rub_01.ogg",
+    "dur": 0.155,
+    "lufs_in": -34,
+    "tp_limited_db": 5.3
+   },
+   {
+    "file": "brake_rub_02.ogg",
+    "dur": 0.379,
+    "lufs_in": -25.9,
+    "tp_limited_db": 5
+   },
+   {
+    "file": "brake_rub_03.ogg",
+    "dur": 0.75,
+    "lufs_in": -24,
+    "tp_limited_db": 4.1
+   },
+   {
+    "file": "brake_rub_04.ogg",
+    "dur": 0.75,
+    "lufs_in": -32.2,
+    "tp_limited_db": 4.1
+   }
+  ]
+ },
+ "breath_exhale": {
+  "files": [
+   "breath_exhale_01.ogg",
+   "breath_exhale_02.ogg",
+   "breath_exhale_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "breath_exhale_01.ogg",
+    "dur": 1.5,
+    "lufs_in": -13.0,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.4
+   },
+   {
+    "file": "breath_exhale_02.ogg",
+    "dur": 1.5,
+    "lufs_in": 1.8,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.7
+   },
+   {
+    "file": "breath_exhale_03.ogg",
+    "dur": 1.5,
+    "lufs_in": -18.0,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 1.3
+   }
+  ]
+ },
+ "breath_run_loop": {
+  "files": [
+   "breath_run_loop_01.ogg",
+   "breath_run_loop_02.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "breath_run_loop_01.ogg",
+    "dur": 12,
+    "lufs_in": -28.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "breath_run_loop_02.ogg",
+    "dur": 11.999,
+    "lufs_in": -37.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.6
+   }
+  ]
+ },
+ "breath_tired": {
+  "files": [
+   "breath_tired.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "breath_tired.ogg",
+    "dur": 3.17,
+    "lufs_in": -38.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.8
+   }
+  ]
+ },
+ "brush_stroke": {
+  "files": [
+   "brush_stroke_01.ogg",
+   "brush_stroke_02.ogg",
+   "brush_stroke_03.ogg",
+   "brush_stroke_04.ogg",
+   "brush_stroke_05.ogg",
+   "brush_stroke_06.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "brush_stroke_01.ogg",
+    "dur": 0.44,
+    "lufs_in": -26.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "brush_stroke_02.ogg",
+    "dur": 0.42,
+    "lufs_in": -24.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.5
+   },
+   {
+    "file": "brush_stroke_03.ogg",
+    "dur": 0.6,
+    "lufs_in": -25.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "brush_stroke_04.ogg",
+    "dur": 0.44,
+    "lufs_in": -23.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.9
+   },
+   {
+    "file": "brush_stroke_05.ogg",
+    "dur": 0.42,
+    "lufs_in": -25,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "brush_stroke_06.ogg",
+    "dur": 0.4,
+    "lufs_in": -25.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.9
+   }
+  ],
+  "picked_at": [
+   13.98,
+   19.54,
+   34.9,
+   44.46,
+   56.84,
+   72.54
+  ]
+ },
+ "brush_wall_loop": {
+  "files": [
+   "brush_wall_loop.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "brush_wall_loop.ogg",
+    "dur": 5.3,
+    "lufs_in": -22.3,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.8,
+    "note": "loop point crossfaded 2026-10-07"
+   }
+  ]
+ },
+ "bubble": {
+  "files": [
+   "bubble_01.ogg",
+   "bubble_02.ogg",
+   "bubble_03.ogg",
+   "bubble_04.ogg",
+   "bubble_05.ogg",
+   "bubble_06.ogg",
+   "bubble_07.ogg",
+   "bubble_08.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "bubble_01.ogg",
+    "dur": 0.16,
+    "lufs_in": -31.7,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_02.ogg",
+    "dur": 0.16,
+    "lufs_in": -31.3,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_03.ogg",
+    "dur": 0.16,
+    "lufs_in": -30.7,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_04.ogg",
+    "dur": 0.16,
+    "lufs_in": -30.8,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_05.ogg",
+    "dur": 0.16,
+    "lufs_in": -30.4,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "bubble_06.ogg",
+    "dur": 0.16,
+    "lufs_in": -30.1,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_07.ogg",
+    "dur": 0.16,
+    "lufs_in": -31.3,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_08.ogg",
+    "dur": 0.16,
+    "lufs_in": -30.6,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "bubble_chain": {
+  "files": [
+   "bubble_chain_01.ogg",
+   "bubble_chain_02.ogg",
+   "bubble_chain_03.ogg",
+   "bubble_chain_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "bubble_chain_01.ogg",
+    "dur": 0.458,
+    "lufs_in": -26.1,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_chain_02.ogg",
+    "dur": 0.534,
+    "lufs_in": -23.8,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_chain_03.ogg",
+    "dur": 1.03,
+    "lufs_in": -25.0,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "bubble_chain_04.ogg",
+    "dur": 0.707,
+    "lufs_in": -28.1,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "camera_shutter": {
+  "files": [
+   "camera_shutter.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "camera_shutter.ogg",
+    "dur": 0.478,
+    "lufs_in": -30.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.3
+   }
+  ]
+ },
+ "camera_shutter_slr": {
+  "files": [
+   "camera_shutter_slr.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "camera_shutter_slr.ogg",
+    "dur": 1.3,
+    "lufs_in": -23.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1
+   }
+  ]
+ },
+ "chain_drop": {
+  "files": [
+   "chain_drop_01.ogg",
+   "chain_drop_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "chain_drop_01.ogg",
+    "dur": 0.918,
+    "lufs_in": -8,
+    "tp_limited_db": 1.7,
+    "opus_gain_db": 2.3
+   },
+   {
+    "file": "chain_drop_02.ogg",
+    "dur": 1.5,
+    "lufs_in": -8.3,
+    "tp_limited_db": 3.3,
+    "opus_gain_db": 0.2
+   }
+  ]
+ },
+ "chain_on": {
+  "files": [
+   "chain_on_01.ogg",
+   "chain_on_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "chain_on_01.ogg",
+    "dur": 2.25,
+    "lufs_in": -14.6,
+    "tp_limited_db": 4.9
+   },
+   {
+    "file": "chain_on_02.ogg",
+    "dur": 2.25,
+    "lufs_in": -15.3,
+    "tp_limited_db": 4.3,
+    "opus_gain_db": 1.1
+   }
+  ]
+ },
+ "chalk_line": {
+  "files": [
+   "chalk_line_01.ogg",
+   "chalk_line_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "chalk_line_01.ogg",
+    "dur": 1,
+    "lufs_in": -38.8,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2.5
+   },
+   {
+    "file": "chalk_line_02.ogg",
+    "dur": 1,
+    "lufs_in": -33.9,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "cloth_rustle": {
+  "files": [
+   "cloth_rustle_01.ogg",
+   "cloth_rustle_02.ogg",
+   "cloth_rustle_03.ogg",
+   "cloth_rustle_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "cloth_rustle_01.ogg",
+    "dur": 0.603,
+    "lufs_in": -26.5,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "cloth_rustle_02.ogg",
+    "dur": 0.361,
+    "lufs_in": -30.2,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.4
+   },
+   {
+    "file": "cloth_rustle_03.ogg",
+    "dur": 0.43,
+    "lufs_in": -31.9,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.4
+   },
+   {
+    "file": "cloth_rustle_04.ogg",
+    "dur": 0.359,
+    "lufs_in": -36.8,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "club_pass": {
+  "files": [
+   "club_pass.ogg"
+  ],
+  "loop": false,
+  "channels": 2,
+  "cat": "event_peaky",
+  "target_lufs": -28,
+  "detail": [
+   {
+    "file": "club_pass.ogg",
+    "dur": 18.1,
+    "lufs_in": -28,
+    "tp_limited_db": 1.5,
+    "opus_gain_db": -0.3
+   }
+  ]
+ },
+ "club_pass_wet": {
+  "files": [
+   "club_pass_wet_01.ogg",
+   "club_pass_wet_02.ogg"
+  ],
+  "loop": false,
+  "channels": 2,
+  "cat": "event_peaky",
+  "target_lufs": -28,
+  "detail": [
+   {
+    "file": "club_pass_wet_01.ogg",
+    "dur": 9,
+    "lufs_in": -32.1,
+    "tp_limited_db": 1
+   },
+   {
+    "file": "club_pass_wet_02.ogg",
+    "dur": 9,
+    "lufs_in": -23.9,
+    "tp_limited_db": 0.5
+   }
+  ]
+ },
+ "coins_drop": {
+  "files": [
+   "coins_drop_01.ogg",
+   "coins_drop_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "coins_drop_01.ogg",
+    "dur": 0.797,
+    "lufs_in": -22.8,
+    "tp_limited_db": 0.7,
+    "opus_gain_db": 1.2
+   },
+   {
+    "file": "coins_drop_02.ogg",
+    "dur": 0.292,
+    "lufs_in": -32.0,
+    "tp_limited_db": 0.4
+   }
+  ]
+ },
+ "cork_pin": {
+  "files": [
+   "cork_pin_01.ogg",
+   "cork_pin_02.ogg",
+   "cork_pin_03.ogg",
+   "cork_pin_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "cork_pin_01.ogg",
+    "dur": 0.15,
+    "lufs_in": -33.2,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "cork_pin_02.ogg",
+    "dur": 0.15,
+    "lufs_in": -31.7,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "cork_pin_03.ogg",
+    "dur": 0.15,
+    "lufs_in": -31.7,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "cork_pin_04.ogg",
+    "dur": 0.15,
+    "lufs_in": -32.0,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "crack_pencil_lead": {
+  "files": [
+   "crack_pencil_lead_01.ogg",
+   "crack_pencil_lead_02.ogg",
+   "crack_pencil_lead_03.ogg",
+   "crack_pencil_lead_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "crack_pencil_lead_01.ogg",
+    "dur": 0.374,
+    "lufs_in": -33.9,
+    "tp_limited_db": 1.3
+   },
+   {
+    "file": "crack_pencil_lead_02.ogg",
+    "dur": 0.17,
+    "lufs_in": -17.9,
+    "tp_limited_db": 2.3,
+    "opus_gain_db": 0.3
+   },
+   {
+    "file": "crack_pencil_lead_03.ogg",
+    "dur": 0.625,
+    "lufs_in": -25.5,
+    "tp_limited_db": 0.6
+   },
+   {
+    "file": "crack_pencil_lead_04.ogg",
+    "dur": 0.625,
+    "lufs_in": -19.3,
+    "tp_limited_db": 0.6
+   }
+  ]
+ },
+ "creak_wood": {
+  "files": [
+   "creak_wood_01.ogg",
+   "creak_wood_02.ogg",
+   "creak_wood_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "creak_wood_01.ogg",
+    "dur": 0.661,
+    "lufs_in": -22.5,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "creak_wood_02.ogg",
+    "dur": 0.83,
+    "lufs_in": -23,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.3
+   },
+   {
+    "file": "creak_wood_03.ogg",
+    "dur": 0.338,
+    "lufs_in": -22.2,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "creak_wood_alt": {
+  "files": [
+   "creak_wood_alt_01.ogg",
+   "creak_wood_alt_02.ogg",
+   "creak_wood_alt_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "creak_wood_alt_01.ogg",
+    "dur": 1.25,
+    "lufs_in": -25.3,
+    "tp_limited_db": 1.2,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "creak_wood_alt_02.ogg",
+    "dur": 1.25,
+    "lufs_in": -22.4,
+    "tp_limited_db": 1.2
+   },
+   {
+    "file": "creak_wood_alt_03.ogg",
+    "dur": 1.25,
+    "lufs_in": -15.8,
+    "tp_limited_db": 3,
+    "opus_gain_db": 0.4
+   }
+  ]
+ },
+ "crowd_cheer_pass": {
+  "files": [
+   "crowd_cheer_pass.ogg"
+  ],
+  "loop": false,
+  "channels": 2,
+  "cat": "crowd",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "crowd_cheer_pass.ogg",
+    "dur": 20,
+    "lufs_in": -15.2,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "door_bell_shop": {
+  "files": [
+   "door_bell_shop.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "door_bell_shop.ogg",
+    "dur": 2.25,
+    "lufs_in": -10.5,
+    "tp_limited_db": 0.3
+   }
+  ]
+ },
+ "door_flat_close": {
+  "files": [
+   "door_flat_close.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "door_flat_close.ogg",
+    "dur": 2.1,
+    "lufs_in": -18.9,
+    "tp_limited_db": 0.6
+   }
+  ]
+ },
+ "door_flat_open": {
+  "files": [
+   "door_flat_open.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "door_flat_open.ogg",
+    "dur": 2.5,
+    "lufs_in": -19.6,
+    "tp_limited_db": 0.9
+   }
+  ]
+ },
+ "door_slam": {
+  "files": [
+   "door_slam_01.ogg",
+   "door_slam_02.ogg",
+   "door_slam_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "door_slam_01.ogg",
+    "dur": 0.675,
+    "lufs_in": -14.3,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 1.1
+   },
+   {
+    "file": "door_slam_02.ogg",
+    "dur": 0.699,
+    "lufs_in": -10.2,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "door_slam_03.ogg",
+    "dur": 0.559,
+    "lufs_in": -18.4,
+    "tp_limited_db": 1.6,
+    "opus_gain_db": 0.3
+   }
+  ]
+ },
+ "dough_roll": {
+  "files": [
+   "dough_roll_01.ogg",
+   "dough_roll_02.ogg",
+   "dough_roll_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "dough_roll_01.ogg",
+    "dur": 0.85,
+    "lufs_in": -21.3,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "dough_roll_02.ogg",
+    "dur": 1.05,
+    "lufs_in": -24.5,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.7
+   },
+   {
+    "file": "dough_roll_03.ogg",
+    "dur": 1.25,
+    "lufs_in": -21.9,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "dough_slap": {
+  "files": [
+   "dough_slap_01.ogg",
+   "dough_slap_02.ogg",
+   "dough_slap_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "dough_slap_01.ogg",
+    "dur": 0.748,
+    "lufs_in": -6.6,
+    "tp_limited_db": 4.0,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "dough_slap_02.ogg",
+    "dur": 0.75,
+    "lufs_in": -9.8,
+    "tp_limited_db": 4.0,
+    "opus_gain_db": 1.0
+   },
+   {
+    "file": "dough_slap_03.ogg",
+    "dur": 0.75,
+    "lufs_in": -20.5,
+    "tp_limited_db": 7.8
+   }
+  ]
+ },
+ "felttip_write": {
+  "files": [
+   "felttip_write_01.ogg",
+   "felttip_write_02.ogg",
+   "felttip_write_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "felttip_write_01.ogg",
+    "dur": 1.5,
+    "lufs_in": -26.8,
+    "tp_limited_db": 5.1,
+    "opus_gain_db": 1.7
+   },
+   {
+    "file": "felttip_write_02.ogg",
+    "dur": 1.5,
+    "lufs_in": -23.2,
+    "tp_limited_db": 5.9
+   },
+   {
+    "file": "felttip_write_03.ogg",
+    "dur": 1.5,
+    "lufs_in": -21.5,
+    "tp_limited_db": 5.1
+   }
+  ]
+ },
+ "fluoro_flicker": {
+  "files": [
+   "fluoro_flicker_01.ogg",
+   "fluoro_flicker_02.ogg",
+   "fluoro_flicker_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "fluoro_flicker_01.ogg",
+    "dur": 1.875,
+    "lufs_in": -11.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.6
+   },
+   {
+    "file": "fluoro_flicker_02.ogg",
+    "dur": 1.875,
+    "lufs_in": -34,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.3
+   },
+   {
+    "file": "fluoro_flicker_03.ogg",
+    "dur": 1.875,
+    "lufs_in": -7.3,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.5
+   }
+  ]
+ },
+ "fluoro_hum": {
+  "files": [
+   "fluoro_hum.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "hum",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "fluoro_hum.ogg",
+    "dur": 7.999,
+    "lufs_in": -12.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "foil_wrap": {
+  "files": [
+   "foil_wrap_01.ogg",
+   "foil_wrap_02.ogg",
+   "foil_wrap_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "foil_wrap_01.ogg",
+    "dur": 1.5,
+    "lufs_in": -17.3,
+    "tp_limited_db": 1.6,
+    "opus_gain_db": 1.0
+   },
+   {
+    "file": "foil_wrap_02.ogg",
+    "dur": 1.5,
+    "lufs_in": -14.0,
+    "tp_limited_db": 1.6,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "foil_wrap_03.ogg",
+    "dur": 1.5,
+    "lufs_in": -18.9,
+    "tp_limited_db": 4.4,
+    "opus_gain_db": 1.0
+   }
+  ]
+ },
+ "freewheel_coastdown": {
+  "files": [
+   "freewheel_coastdown_01.ogg",
+   "freewheel_coastdown_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "freewheel_coastdown_01.ogg",
+    "dur": 6,
+    "lufs_in": -8.8,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2.3
+   },
+   {
+    "file": "freewheel_coastdown_02.ogg",
+    "dur": 5.897,
+    "lufs_in": -14.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.8
+   }
+  ]
+ },
+ "freewheel_tick": {
+  "files": [
+   "freewheel_tick_01.ogg",
+   "freewheel_tick_02.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "freewheel_tick_01.ogg",
+    "dur": 3.999,
+    "lufs_in": -22.3,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "freewheel_tick_02.ogg",
+    "dur": 4,
+    "lufs_in": -31.8,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2.3
+   }
+  ]
+ },
+ "garage_door_open": {
+  "files": [
+   "garage_door_open.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "garage_door_open.ogg",
+    "dur": 3.6,
+    "lufs_in": -23.3,
+    "tp_limited_db": 0.7,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "garage_door_shut": {
+  "files": [
+   "garage_door_shut.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "garage_door_shut.ogg",
+    "dur": 2.6,
+    "lufs_in": -16.5,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "hammer_floor": {
+  "files": [
+   "hammer_floor_01.ogg",
+   "hammer_floor_02.ogg",
+   "hammer_floor_03.ogg",
+   "hammer_floor_04.ogg",
+   "hammer_floor_05.ogg",
+   "hammer_floor_06.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "floor",
+  "target_lufs": -21,
+  "detail": [
+   {
+    "file": "hammer_floor_01.ogg",
+    "dur": 0.85,
+    "lufs_in": -23,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_floor_02.ogg",
+    "dur": 0.85,
+    "lufs_in": -22.6,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_floor_03.ogg",
+    "dur": 0.85,
+    "lufs_in": -24.5,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_floor_04.ogg",
+    "dur": 0.9,
+    "lufs_in": -27.8,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_floor_05.ogg",
+    "dur": 0.8,
+    "lufs_in": -23.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.3
+   },
+   {
+    "file": "hammer_floor_06.ogg",
+    "dur": 0.85,
+    "lufs_in": -39.5,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "hammer_near": {
+  "files": [
+   "hammer_near_01.ogg",
+   "hammer_near_02.ogg",
+   "hammer_near_03.ogg",
+   "hammer_near_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "hammer_near_01.ogg",
+    "dur": 0.36,
+    "lufs_in": -22.9,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_near_02.ogg",
+    "dur": 0.38,
+    "lufs_in": -22.9,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_near_03.ogg",
+    "dur": 0.38,
+    "lufs_in": -27.4,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "hammer_near_04.ogg",
+    "dur": 0.38,
+    "lufs_in": -26.9,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.5
+   }
+  ]
+ },
+ "kettle_boil": {
+  "files": [
+   "kettle_boil.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "event",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "kettle_boil.ogg",
+    "dur": 40,
+    "lufs_in": -26.7,
+    "tp_limited_db": 1.6
+   }
+  ]
+ },
+ "key_insert": {
+  "files": [
+   "key_insert_01.ogg",
+   "key_insert_02.ogg",
+   "key_insert_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "key_insert_01.ogg",
+    "dur": 0.713,
+    "lufs_in": -11.3,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "key_insert_02.ogg",
+    "dur": 0.75,
+    "lufs_in": -17.4,
+    "tp_limited_db": 1.8,
+    "opus_gain_db": 2.8
+   },
+   {
+    "file": "key_insert_03.ogg",
+    "dur": 0.75,
+    "lufs_in": -6.3,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "key_stuck": {
+  "files": [
+   "key_stuck_01.ogg",
+   "key_stuck_02.ogg",
+   "key_stuck_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "key_stuck_01.ogg",
+    "dur": 1.0,
+    "lufs_in": -12.4,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.6
+   },
+   {
+    "file": "key_stuck_02.ogg",
+    "dur": 1.0,
+    "lufs_in": -24.4,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "key_stuck_03.ogg",
+    "dur": 1.0,
+    "lufs_in": -31.4,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 1.9
+   }
+  ]
+ },
+ "keys_jingle": {
+  "files": [
+   "keys_jingle_01.ogg",
+   "keys_jingle_02.ogg",
+   "keys_jingle_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "keys_jingle_01.ogg",
+    "dur": 1.25,
+    "lufs_in": -11.9,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.7
+   },
+   {
+    "file": "keys_jingle_02.ogg",
+    "dur": 1.25,
+    "lufs_in": -16.8,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "keys_jingle_03.ogg",
+    "dur": 1.25,
+    "lufs_in": -24.2,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "knife_slice": {
+  "files": [
+   "knife_slice_01.ogg",
+   "knife_slice_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "knife_slice_01.ogg",
+    "dur": 0.524,
+    "lufs_in": -17.2,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.2
+   },
+   {
+    "file": "knife_slice_02.ogg",
+    "dur": 0.558,
+    "lufs_in": -14.9,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.2
+   }
+  ]
+ },
+ "liquid_pour": {
+  "files": [
+   "liquid_pour_01.ogg",
+   "liquid_pour_02.ogg",
+   "liquid_pour_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "liquid_pour_01.ogg",
+    "dur": 3.836,
+    "lufs_in": -14.0,
+    "tp_limited_db": 3.1,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "liquid_pour_02.ogg",
+    "dur": 3.896,
+    "lufs_in": -10.1,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "liquid_pour_03.ogg",
+    "dur": 2.853,
+    "lufs_in": -13.6,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "lock_turn": {
+  "files": [
+   "lock_turn_01.ogg",
+   "lock_turn_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "lock_turn_01.ogg",
+    "dur": 1.125,
+    "lufs_in": -9.5,
+    "tp_limited_db": 5.1
+   },
+   {
+    "file": "lock_turn_02.ogg",
+    "dur": 1.125,
+    "lufs_in": -13.5,
+    "tp_limited_db": 4.3
+   }
+  ]
+ },
+ "mug_clink": {
+  "files": [
+   "mug_clink_01.ogg",
+   "mug_clink_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "mug_clink_01.ogg",
+    "dur": 0.542,
+    "lufs_in": -25.3,
+    "tp_limited_db": 0.3,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "mug_clink_02.ogg",
+    "dur": 0.655,
+    "lufs_in": -25.9,
+    "tp_limited_db": 0.5,
+    "opus_gain_db": 1
+   }
+  ]
+ },
+ "mug_clink_alt": {
+  "files": [
+   "mug_clink_alt_01.ogg",
+   "mug_clink_alt_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "mug_clink_alt_01.ogg",
+    "dur": 0.244,
+    "lufs_in": -9.5,
+    "tp_limited_db": 1.6,
+    "opus_gain_db": 1
+   },
+   {
+    "file": "mug_clink_alt_02.ogg",
+    "dur": 0.265,
+    "lufs_in": -11.1,
+    "tp_limited_db": 3.2,
+    "opus_gain_db": 0.8
+   }
+  ]
+ },
+ "neon_buzz": {
+  "files": [
+   "neon_buzz.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "hum",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "neon_buzz.ogg",
+    "dur": 7.999,
+    "lufs_in": -13.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.6
+   }
+  ]
+ },
+ "neon_flicker": {
+  "files": [
+   "neon_flicker_01.ogg",
+   "neon_flicker_02.ogg",
+   "neon_flicker_03.ogg",
+   "neon_flicker_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "neon_flicker_01.ogg",
+    "dur": 0.55,
+    "lufs_in": -25.2,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.4
+   },
+   {
+    "file": "neon_flicker_02.ogg",
+    "dur": 0.8,
+    "lufs_in": -24.8,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "neon_flicker_03.ogg",
+    "dur": 1.05,
+    "lufs_in": -26.0,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "neon_flicker_04.ogg",
+    "dur": 0.7,
+    "lufs_in": -24.9,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "notebook_close": {
+  "files": [
+   "notebook_close.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "notebook_close.ogg",
+    "dur": 0.231,
+    "lufs_in": -22.3,
+    "tp_limited_db": 0.1
+   }
+  ]
+ },
+ "notebook_open": {
+  "files": [
+   "notebook_open.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "notebook_open.ogg",
+    "dur": 0.151,
+    "lufs_in": -38.8,
+    "tp_limited_db": 0.9,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "oven_door": {
+  "files": [
+   "oven_door_01.ogg",
+   "oven_door_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "oven_door_01.ogg",
+    "dur": 1.875,
+    "lufs_in": -3.3,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.7
+   },
+   {
+    "file": "oven_door_02.ogg",
+    "dur": 1.875,
+    "lufs_in": 2.8,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.8
+   }
+  ]
+ },
+ "page_flip": {
+  "files": [
+   "page_flip_01.ogg",
+   "page_flip_02.ogg",
+   "page_flip_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "page_flip_01.ogg",
+    "dur": 0.769,
+    "lufs_in": -24.1,
+    "tp_limited_db": 0.3
+   },
+   {
+    "file": "page_flip_02.ogg",
+    "dur": 0.43,
+    "lufs_in": -34.2,
+    "tp_limited_db": 0.3,
+    "opus_gain_db": 1.5
+   },
+   {
+    "file": "page_flip_03.ogg",
+    "dur": 0.231,
+    "lufs_in": -31.8,
+    "tp_limited_db": 1.5,
+    "opus_gain_db": 1.7
+   }
+  ]
+ },
+ "paint_drop": {
+  "files": [
+   "paint_drop_01.ogg",
+   "paint_drop_02.ogg",
+   "paint_drop_03.ogg",
+   "paint_drop_04.ogg",
+   "paint_drop_05.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "paint_drop_01.ogg",
+    "dur": 0.254,
+    "lufs_in": -19.7,
+    "tp_limited_db": 3
+   },
+   {
+    "file": "paint_drop_02.ogg",
+    "dur": 0.5,
+    "lufs_in": -16.7,
+    "tp_limited_db": 1.6
+   },
+   {
+    "file": "paint_drop_03.ogg",
+    "dur": 0.5,
+    "lufs_in": -8.2,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "paint_drop_04.ogg",
+    "dur": 0.229,
+    "lufs_in": -19.8,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "paint_drop_05.ogg",
+    "dur": 0.226,
+    "lufs_in": -18.3,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "paint_lid_open": {
+  "files": [
+   "paint_lid_open_01.ogg",
+   "paint_lid_open_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "paint_lid_open_01.ogg",
+    "dur": 1.5,
+    "lufs_in": -16.4,
+    "tp_limited_db": 8.6,
+    "opus_gain_db": 2.2
+   },
+   {
+    "file": "paint_lid_open_02.ogg",
+    "dur": 1.5,
+    "lufs_in": -5.3,
+    "tp_limited_db": 4.8,
+    "opus_gain_db": 0.5
+   }
+  ]
+ },
+ "paint_slosh": {
+  "files": [
+   "paint_slosh_01.ogg",
+   "paint_slosh_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "paint_slosh_01.ogg",
+    "dur": 1.749,
+    "lufs_in": -27.3,
+    "tp_limited_db": 2,
+    "opus_gain_db": 0.6
+   },
+   {
+    "file": "paint_slosh_02.ogg",
+    "dur": 1.334,
+    "lufs_in": -16.1,
+    "tp_limited_db": 3.2,
+    "opus_gain_db": 1.5
+   }
+  ]
+ },
+ "paint_stir_loop": {
+  "files": [
+   "paint_stir_loop_01.ogg",
+   "paint_stir_loop_02.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "paint_stir_loop_01.ogg",
+    "dur": 6,
+    "lufs_in": -23,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "paint_stir_loop_02.ogg",
+    "dur": 6,
+    "lufs_in": -23.8,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "pawl_click": {
+  "files": [
+   "pawl_click_01.ogg",
+   "pawl_click_02.ogg",
+   "pawl_click_03.ogg",
+   "pawl_click_04.ogg",
+   "pawl_click_05.ogg",
+   "pawl_click_06.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "pawl_click_01.ogg",
+    "dur": 0.15,
+    "lufs_in": -34.3,
+    "tp_limited_db": 1.1
+   },
+   {
+    "file": "pawl_click_02.ogg",
+    "dur": 0.15,
+    "lufs_in": -33.3,
+    "tp_limited_db": 1.1,
+    "opus_gain_db": 0.4
+   },
+   {
+    "file": "pawl_click_03.ogg",
+    "dur": 0.15,
+    "lufs_in": -35.3,
+    "tp_limited_db": 1.8,
+    "opus_gain_db": 0.3
+   },
+   {
+    "file": "pawl_click_04.ogg",
+    "dur": 0.15,
+    "lufs_in": -36.0,
+    "tp_limited_db": 2.5
+   },
+   {
+    "file": "pawl_click_05.ogg",
+    "dur": 0.15,
+    "lufs_in": -34.5,
+    "tp_limited_db": 1.1,
+    "opus_gain_db": 0.6
+   },
+   {
+    "file": "pawl_click_06.ogg",
+    "dur": 0.15,
+    "lufs_in": -34.6,
+    "tp_limited_db": 1.2
+   }
+  ]
+ },
+ "pencil_erase": {
+  "files": [
+   "pencil_erase.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "pencil_erase.ogg",
+    "dur": 1.14,
+    "lufs_in": -22.1,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "pencil_erase_alt": {
+  "files": [
+   "pencil_erase_alt_01.ogg",
+   "pencil_erase_alt_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "pencil_erase_alt_01.ogg",
+    "dur": 1.5,
+    "lufs_in": -36.3,
+    "tp_limited_db": 3.7
+   },
+   {
+    "file": "pencil_erase_alt_02.ogg",
+    "dur": 1.5,
+    "lufs_in": -28.7,
+    "tp_limited_db": 4.3,
+    "opus_gain_db": 1.3
+   }
+  ]
+ },
+ "pencil_write": {
+  "files": [
+   "pencil_write.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "pencil_write.ogg",
+    "dur": 1.422,
+    "lufs_in": -24.7,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "phone_buzz_hand": {
+  "files": [
+   "phone_buzz_hand_01.ogg",
+   "phone_buzz_hand_02.ogg",
+   "phone_buzz_hand_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "phone_buzz_hand_01.ogg",
+    "dur": 1.14,
+    "lufs_in": -17.1,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "phone_buzz_hand_02.ogg",
+    "dur": 0.974,
+    "lufs_in": -16.3,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "phone_buzz_hand_03.ogg",
+    "dur": 1.06,
+    "lufs_in": -19.3,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "phone_sms": {
+  "files": [
+   "phone_sms.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "phone_sms.ogg",
+    "dur": 0.75,
+    "lufs_in": -18.8,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "phone_vibrate_table": {
+  "files": [
+   "phone_vibrate_table.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "phone_vibrate_table.ogg",
+    "dur": 2,
+    "lufs_in": -16,
+    "tp_limited_db": 0.7,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "plane_stroke": {
+  "files": [
+   "plane_stroke_01.ogg",
+   "plane_stroke_02.ogg",
+   "plane_stroke_03.ogg",
+   "plane_stroke_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "plane_stroke_01.ogg",
+    "dur": 1,
+    "lufs_in": -15.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.5
+   },
+   {
+    "file": "plane_stroke_02.ogg",
+    "dur": 1,
+    "lufs_in": -13.8,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.5
+   },
+   {
+    "file": "plane_stroke_03.ogg",
+    "dur": 1,
+    "lufs_in": -12.4,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.4
+   },
+   {
+    "file": "plane_stroke_04.ogg",
+    "dur": 1,
+    "lufs_in": -13.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.5
+   }
+  ],
+  "picked_at": [
+   6.67,
+   12.095,
+   17.5,
+   32.695
+  ]
+ },
+ "pump_stroke": {
+  "files": [
+   "pump_stroke_01.ogg",
+   "pump_stroke_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "pump_stroke_01.ogg",
+    "dur": 3.757,
+    "lufs_in": -7.6,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "pump_stroke_02.ogg",
+    "dur": 2.081,
+    "lufs_in": -18.8,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.7
+   }
+  ]
+ },
+ "radio_static": {
+  "files": [
+   "radio_static.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "radio",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "radio_static.ogg",
+    "dur": 7.999,
+    "lufs_in": -20.4,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1
+   }
+  ]
+ },
+ "radio_talk_fishing": {
+  "files": [
+   "radio_talk_fishing.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "radio",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "radio_talk_fishing.ogg",
+    "dur": 20,
+    "lufs_in": -18.7,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "radio_tune_sweep": {
+  "files": [
+   "radio_tune_sweep.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "radio",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "radio_tune_sweep.ogg",
+    "dur": 14,
+    "lufs_in": -16.3,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2.1
+   }
+  ]
+ },
+ "run_step": {
+  "files": [
+   "run_step_01.ogg",
+   "run_step_02.ogg",
+   "run_step_03.ogg",
+   "run_step_04.ogg",
+   "run_step_05.ogg",
+   "run_step_06.ogg",
+   "run_step_07.ogg",
+   "run_step_08.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "run_step_01.ogg",
+    "dur": 0.24,
+    "lufs_in": -27.9,
+    "tp_limited_db": 2.8,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "run_step_02.ogg",
+    "dur": 0.24,
+    "lufs_in": -28.2,
+    "tp_limited_db": 2.8,
+    "opus_gain_db": 0.7
+   },
+   {
+    "file": "run_step_03.ogg",
+    "dur": 0.24,
+    "lufs_in": -28.7,
+    "tp_limited_db": 2.8,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "run_step_04.ogg",
+    "dur": 0.24,
+    "lufs_in": -29.1,
+    "tp_limited_db": 3.9
+   },
+   {
+    "file": "run_step_05.ogg",
+    "dur": 0.24,
+    "lufs_in": -28.1,
+    "tp_limited_db": 3.2,
+    "opus_gain_db": 0.4
+   },
+   {
+    "file": "run_step_06.ogg",
+    "dur": 0.24,
+    "lufs_in": -29.1,
+    "tp_limited_db": 3.1,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "run_step_07.ogg",
+    "dur": 0.24,
+    "lufs_in": -27.8,
+    "tp_limited_db": 3,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "run_step_08.ogg",
+    "dur": 0.24,
+    "lufs_in": -28.7,
+    "tp_limited_db": 2.8,
+    "opus_gain_db": 0.5
+   }
+  ],
+  "picked_at": [
+   15.988,
+   21.313,
+   23.393,
+   26.648,
+   28.683,
+   36.863,
+   45.623,
+   50.868
+  ]
+ },
+ "run_step_wet": {
+  "files": [
+   "run_step_wet_01.ogg",
+   "run_step_wet_02.ogg",
+   "run_step_wet_03.ogg",
+   "run_step_wet_04.ogg",
+   "run_step_wet_05.ogg",
+   "run_step_wet_06.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "run_step_wet_01.ogg",
+    "dur": 0.5,
+    "lufs_in": -29.4,
+    "tp_limited_db": 0.3,
+    "opus_gain_db": 1.5
+   },
+   {
+    "file": "run_step_wet_02.ogg",
+    "dur": 0.441,
+    "lufs_in": -34,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1
+   },
+   {
+    "file": "run_step_wet_03.ogg",
+    "dur": 0.5,
+    "lufs_in": -32.8,
+    "tp_limited_db": 4.8
+   },
+   {
+    "file": "run_step_wet_04.ogg",
+    "dur": 0.5,
+    "lufs_in": -35.7,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "run_step_wet_05.ogg",
+    "dur": 0.5,
+    "lufs_in": -36.4,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1
+   },
+   {
+    "file": "run_step_wet_06.ogg",
+    "dur": 0.5,
+    "lufs_in": -24.4,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.5
+   }
+  ]
+ },
+ "sand_loop": {
+  "files": [
+   "sand_loop.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "sand_loop.ogg",
+    "dur": 6,
+    "lufs_in": -16.9,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "sand_stroke": {
+  "files": [
+   "sand_stroke_01.ogg",
+   "sand_stroke_02.ogg",
+   "sand_stroke_03.ogg",
+   "sand_stroke_04.ogg",
+   "sand_stroke_05.ogg",
+   "sand_stroke_06.ogg",
+   "sand_stroke_07.ogg",
+   "sand_stroke_08.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "sand_stroke_01.ogg",
+    "dur": 0.34,
+    "lufs_in": -19.9,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.7
+   },
+   {
+    "file": "sand_stroke_02.ogg",
+    "dur": 0.3,
+    "lufs_in": -19,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2
+   },
+   {
+    "file": "sand_stroke_03.ogg",
+    "dur": 0.3,
+    "lufs_in": -18.3,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2
+   },
+   {
+    "file": "sand_stroke_04.ogg",
+    "dur": 0.32,
+    "lufs_in": -19.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.9
+   },
+   {
+    "file": "sand_stroke_05.ogg",
+    "dur": 0.32,
+    "lufs_in": -19,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.9
+   },
+   {
+    "file": "sand_stroke_06.ogg",
+    "dur": 0.3,
+    "lufs_in": -17.5,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2
+   },
+   {
+    "file": "sand_stroke_07.ogg",
+    "dur": 0.3,
+    "lufs_in": -19.5,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.7
+   },
+   {
+    "file": "sand_stroke_08.ogg",
+    "dur": 0.4,
+    "lufs_in": -17.4,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.9
+   }
+  ],
+  "picked_at": [
+   17.48,
+   54.2,
+   57.08,
+   58.12,
+   59.2,
+   72.38,
+   74.02,
+   86.92
+  ]
+ },
+ "sauce_squirt": {
+  "files": [
+   "sauce_squirt_01.ogg",
+   "sauce_squirt_02.ogg",
+   "sauce_squirt_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "sauce_squirt_01.ogg",
+    "dur": 1.0,
+    "lufs_in": -10.7,
+    "tp_limited_db": 0.2
+   },
+   {
+    "file": "sauce_squirt_02.ogg",
+    "dur": 1.0,
+    "lufs_in": -29.5,
+    "tp_limited_db": 2.1,
+    "opus_gain_db": 0.9
+   },
+   {
+    "file": "sauce_squirt_03.ogg",
+    "dur": 1.0,
+    "lufs_in": -28.9,
+    "tp_limited_db": 0.2
+   }
+  ]
+ },
+ "scaffold_creak": {
+  "files": [
+   "scaffold_creak_01.ogg",
+   "scaffold_creak_02.ogg",
+   "scaffold_creak_03.ogg",
+   "scaffold_creak_04.ogg",
+   "scaffold_creak_05.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "scaffold_creak_01.ogg",
+    "dur": 1.1,
+    "lufs_in": -19.7,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "scaffold_creak_02.ogg",
+    "dur": 1.1,
+    "lufs_in": -19.3,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "scaffold_creak_03.ogg",
+    "dur": 1.1,
+    "lufs_in": -18.5,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "scaffold_creak_04.ogg",
+    "dur": 1.1,
+    "lufs_in": -14.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1
+   },
+   {
+    "file": "scaffold_creak_05.ogg",
+    "dur": 1.1,
+    "lufs_in": -20.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.3
+   }
+  ],
+  "picked_at": [
+   4.15,
+   12.805,
+   24.21,
+   53.5,
+   64.015
+  ]
+ },
+ "shutter_glide": {
+  "files": [
+   "shutter_glide_01.ogg",
+   "shutter_glide_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "shutter_glide_01.ogg",
+    "dur": 1.95,
+    "lufs_in": -21.7,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "shutter_glide_02.ogg",
+    "dur": 2.25,
+    "lufs_in": -22.3,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "shutter_roll_up": {
+  "files": [
+   "shutter_roll_up_01.ogg",
+   "shutter_roll_up_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "shutter_roll_up_01.ogg",
+    "dur": 2.75,
+    "lufs_in": -8.4,
+    "tp_limited_db": 2.8,
+    "opus_gain_db": 2.5
+   },
+   {
+    "file": "shutter_roll_up_02.ogg",
+    "dur": 2.591,
+    "lufs_in": -8,
+    "tp_limited_db": 4.8,
+    "opus_gain_db": 1.7
+   }
+  ]
+ },
+ "shutter_runner_scrape": {
+  "files": [
+   "shutter_runner_scrape_01.ogg",
+   "shutter_runner_scrape_02.ogg",
+   "shutter_runner_scrape_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "shutter_runner_scrape_01.ogg",
+    "dur": 0.698,
+    "lufs_in": -10.1,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "shutter_runner_scrape_02.ogg",
+    "dur": 0.524,
+    "lufs_in": 6.8,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "shutter_runner_scrape_03.ogg",
+    "dur": 0.569,
+    "lufs_in": -3.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.9
+   }
+  ]
+ },
+ "shutter_scream": {
+  "files": [
+   "shutter_scream_01.ogg",
+   "shutter_scream_02.ogg",
+   "shutter_scream_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "heavy",
+  "target_lufs": -18,
+  "detail": [
+   {
+    "file": "shutter_scream_01.ogg",
+    "dur": 2.25,
+    "lufs_in": 1.9,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.0
+   },
+   {
+    "file": "shutter_scream_02.ogg",
+    "dur": 2.25,
+    "lufs_in": -12.8,
+    "tp_limited_db": 6.6,
+    "opus_gain_db": 1.9
+   },
+   {
+    "file": "shutter_scream_03.ogg",
+    "dur": 1.402,
+    "lufs_in": 0.8,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.6
+   }
+  ]
+ },
+ "spit_sizzle": {
+  "files": [
+   "spit_sizzle.ogg"
+  ],
+  "loop": true,
+  "channels": 2,
+  "cat": "amb_int",
+  "target_lufs": -30,
+  "detail": [
+   {
+    "file": "spit_sizzle.ogg",
+    "dur": 20.0,
+    "lufs_in": -18.9,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "spoke_key": {
+  "files": [
+   "spoke_key_01.ogg",
+   "spoke_key_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "spoke_key_01.ogg",
+    "dur": 0.446,
+    "lufs_in": -31.8,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.7
+   },
+   {
+    "file": "spoke_key_02.ogg",
+    "dur": 0.261,
+    "lufs_in": -20.2,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.2
+   }
+  ]
+ },
+ "stamp_thump": {
+  "files": [
+   "stamp_thump_01.ogg",
+   "stamp_thump_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "stamp_thump_01.ogg",
+    "dur": 0.32,
+    "lufs_in": -29.5,
+    "tp_limited_db": 2.7
+   },
+   {
+    "file": "stamp_thump_02.ogg",
+    "dur": 0.32,
+    "lufs_in": -30.0,
+    "tp_limited_db": 2.6
+   }
+  ]
+ },
+ "step_wood": {
+  "files": [
+   "step_wood_01.ogg",
+   "step_wood_02.ogg",
+   "step_wood_03.ogg",
+   "step_wood_04.ogg",
+   "step_wood_05.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "step_wood_01.ogg",
+    "dur": 0.271,
+    "lufs_in": -26.1,
+    "tp_limited_db": 0.4
+   },
+   {
+    "file": "step_wood_02.ogg",
+    "dur": 0.249,
+    "lufs_in": -24.9,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "step_wood_03.ogg",
+    "dur": 0.248,
+    "lufs_in": -24.3,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "step_wood_04.ogg",
+    "dur": 0.249,
+    "lufs_in": -27.3,
+    "tp_limited_db": 0.9
+   },
+   {
+    "file": "step_wood_05.ogg",
+    "dur": 0.245,
+    "lufs_in": -24.8,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "step_wood_alt": {
+  "files": [
+   "step_wood_alt_01.ogg",
+   "step_wood_alt_02.ogg",
+   "step_wood_alt_03.ogg",
+   "step_wood_alt_04.ogg",
+   "step_wood_alt_05.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "step_wood_alt_01.ogg",
+    "dur": 0.625,
+    "lufs_in": -43.2,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "step_wood_alt_02.ogg",
+    "dur": 0.625,
+    "lufs_in": -34.3,
+    "tp_limited_db": 2.3,
+    "opus_gain_db": 1.3
+   },
+   {
+    "file": "step_wood_alt_03.ogg",
+    "dur": 0.625,
+    "lufs_in": -32,
+    "tp_limited_db": 3.5,
+    "opus_gain_db": 1.1
+   },
+   {
+    "file": "step_wood_alt_04.ogg",
+    "dur": 0.625,
+    "lufs_in": -40.1,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.3
+   },
+   {
+    "file": "step_wood_alt_05.ogg",
+    "dur": 0.625,
+    "lufs_in": -41.4,
+    "tp_limited_db": 0,
+    "opus_gain_db": 1.4
+   }
+  ]
+ },
+ "stopwatch_click": {
+  "files": [
+   "stopwatch_click_01.ogg",
+   "stopwatch_click_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "stopwatch_click_01.ogg",
+    "dur": 0.26,
+    "lufs_in": -37.4,
+    "tp_limited_db": 4.0
+   },
+   {
+    "file": "stopwatch_click_02.ogg",
+    "dur": 0.26,
+    "lufs_in": -34.7,
+    "tp_limited_db": 2.6
+   }
+  ]
+ },
+ "stopwatch_tick": {
+  "files": [
+   "stopwatch_tick.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "hum",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "stopwatch_tick.ogg",
+    "dur": 4.0,
+    "lufs_in": -38.9,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "stride_alert": {
+  "files": [
+   "stride_alert.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "stride_alert.ogg",
+    "dur": 0.6,
+    "lufs_in": -20.0,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "stride_bravo": {
+  "files": [
+   "stride_bravo.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "stride_bravo.ogg",
+    "dur": 0.36,
+    "lufs_in": -19.1,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "table_tock": {
+  "files": [
+   "table_tock_01.ogg",
+   "table_tock_02.ogg",
+   "table_tock_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "table_tock_01.ogg",
+    "dur": 0.263,
+    "lufs_in": -27,
+    "tp_limited_db": 0.2
+   },
+   {
+    "file": "table_tock_02.ogg",
+    "dur": 0.263,
+    "lufs_in": -30.4,
+    "tp_limited_db": 0.2
+   },
+   {
+    "file": "table_tock_03.ogg",
+    "dur": 0.263,
+    "lufs_in": -26.8,
+    "tp_limited_db": 0.6
+   }
+  ]
+ },
+ "tape_pull": {
+  "files": [
+   "tape_pull_01.ogg",
+   "tape_pull_02.ogg",
+   "tape_pull_03.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "tape_pull_01.ogg",
+    "dur": 1.6,
+    "lufs_in": -18.9,
+    "tp_limited_db": 0,
+    "opus_gain_db": 2.3
+   },
+   {
+    "file": "tape_pull_02.ogg",
+    "dur": 1.6,
+    "lufs_in": -21.8,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "tape_pull_03.ogg",
+    "dur": 1.6,
+    "lufs_in": -23.7,
+    "tp_limited_db": 3.1,
+    "opus_gain_db": 2.4
+   }
+  ]
+ },
+ "tape_retract": {
+  "files": [
+   "tape_retract_01.ogg",
+   "tape_retract_02.ogg",
+   "tape_retract_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "tape_retract_01.ogg",
+    "dur": 1.125,
+    "lufs_in": -20,
+    "tp_limited_db": 1.7,
+    "opus_gain_db": 1.7
+   },
+   {
+    "file": "tape_retract_02.ogg",
+    "dur": 1.125,
+    "lufs_in": -14.9,
+    "tp_limited_db": 1.7
+   },
+   {
+    "file": "tape_retract_03.ogg",
+    "dur": 1.125,
+    "lufs_in": -34.4,
+    "tp_limited_db": 5.2,
+    "opus_gain_db": 2.5
+   }
+  ]
+ },
+ "tape_tock": {
+  "files": [
+   "tape_tock.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "tape_tock.ogg",
+    "dur": 0.5,
+    "lufs_in": -11.1,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "tattoo_machine": {
+  "files": [
+   "tattoo_machine.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "hum",
+  "target_lufs": -32,
+  "detail": [
+   {
+    "file": "tattoo_machine.ogg",
+    "dur": 10.0,
+    "lufs_in": -24.6,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "thermos_cap": {
+  "files": [
+   "thermos_cap_01.ogg",
+   "thermos_cap_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "thermos_cap_01.ogg",
+    "dur": 1.25,
+    "lufs_in": -21.6,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 2.3
+   },
+   {
+    "file": "thermos_cap_02.ogg",
+    "dur": 1.25,
+    "lufs_in": -15.6,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.6
+   }
+  ]
+ },
+ "till_drawer": {
+  "files": [
+   "till_drawer.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "till_drawer.ogg",
+    "dur": 1.5,
+    "lufs_in": -4.9,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "tin_tap": {
+  "files": [
+   "tin_tap_01.ogg",
+   "tin_tap_02.ogg",
+   "tin_tap_03.ogg",
+   "tin_tap_04.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "tin_tap_01.ogg",
+    "dur": 0.156,
+    "lufs_in": -28.5,
+    "tp_limited_db": 1.3
+   },
+   {
+    "file": "tin_tap_02.ogg",
+    "dur": 0.171,
+    "lufs_in": -29.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "tin_tap_03.ogg",
+    "dur": 0.131,
+    "lufs_in": -30.4,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "tin_tap_04.ogg",
+    "dur": 0.212,
+    "lufs_in": -29.5,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.5
+   }
+  ]
+ },
+ "tool_hook": {
+  "files": [
+   "tool_hook_01.ogg",
+   "tool_hook_02.ogg",
+   "tool_hook_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "tool_hook_01.ogg",
+    "dur": 0.414,
+    "lufs_in": -7.8,
+    "tp_limited_db": 5.9,
+    "opus_gain_db": 1.5
+   },
+   {
+    "file": "tool_hook_02.ogg",
+    "dur": 0.875,
+    "lufs_in": -15.7,
+    "tp_limited_db": 7.5
+   },
+   {
+    "file": "tool_hook_03.ogg",
+    "dur": 0.389,
+    "lufs_in": -13.1,
+    "tp_limited_db": 5.9
+   }
+  ]
+ },
+ "tool_take": {
+  "files": [
+   "tool_take_01.ogg",
+   "tool_take_02.ogg",
+   "tool_take_03.ogg",
+   "tool_take_04.ogg",
+   "tool_take_05.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "tool_take_01.ogg",
+    "dur": 0.7,
+    "lufs_in": -27.2,
+    "tp_limited_db": 0.4,
+    "opus_gain_db": 0.7
+   },
+   {
+    "file": "tool_take_02.ogg",
+    "dur": 0.7,
+    "lufs_in": -17.7,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "tool_take_03.ogg",
+    "dur": 0.7,
+    "lufs_in": -20,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "tool_take_04.ogg",
+    "dur": 0.7,
+    "lufs_in": -31.6,
+    "tp_limited_db": 1.9,
+    "opus_gain_db": 0.8
+   },
+   {
+    "file": "tool_take_05.ogg",
+    "dur": 0.63,
+    "lufs_in": -19.6,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.3
+   }
+  ],
+  "picked_at": [
+   5.395,
+   13.405,
+   16.16,
+   21.12,
+   27.37
+  ]
+ },
+ "tv_crt_off": {
+  "files": [
+   "tv_crt_off.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "tv_crt_off.ogg",
+    "dur": 2,
+    "lufs_in": -30.9,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "tv_race_bed": {
+  "files": [
+   "tv_race_bed.ogg"
+  ],
+  "loop": true,
+  "channels": 1,
+  "cat": "tv",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "tv_race_bed.ogg",
+    "dur": 36,
+    "lufs_in": -22.5,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "velcro_rip": {
+  "files": [
+   "velcro_rip_01.ogg",
+   "velcro_rip_02.ogg",
+   "velcro_rip_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley",
+  "target_lufs": -20,
+  "detail": [
+   {
+    "file": "velcro_rip_01.ogg",
+    "dur": 1.043,
+    "lufs_in": -22.5,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "velcro_rip_02.ogg",
+    "dur": 0.849,
+    "lufs_in": -21,
+    "tp_limited_db": 0
+   },
+   {
+    "file": "velcro_rip_03.ogg",
+    "dur": 0.66,
+    "lufs_in": -22.2,
+    "tp_limited_db": 0,
+    "opus_gain_db": 0.7
+   }
+  ]
+ },
+ "watch_buzz_wrist": {
+  "files": [
+   "watch_buzz_wrist.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "watch_buzz_wrist.ogg",
+    "dur": 1,
+    "lufs_in": -20,
+    "tp_limited_db": 0
+   }
+  ]
+ },
+ "watch_hang_nail": {
+  "files": [
+   "watch_hang_nail_01.ogg",
+   "watch_hang_nail_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "tick",
+  "target_lufs": -26,
+  "detail": [
+   {
+    "file": "watch_hang_nail_01.ogg",
+    "dur": 0.649,
+    "lufs_in": -15.5,
+    "tp_limited_db": 2,
+    "opus_gain_db": 0.5
+   },
+   {
+    "file": "watch_hang_nail_02.ogg",
+    "dur": 0.14,
+    "lufs_in": -22,
+    "tp_limited_db": 1
+   }
+  ]
+ },
+ "watch_haptic": {
+  "files": [
+   "watch_haptic_01.ogg",
+   "watch_haptic_02.ogg",
+   "watch_haptic_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "watch_haptic_01.ogg",
+    "dur": 0.329,
+    "lufs_in": -18.3,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "watch_haptic_02.ogg",
+    "dur": 0.344,
+    "lufs_in": -17.8,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "watch_haptic_03.ogg",
+    "dur": 0.329,
+    "lufs_in": -18.6,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "watch_haptic_long": {
+  "files": [
+   "watch_haptic_long_01.ogg",
+   "watch_haptic_long_02.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "watch_haptic_long_01.ogg",
+    "dur": 0.86,
+    "lufs_in": -14.5,
+    "tp_limited_db": 0.0
+   },
+   {
+    "file": "watch_haptic_long_02.ogg",
+    "dur": 0.93,
+    "lufs_in": -14.6,
+    "tp_limited_db": 0.0
+   }
+  ]
+ },
+ "water_slosh": {
+  "files": [
+   "water_slosh_01.ogg",
+   "water_slosh_02.ogg",
+   "water_slosh_03.ogg"
+  ],
+  "loop": false,
+  "channels": 1,
+  "cat": "foley_soft",
+  "target_lufs": -24,
+  "detail": [
+   {
+    "file": "water_slosh_01.ogg",
+    "dur": 1.5,
+    "lufs_in": -27.7,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 1.2
+   },
+   {
+    "file": "water_slosh_02.ogg",
+    "dur": 1.5,
+    "lufs_in": -17.9,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 1.0
+   },
+   {
+    "file": "water_slosh_03.ogg",
+    "dur": 1.5,
+    "lufs_in": -17.8,
+    "tp_limited_db": 0.0,
+    "opus_gain_db": 0.5
+   }
+  ]
+ }
+}

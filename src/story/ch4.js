@@ -1,51 +1,20 @@
-import * as THREE from 'three';
 import { L } from './script.js';
-import { rememberOpenSign } from './minigames.js';
-import { sandDoor, trueBike, letterSign } from './ch4crafts.js';
+import { sandDoor } from './ch4crafts.js';
 import { measureTape, readingIndex } from './crafts/tape.js';
 import { mixGrey } from './crafts/mixer.js';
 import { dry, reveal } from './crafts/finish.js';
 import { remember } from './memory.js';
 import { buildScene4 } from '../world/scenes/scene4.js';
-import { IN_X, GARAGE } from '../world/scenes/scene4/layout.js';
-import { PRESETS } from '../render/Mood.js';
-import { duckUnderVoice, wheelSound } from './crafts/sound.js';
+import { LOOK, SOUNDS, BED, RAIN, CHAPTER_CAMERA, CHAPTER_PLAYER, workshopKit } from './workshop.js';
 
-// Ch4 "Measure Twice": Odile's workshop, Day 5 to Week 7 in the boot (docs/DESIGN.md).
-// Colour comes back on the things he makes and accumulates: the door (focus slot 0), the bike
-// (slot 1: Sami's, then Hugo's own race bike on the stand by Week 7), the OPEN sign (slot 2).
+// Ch4 « Mesurer deux fois »: Odile's workshop, Day 5 and Day 8 in the boot (docs/DESIGN.md, SCRIPT-R4 §5).
+// Colour comes back on the things he makes and accumulates: the door (focus slot 0) here; Sami's bike
+// (slot 1) in Ch5 Week 4 and the OPEN sign (slot 2) in Ch6 Week 7 (Revision 4 moved those weeks out).
 // Every await goes through the Director (d.say / d.gate / d.until / d.interact ...), so
-// __game.debug.skip() always progresses and no minigame can block.
+// __game.debug.skip() always progresses and no minigame can block. Staging helpers: story/workshop.js.
 
 const T4 = L.ch4;
 const N = L.notebook.items;
-const CAM = { offset: [0, 3.4, 3.6], look: [0, 1.0, -0.6] };
-// Light: the workshop preset with less ambient and fill, so the bare bulb makes a warm pool and the
-// corners fall off into brown dark (the room is lit by its practicals, see scene4/lights.js).
-const LOOK = { ...PRESETS.workshop, hemiIntensity: 0.9, fillIntensity: 1.5, envIntensity: 0.13, envIntensityHope: 0.2 };
-
-const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
-const clamp = THREE.MathUtils.clamp;
-
-// Sound (docs/assets/sfx.md, Ch4 Integration list). Beds: the workshop room tone all four days (0.3,
-// 0.25 in Week 4, 0.2 low-passed on the dry Week 7) and the rain on the roof on Day 5 / Day 8. Point
-// sources: Odile's kettle once a day, the radio on its crate, the garage door. The crafts (ch4crafts.js,
-// crafts/*) play their own recorded cues; the tube hum and flicker live in scene4/lights.js.
-const SOUNDS = [
-  'amb_workshop', 'amb_rain_window', 'fluoro_hum', 'fluoro_flicker', 'kettle_boil', 'radio_static', 'radio_talk_fishing',
-  'tool_hook', 'tool_take', 'sand_stroke', 'sand_loop', 'tape_pull', 'tape_tock', 'table_tock', 'tape_retract', 'scaffold_creak',
-  'plane_stroke', 'paint_lid_open', 'paint_drop', 'paint_stir_loop', 'paint_slosh', 'tin_tap', 'brush_stroke', 'creak_wood', 'creak_wood_alt',
-  'garage_door_open', 'bike_bell', 'spoke_key', 'brake_rub', 'freewheel_tick', 'freewheel_coastdown', 'brush_wall_loop',
-  // the notebook (UI.js) and the stumble (Player.js): docs/assets/sfx.md, Global
-  'notebook_open', 'page_flip', 'notebook_close', 'pencil_write', 'pencil_erase', 'pencil_erase_alt', 'body_thud',
-];
-const BED = { name: 'amb_workshop', volume: 0.3 };
-const RAIN = { name: 'amb_rain_window', volume: 0.2, lowpass: 900 };
-const SND = {
-  kettle: [4.07, 0.55, 2.62],
-  radio: [4.0, 0.45, 1.98],
-  garage: [-IN_X, 1.2, (GARAGE.z0 + GARAGE.z1) / 2],
-};
 
 export default {
   id: 'workshop',
@@ -58,158 +27,22 @@ export default {
   music: { name: 'contemplation', volume: 0.3, fade: 3 },
   ambience: [],
   sounds: SOUNDS,
-  camera: { offset: CAM.offset, look: CAM.look, fov: 55, lerp: 5 },
-  player: { spawn: [3.4, -2.4], facing: 0, boot: true, limp: 0.85, painRate: 1 / 1.0, canJog: true, footsteps: 'boot' },
+  camera: CHAPTER_CAMERA,
+  player: CHAPTER_PLAYER,
   build: (ctx) => buildScene4(ctx),
 
   async run(ctx, d) {
-    const { ui, player, hotspots, mood, audio, cam, runner, input, engine } = ctx;
+    const { ui, player, mood, audio, cam, runner } = ctx;
     const W = ctx.world.current;
     const S = W.spots;
     const O = W.odile;
-    const K = W.sami;
     player.firstStumbleDone = true; // day four is long gone: stumbles draw from the bag
 
-    // ------------------------------------------------------------ helpers
-    const follow = (snap = false) => {
-      const p = player.root.position;
-      if (snap) W.camRig.position.set(clamp(p.x * 0.7, -1.1, 1.1), 0, clamp(p.z, -1.4, 1.9));
-      cam.follow(W.camRig, { offset: CAM.offset, look: CAM.look, lerp: 4, snap });
-    };
-    const followShot = () => {
-      const r = W.camRig.position;
-      return { pos: [r.x + CAM.offset[0], CAM.offset[1], r.z + CAM.offset[2]], look: [r.x + CAM.look[0], CAM.look[1], r.z + CAM.look[2]], fov: 55 };
-    };
-    /** Tween to a fixed shot (skippable: a skip hard-cuts there). */
-    const shot = (s, dur = 1.2) => {
-      const target = typeof s === 'function' ? s() : s;
-      if (dur <= 0) {
-        cam.set(target);
-        return Promise.resolve();
-      }
-      return d.gate(cam.tween(target, dur), () => {
-        cam.set(target);
-        return false;
-      });
-    };
-    /** Back to the room camera (fov eases back first, then the follow takes over). */
-    const back = async (dur = 0.9) => {
-      await shot(followShot(), dur);
-      follow();
-    };
-    const faceTo = (char, x, z) => {
-      const p = char.root.position;
-      char.root.rotation.y = Math.atan2(x - p.x, z - p.z);
-    };
-    const put = (char, [x, z], look) => {
-      char.root.position.set(x, 0, z);
-      if (look) faceTo(char, look[0], look[1]);
-      char.play('idle', 0.2);
-    };
-    /** Clip choice for an NPC (staging only; a missing clip is a no-op). */
-    const act = (char, clip, fade = 0.35) => char.play(clip, fade);
-    /** Hugo holds a work pose (scripted, so the Player leaves the clip alone); null hands him back. */
-    const pose = (clip) => {
-      if (clip) {
-        player.scripted = true;
-        player.char.play(clip, 0.4);
-      } else {
-        player.char.play('idle', 0.4);
-        player.scripted = false;
-      }
-    };
-    const putHugo = ([x, z], look) => {
-      player.teleport(x, z);
-      if (look) player.face(look[0], look[1]);
-    };
-    const hugoXZ = () => [player.root.position.x, player.root.position.z];
-    /** Gated NPC walk; a skip snaps the character to the end point. */
-    const walk = (char, to, opts = {}) => {
-      const h = runner.walkTo(char, to, { speed: 1.0, ...opts });
-      return d.gate(h, () => {
-        h.stop();
-        char.root.position.set(to[0], 0, to[1]);
-        if (opts.face !== undefined) char.root.rotation.y = opts.face;
-        return false;
-      });
-    };
-    const nb = (p) => d.gate(p);
-    const cut = async (setup, { out = 0.45, inn = 0.6, card = null } = {}) => {
-      await d.gate(ui.fade(1, out));
-      try {
-        setup();
-      } catch (err) {
-        console.error('[ch4] cut setup failed', err);
-      }
-      if (card) await d.card(card, { big: true });
-      await d.gate(ui.fade(0, inn));
-    };
-    const pick = (bag, i) => bag[i % bag.length];
-
-    // ---- sound helpers
-    /** Odile's kettle, once a day (a quiet 40 s point source; dips under the voices, stops at a cut). */
-    let kettle = null;
-    const kettleOn = () => {
-      kettle?.stop(0.5);
-      kettle = audio.sfx('kettle_boil', { volume: 0.25, bus: 'bus', pos: SND.kettle, ref: 1.5, jitter: 0, fallback: false });
-      if (kettle) duckUnderVoice(ctx, kettle, { db: 6 });
-    };
-    const kettleOff = () => {
-      kettle?.stop(0.6);
-      kettle = null;
-    };
-
-    // Optional hotspots: only while the player is free to walk toward a required one.
-    let roam = false;
-    const required = async (id, pos, prompt, onInteract) => {
-      hotspots.add({ id, pos, prompt, required: true, onInteract });
-      roam = true;
-      try {
-        await d.interact(id);
-      } finally {
-        roam = false;
-      }
-    };
-    hotspots.add({
-      id: 'oldSigns',
-      pos: S.oldSigns,
-      prompt: T4.prompts.oldSigns,
-      enabled: () => roam,
-      onInteract: async () => {
-        await d.say(T4.oldSigns);
-      },
-    });
-    hotspots.add({
-      id: 'radio',
-      pos: S.radio,
-      prompt: T4.prompts.radio,
-      enabled: () => roam,
-      onInteract: async () => {
-        // A burst of static through the radio band, then the one station (the fishing man, babble)
-        // low under her line.
-        const st = audio.sfx('radio_static', { volume: 0.3, band: 'radio', pos: SND.radio, ref: 2, offset: Math.random() * 7, jitter: 0, fallback: (a) => a.noise({ type: 'bandpass', freq: 1600, q: 1.4, dur: 0.6, volume: 0.05 }) });
-        if (st) {
-          // 0.6 s of it, the last 0.2 s fading.
-          st.gain.gain.setValueAtTime(0.3, audio.t + 0.4);
-          st.gain.gain.linearRampToValueAtTime(0, audio.t + 0.6);
-          try {
-            st.src.stop(audio.t + 0.62);
-          } catch {
-            /* noop */
-          }
-        }
-        const talk = audio.loopSfx('radio_talk_fishing', { volume: 0.1, bus: 'beds', band: 'radio', pos: SND.radio, ref: 2, fade: 0.4 });
-        try {
-          await d.wait(0.45);
-          await d.say(T4.radio);
-        } finally {
-          talk.stop(0.6);
-        }
-      },
-    });
-
-    // The rim kisses the pad once a turn (from Sami's arrival until it's true).
-    W.bike.onRub = (dev) => audio.sfx('brake_rub', { volume: Math.min(0.45, 0.15 + (dev || 0) * 10), pos: W.bike.pads, fallback: (a) => a.tick({ volume: 0.22 }) });
+    // ------------------------------------------------------------ helpers (story/workshop.js)
+    const { follow, shot, back, faceTo, put, act, pose, putHugo, hugoXZ, walk, nb, cut, required, kettleOn, kettleOff, addRoomSpots } = workshopKit(ctx, d, W);
+    addRoomSpots(); // the old signs and the radio, optional while a required spot waits
+    W.setPegTape?.(true); // R4: Odile's tape on its outline until Day 8 (scene4 builds without it)
+    W.setSpokeKey?.(false); // ...and the spoke key's outline beside it, empty (the hook)
 
     // ============================================================ DAY 5
     W.fluoro('flicker');
@@ -231,6 +64,7 @@ export default {
     await d.say(T4.day5.arrive);
     O.play('reach', 0.3, { once: true }); // she hands him a pencil and a school exercise book
     await d.say(T4.day5.book.slice(0, 1));
+    d.give('pencil'); // item+ pencil, with the exercise book (docs/SCRIPT-R4.md §5)
     ui.notebook.set([]);
     ui.notebook.open(0);
     act(O, 'talk');
@@ -251,14 +85,24 @@ export default {
     runner.walkTo(O, S.odileBench, { speed: 0.8, face: Math.PI }).then(() => act(O, 'lean', 0.5)); // back to work at her bench
     ui.objective(T4.objectives.day5);
 
+    // R4: the door answers before the sandpaper with its needs line (an optional spot while the
+    // pegboard waits; required() only shows one required spot at a time, so it was unreachable).
+    const early = (id, pos, prompt, needs, needsLine, object) => {
+      ctx.hotspots.add({ id, pos, prompt, needs, needsLine, object, once: false, onInteract: async () => {} });
+      return () => ctx.hotspots.remove(id);
+    };
+    const offDoorEarly = early('doorEarly', S.door, T4.prompts.door, 'sandpaper', T4.needs?.door, 'door');
     await required('pegboard', S.pegboard, T4.prompts.pegboard, async () => {
       player.face(-2.62, -3);
       await d.say(T4.day5.pegboard);
       W.takeSandpaper();
+      d.give('sandpaper'); // into the pocket
       audio.sfx('tool_hook', { volume: 0.55 }); // fallback: scrape(0.12)
     });
+    offDoorEarly();
     ui.objective(T4.objectives.sand);
-    await required('door', S.door, T4.prompts.door);
+    // Needs the sandpaper: E uses it from the pocket by itself (or held); without it, the needs line.
+    await required('door', S.door, T4.prompts.door, null, { needs: 'sandpaper', needsLine: T4.needs?.door, object: 'door' });
     ui.objective(null);
 
     await d.cinematic(
@@ -272,6 +116,7 @@ export default {
         await d.wait(0.5);
         await d.say(T4.day5.after);
         await nb(ui.notebook.add(N.sand));
+        d.take('sandpaper'); // used up
         d.hope(0.2);
       },
       { letterbox: false },
@@ -296,8 +141,22 @@ export default {
       { card: T4.cards.day8 },
     );
     await d.say(T4.day8.start);
+    // R4 (SCRIPT-R4 §5): the tape is on the pegboard, on its own painted outline.
+    ui.objective(T4.objectives.day8Tape);
+    const offFrameEarly = early('frameEarly', S.frame, T4.prompts.frame, 'tape', T4.needs?.frame, null);
+    await required('tapeTake', S.pegboard, T4.prompts.tapeTake, async () => {
+      player.face(W.peg?.tape?.x ?? -2.7, -3);
+      await shot(W.shots.pegboard, 0.9);
+      await d.say(T4.day8.tapeTake);
+      W.setPegTape?.(false);
+      d.give('tape'); // item+ tape: « + Mètre ruban »
+      audio.sfx('tool_take', { volume: 0.5, fallback: (a) => a.scrape({ volume: 0.1 }) });
+      await d.wait(0.6);
+      await back(0.8);
+    });
+    offFrameEarly();
     ui.objective(T4.objectives.day8);
-    await required('frame', S.frame, T4.prompts.frame);
+    await required('frame', S.frame, T4.prompts.frame, null, { needs: 'tape', needsLine: T4.needs?.frame });
     ui.objective(null);
 
     // Measure twice, with the tape (crafts/tape.js).
@@ -407,246 +266,27 @@ export default {
       bloom();
     }
 
-    // ============================================================ WEEK 4
-    W.bike.setWobble(0.07);
-    await cut(
-      () => {
-        player.limp = 0.78;
-        audio.ambience(RAIN.name, false, { fade: 2 });
-        audio.ambience(BED.name, true, { volume: 0.25, fade: 2 });
-        kettleOff();
-        W.rain(0.25);
-        putHugo([0.2, 1.1], [-3.5, 0.4]);
-        // At the bench on her stool, back to us, working.
-        W.setStool?.([S.odileBench[0], S.odileBench[1] - 0.02], Math.PI + 0.3);
-        put(O, [S.odileBench[0], S.odileBench[1] - 0.02]);
-        O.root.rotation.y = Math.PI;
-        act(O, 'sit_idle', 0.1);
-        K.root.visible = true;
-        put(K, S.samiOutside);
-        K.root.rotation.y = Math.PI / 2;
-        W.parkBike(S.samiOutside[0] + 0.1, S.samiOutside[1] - 0.42, Math.PI / 2);
-        W.bike.follow(K);
-        cam.set(W.shots.samiIn);
-      },
-      { card: T4.cards.week4 },
-    );
-
-    // Sami rings at the garage door and ducks under it with the bike: the freewheel ticks as it rolls
-    // (wheelSound follows the rear wheel all through Week 4: the walk in, the stand, the truing, his spin).
-    const wheel = wheelSound(ctx, W.bike);
-    await d.cinematic(
-      async () => {
-        audio.sfx('bike_bell', { volume: 0.35, pos: SND.garage, ref: 2, fallback: false });
-        d.after(0.9, () => {
-          const g = audio.sfx('garage_door_open', { volume: 0.4, pos: SND.garage, ref: 2, fallback: false });
-          d.after(1.4, () => g?.stop(0.5)); // a part of it: the door knocked as he ducks under
-        });
-        await walk(K, S.samiParked, { speed: 1.15 });
-        W.bike.follow(null);
-        faceTo(K, ...hugoXZ());
-        act(K, 'talk');
-        await shot(W.shots.threeShot, 1.1);
-        await d.say(T4.week4.sami.slice(0, 1));
-        faceTo(O, ...hugoXZ()); // "Don't look at me. Ask him."
-        act(O, 'sit_talk');
-        await d.say(T4.week4.sami.slice(1));
-        act(K, 'idle');
-      },
-      { letterbox: false },
-    );
-    O.root.rotation.y = Math.PI;
-    act(O, 'sit_idle');
-    await back();
-    ui.objective(T4.objectives.week4);
-    await required('bike', S.bike, T4.prompts.bike);
-    ui.objective(null);
-
-    await d.cinematic(
-      async () => {
-        await d.gate(ui.fade(1, 0.35));
-        W.bikeOnStand(); // it flips onto the stand
-        audio.sfx('tool_take', { volume: 0.3, fallback: false });
-        put(K, S.samiHold, [W.stand.x, W.stand.z]);
-        act(K, 'push', 0.1); // both hands on the bike
-        putHugo(S.hugoBikeStand, [S.hugoBikeStand[0], S.hugoBikeStand[1] + 2]);
-        W.bike.setSpin(1 / 2.4, { snap: true });
-        cam.set(W.shots.truing);
-        await d.gate(ui.fade(0, 0.45));
-        await d.say(T4.week4.bike);
-        pose('crouch_idle'); // down at the wheel, an eye on the rim
-        W.bike.setSpin(0); // he stops it with a hand; it runs down while Sami takes hold
-        await d.say(T4.week4.hold);
-        await truing();
-        await d.wait(0.3); // the reveal has held on it already
-        pose(null);
-        act(K, 'talk');
-        await shot(W.shots.bikeTalk, 1.0);
-        W.bike.setSpin(1.1); // Sami spins it
-        d.after(1.8, () => W.bike.setSpin(0));
-        await d.say(T4.week4.after);
-        // The laugh.
-        await d.say(T4.week4.laughStage);
-        faceTo(O, ...hugoXZ()); // Odile looks up from the bench
-        mood.pulse(0.08);
-        d.hope(0.5);
-        await d.wait(0.6);
-        await d.say(T4.week4.laugh);
-      },
-      { letterbox: false },
-    );
-
-    // Sami takes the bike home; the colour on it rides out of the door with him.
-    await cut(() => {
-      put(K, S.samiHold);
-      faceTo(K, ...S.samiOutside);
-      W.bike.group.rotation.set(0, K.root.rotation.y, 0);
-      W.bike.follow(K);
-      follow(true);
+    // ============================================================ THE HOOK (Revision 4, SCRIPT-R4 §5)
+    // Odile back at her bench; he goes to hang the tape back. « Garde-le. » Beside its outline, another one, empty.
+    runner.walkTo(O, S.odileBench, { speed: 0.8, face: Math.PI }).then(() => act(O, 'lean', 0.5));
+    ui.objective(T4.objectives.hook);
+    await required('hook', S.pegboard, T4.prompts.hook, async () => {
+      player.face(W.peg?.tape?.x ?? -2.7, -3);
+      pose('reach');
+      await shot(W.shots.pegboard, 1.0);
+      await d.say(T4.day8.hook.slice(0, 1)); // « Garde-le. » He stops, the tape still in his hand.
+      pose(null);
+      audio.sfx('tool_hook', { volume: 0.25, rate: 1.15, fallback: false }); // his hand brushes the empty peg
+      await d.say(T4.day8.hook.slice(1));
     });
-    const leaving = runner.walkTo(K, S.samiOutside, { speed: 1.25 });
-    faceTo(O, -4.5, 0.2); // nodding at the door
-    await d.say(T4.week4.wrap);
-    await nb(ui.notebook.add(N.wheel));
-    let left = false;
-    leaving.then(() => (left = true));
-    await d.until(() => left || K.root.position.x < -4.9);
-    leaving.stop();
-    mood.focusOn(null, { slot: 1 });
-    wheel.dispose();
-    K.root.visible = false;
-    W.bike.follow(null);
-    W.bike.group.visible = false;
-    O.root.rotation.y = Math.PI;
-
-    /** Week 4 truing by ear (ch4crafts.js / crafts/truing.js), then the colour comes to the bike. */
-    async function truing() {
-      await trueBike(ctx, d, W);
-      mood.focusOn(W.bike.group, { slot: 1, floor: 0.55, offsetY: 0.5 });
-      d.hope(0.42);
-    }
-
-    // ============================================================ WEEK 7
-    await cut(
-      () => {
-        player.limp = 0.75;
-        W.fluoro('on'); // fixed, at last
-        W.rain(0);
-        audio.ambience(BED.name, true, { volume: 0.2, lowpass: 2500, fade: 2 }); // dry: the rain in the bed low-passed away
-        kettleOn();
-        putHugo([1.2, 1.1], [-1.5, -2.5]);
-        W.setStool?.(null);
-        put(O, S.odileBench);
-        O.root.rotation.y = Math.PI;
-        act(O, 'lean', 0.1);
-        W.showBoard(true);
-        W.board.guides(true);
-        // Hugo's own race bike, chain cleaned, has taken the stand.
-        W.raceBike.visible = true;
-        mood.focusOn(W.raceBike, { slot: 1, strength: 0.55, floor: 0.55, decay: 0, offsetY: 0.5 });
-        follow(true);
-      },
-      { card: T4.cards.week7 },
-    );
-    await d.say(T4.week7.raceBike);
-    ui.objective(T4.objectives.week7);
-    await required('bench', S.bench, T4.prompts.bench);
     ui.objective(null);
+    // Fade to black on the empty outline; the next chapter's title card follows.
+    await d.gate(ui.fade(1, 1.6));
 
-    await d.cinematic(
-      async () => {
-        const B7 = T4.week7;
-        putHugo([-0.72, -2.0], [W.board.group.position.x, W.board.group.position.z]); // beside her, not between her and the lens
-        faceTo(O, W.board.group.position.x, W.board.group.position.z);
-        act(O, 'paint'); // the liner brush up to the board
-        await shot(W.shots.bench, 1.2);
-        // The tip shivers.
-        const [u0, v0] = W.board.paths[0].pts[0];
-        let shiver = true;
-        const offShiver = ctx.world.onUpdate(() => {
-          if (shiver) W.board.setBrush(true, u0 + (Math.random() - 0.5) * 14, v0 + (Math.random() - 0.5) * 14, 0.02 + Math.random() * 0.01);
-        });
-        await d.say(B7.stage);
-        shiver = false;
-        offShiver();
-        W.board.setBrush(false);
-        act(O, 'talk');
-        await d.say(B7.intro.slice(0, 5)); // ... "I need someone to—"
-        await d.wait(0.9);
-        await d.say(B7.intro.slice(5)); // "...Hold this board." ...
-
-        // He takes her place at the board. (POV: Hugo hides so he doesn't fill the lens.)
-        await d.gate(ui.fade(1, 0.35));
-        put(O, S.odileAside, [W.board.group.position.x, W.board.group.position.z]);
-        act(O, 'arms_crossed', 0.1);
-        putHugo(S.hugoBench, [S.hugoBench[0], -3]);
-        player.root.visible = false;
-        cam.set(W.shots.lettering());
-        mood.focusOn(W.board.face, { slot: 2, strength: 1, decay: 0.2, floor: 0.3, offsetY: 0 });
-        await d.gate(ui.fade(0, 0.5));
-        const score = await lettering();
-        const tiers = B7.lettering.tiers;
-        await d.say(score < 0.16 ? tiers.good : score < 0.42 ? tiers.middle : tiers.poor);
-        await d.correct(B7.signMenu);
-        await initials();
-        await d.say(B7.signThink);
-        W.board.guides(false);
-        W.board.update();
-        rememberOpenSign(W.board.snapshot());
-
-        // The sign goes up on the door he painted; the colour spreads into the room.
-        await d.gate(ui.fade(1, 0.45));
-        W.hangSign();
-        player.root.visible = true;
-        putHugo(S.hugoSign, [W.doorX, -3]);
-        put(O, S.odileSign, [W.doorX, -3]);
-        cam.set(W.shots.hungDoor);
-        await d.gate(ui.fade(0, 0.7));
-        mood.focusOn(W.board.face, { slot: 2, strength: 1, decay: 0.25, floor: 0.6, offsetY: 0 });
-        d.hope(0.62, 4);
-        await d.wait(1.2);
-        await nb(ui.notebook.add(N.sign));
-        ui.watchBuzz(B7.buzz);
-        d.after(2.6, () => d.thought(B7.buzzReply, 2.4));
-        await d.wait(5.2); // let "...Three hours?" clear before the wrap dialogue
-        faceTo(O, ...hugoXZ());
-        player.face(O.root.position.x, O.root.position.z);
-        act(O, 'talk');
-        await d.say(B7.wrap);
-      },
-      { letterbox: false },
-    );
-    player.root.visible = true;
-    W.board.setBrush(false);
-
-    // Advance: Week 12.
+    // End of Ch4 (Revision 4): Week 4 is in ch5.js, Week 7 in ch6.js.
     kettleOff();
     audio.ambience(BED.name, false, { fade: 1.5 });
-    await d.gate(ui.fade(1, 1.0));
+    audio.ambience(RAIN.name, false, { fade: 1.5 });
     ui.notebook.dock();
-    await d.card(T4.cards.week12, { big: true });
-
-    // ------------------------------------------------------------ lettering (crafts/letters.js)
-    /** LETTERING: letter() over the chalk guides (WASD or a mouse drag), the board dries, a reveal. */
-    async function lettering() {
-      return letterSign(ctx, d, W);
-    }
-
-    /** Hugo letters a tiny "H.R." in the corner (one auto stroke). */
-    async function initials() {
-      const Bd = W.board;
-      const [CW, CH] = Bd.size;
-      let t = 0;
-      audio.sfx('brush_stroke', { volume: 0.3, rate: 1.1, fallback: false });
-      await d.until((dt) => {
-        t += dt;
-        const k = Math.min(1, t / 1.0);
-        Bd.initials(k);
-        Bd.setBrush(true, CW - 150 + 90 * k, CH - 56, 0);
-        return k >= 1;
-      });
-      Bd.initials(1);
-      Bd.setBrush(false);
-    }
   },
 };

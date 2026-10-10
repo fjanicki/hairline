@@ -1,11 +1,13 @@
 import './style.css';
-import { LANGS, getLang, setLang, onLangChange, retext, english, num } from '../story/i18n.js';
+import './inventory.css'; // the notebook's case tab (and the pocket, src/ui/Inventory.js)
+import { onLangChange, retext, num } from '../story/i18n.js';
 import { label } from '../core/KeyLabels.js';
 
 // All DOM is created here. Every blocking element (dialogue, choices, card, driveRing)
 // returns a Promise and has a matching skip*/cancel* method used by Director.skip().
-// Language changes (i18n.setLang) re-render whatever is on screen at once (_relang), except a
-// dialogue line or card already showing. In debug, this.textLog collects every string shown.
+// When the text is re-resolved (i18n.js: the keyboard layout was learned) whatever is on screen is
+// re-rendered at once (_relang), except a dialogue line or card already showing. In debug,
+// this.textLog collects every string shown.
 
 const el = (tag, cls, parent, html) => {
   const e = document.createElement(tag);
@@ -44,22 +46,33 @@ function renderSegments(segs, n = Infinity) {
 
 const plainLength = (segs) => segs.reduce((a, s) => a + s.t.length, 0);
 
-/** "[E] Watch" -> kbd chip + text. */
-function promptHtml(text) {
+/** "[E] Watch" -> kbd chip + text. icon: an item icon URL shown after the chip (the held item). */
+function promptHtml(text, icon = null) {
+  const img = icon ? `<img class="prompt-item" src="${esc(icon)}" alt="">` : '';
   const m = String(text).match(/^\[([^\]]+)\]\s*(.*)$/);
-  if (m) return `<span class="kbd">${esc(m[1])}</span>${esc(m[2])}`;
-  return esc(text);
+  if (m) return `<span class="kbd">${esc(m[1])}</span>${img}${esc(m[2])}`;
+  return img + esc(text);
 }
 
+/** Notebook hands (entry `hand` / `noteHand`, CSS row classes): Hugo's pencil is the default. */
+const HANDS = new Set(['sami', 'jo']);
+
+/** Speaker classes that differ from the label's first word ('Téléphone' -> phone). */
+// « Le vieux monsieur » and « M. Durand » are one man (docs/SCRIPT-R4.md §0.2).
+const SPEAKER_CLASS = { telephone: 'phone', maman: 'mum', le: 'durand', m: 'durand' };
+
 /**
- * CSS class for a speaker: the first word of the English `who`, lowercased ('Dr Okafor' -> 'dr',
- * "Dr Okafor's office" -> 'dr'; a translated label maps back through i18n.english).
+ * CSS class for a speaker: the first word of `who`, lowercased, accents dropped ('Dr Okafor (cabinet)'
+ * -> 'dr', 'Gérard' -> 'gerard'), then SPEAKER_CLASS.
  */
 function speakerClass(who) {
-  return String(english(who) || '')
+  const k = String(who || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .split(/[\s(']/)[0]
+    .split(/[\s('’]/)[0]
     .replace(/[^a-z0-9-]/g, '');
+  return SPEAKER_CLASS[k] || k;
 }
 
 /** Restart a one-shot CSS animation class. */
@@ -97,20 +110,26 @@ export class UI {
     this._thoughtClip = null;
     this._voiceQueue = [];
     this._watch = { face: null, label: null, lap: null, over: false, shown: false, count: null, buzzUntil: 0 };
-    this._nb = { entries: [], shown: false, open: false };
+    // page: 'skills' | 'case' (L’AFFAIRE, the back pages); auto: the page was flipped by a new line, and
+    // flips back to the skills when the notebook docks; caseData: the last caseSet() (see _nbCaseSet).
+    this._nb = { entries: [], shown: false, open: false, page: 'skills', auto: false, caseData: null };
     this._gauge = null;
     this.notebook = {
       set: (entries) => this._nbSet(entries),
       add: (text, opts) => this._nbAdd(text, opts),
       strike: (text, on) => this._nbStrike(text, on),
-      annotate: (text, note) => this._nbAnnotate(text, note),
+      annotate: (text, note, opts) => this._nbAnnotate(text, note, opts),
       open: (secs) => this._nbOpen(secs),
       dock: () => this._nbDock(),
       hide: () => this._nbHide(),
+      // L’AFFAIRE (src/ui/Inventory.js fills it from story/items.js caseFile).
+      caseSet: (data, opts) => this._nbCaseSet(data, opts),
+      page: (name, opts) => this._nbPage(name, opts),
     };
     Object.defineProperty(this.notebook, 'entries', { get: () => this._nb.entries.map((e) => ({ ...e })) });
     Object.defineProperty(this.notebook, 'visible', { get: () => this._nb.shown });
     Object.defineProperty(this.notebook, 'isOpen', { get: () => this._nb.open });
+    Object.defineProperty(this.notebook, 'currentPage', { get: () => this._nb.page });
 
     this.textLog = null; // main sets an array in debug mode (__game.debug.textLog)
     this._build();
@@ -148,10 +167,15 @@ export class UI {
       'div',
       'notebook',
       this.hud,
-      `<div class="nb-spiral"></div><div class="nb-head"></div><ol class="nb-list"></ol>`,
+      `<div class="nb-spiral"></div><div class="nb-tabs"><button type="button" class="nb-tab" data-page="skills"></button><button type="button" class="nb-tab" data-page="case"></button></div>
+       <div class="nb-head"></div><ol class="nb-list"></ol><div class="nb-case"></div>`,
     );
     this.notebookEl.querySelector('.nb-head').textContent = this.L.notebook?.heading || 'WHAT I CAN DO';
     this.nbList = this.notebookEl.querySelector('.nb-list');
+    this.nbCase = this.notebookEl.querySelector('.nb-case');
+    this.notebookEl.dataset.page = 'skills';
+    this._nbTabsText();
+    for (const b of this.notebookEl.querySelectorAll('.nb-tab')) b.addEventListener('click', () => this._nbTab(b.dataset.page));
 
     this.fadeEl = el('div', 'ui-layer fade', r);
     // The watch lives outside the HUD layer so `over: true` can lift it above the fade (z 26).
@@ -204,7 +228,7 @@ export class UI {
   }
 
   /**
-   * Title screen with the language switch and an Options button. Resolves on click / E / Enter
+   * Title screen with an Options button. Resolves on click / E / Enter
    * (not on its buttons, nor while Options is open). onBegin runs inside the gesture (audio resume).
    * quality: as for showPause (the Options panel's graphics row).
    * resume: { num, name() } when there is saved progress: the begin line becomes Continue (click / E /
@@ -253,7 +277,6 @@ export class UI {
       <div class="title-foot"></div>`;
     if (this.titleEl.classList.contains('show')) this.titleEl.querySelector('.hairline-rule').style.transition = 'none';
     const foot = this.titleEl.querySelector('.title-foot');
-    this._langButtons(foot);
     const opts = el('button', 'quality-opt title-options', foot, esc(this.L.options.title));
     opts.addEventListener('click', () => this._openOptions({ quality: this._title?.quality }));
     if (resume) {
@@ -266,26 +289,10 @@ export class UI {
     this._log(begin);
   }
 
-  /** English / Français buttons (native names), the current one highlighted. */
-  _langButtons(parent) {
-    const btns = LANGS.map(({ code, label }) => {
-      const b = el('button', 'quality-opt lang-opt', parent, esc(label));
-      b.lang = code;
-      b.dataset.lang = code;
-      b.classList.toggle('on', code === getLang());
-      b.addEventListener('click', () => setLang(code)); // _relang re-renders (and re-highlights)
-      return b;
-    });
-    return btns;
-  }
-
-  /** The Options rows: language, voices, then graphics quality (when given). */
+  /** The Options rows: voices, then graphics quality (when given). */
   _optionsRows(parent, quality) {
     const O = this.L.options;
     const P = this.L.pause;
-    const lang = el('div', 'quality', parent);
-    el('span', 'quality-label', lang, esc(O.language));
-    this._langButtons(lang);
     if (this.voice) this._voiceRow(parent);
     if (quality?.tiers?.length) {
       const row = el('div', 'quality', parent);
@@ -304,31 +311,27 @@ export class UI {
   }
 
   /**
-   * Voices on/off (saved by Voice). Voices are French only: in another language the row is greyed,
-   * its buttons disabled, with a short note. Re-rendered by _relang with the rest of the panel.
+   * Voices on/off (saved by Voice). Greyed (buttons disabled) only when there is no WebAudio.
+   * Re-rendered by _relang with the rest of the panel.
    */
   _voiceRow(parent) {
     const O = this.L.options;
     const V = this.voice;
-    const ok = V.supported;
+    const ok = V.supported && V.audio?.ok !== false;
     const row = el('div', 'quality voices', parent);
     el('span', 'quality-label', row, esc(O.voices));
     const btns = [true, false].map((on) => {
       const b = el('button', 'quality-opt', row, esc(on ? O.voicesOn : O.voicesOff));
       b.dataset.voices = on ? 'on' : 'off';
       b.disabled = !ok;
-      b.classList.toggle('on', V.enabled === on); // greyed in English, but the saved choice still shows
+      b.classList.toggle('on', V.enabled === on); // greyed without audio, but the saved choice still shows
       b.addEventListener('click', () => {
         V.setEnabled(on);
         for (const x of btns) x.classList.toggle('on', (x.dataset.voices === 'on') === V.enabled);
       });
       return b;
     });
-    if (!ok) {
-      for (const b of btns) Object.assign(b.style, { opacity: '0.4', cursor: 'default', pointerEvents: 'none' });
-      const note = el('span', 'quality-note', row, esc(O.voicesNote));
-      Object.assign(note.style, { fontSize: '12px', fontStyle: 'italic', color: 'var(--ink-faint)', marginLeft: '6px' });
-    }
+    if (!ok) for (const b of btns) Object.assign(b.style, { opacity: '0.4', cursor: 'default', pointerEvents: 'none' });
   }
 
   /** Options panel over the title screen (the pause menu shows the same rows in place). */
@@ -629,6 +632,14 @@ export class UI {
   /** Choice menu { prompt, options:[{text}] }. Resolves with the chosen index (keys 1-3 or click). */
   choices(menu) {
     this._closeChoices(null);
+    // The line before the menu is still fading out (0.35 s) and read through the options: cut it.
+    if (!this._dialogue && this.dialogueEl) {
+      const de = this.dialogueEl;
+      de.style.transition = 'none';
+      de.classList.remove('show');
+      void de.offsetWidth;
+      de.style.transition = '';
+    }
     const c = this.choicesEl;
     c.innerHTML = '';
     if (menu.prompt) el('div', 'q', c, esc(menu.prompt));
@@ -709,23 +720,27 @@ export class UI {
     this._renderPrompt();
   }
 
-  _spotPrompt(text) {
+  /** Hotspots: the nearest spot's prompt (null clears). icon: the held (or needed) item's icon URL. */
+  _spotPrompt(text, icon = null) {
     const t = text ? `[${label('KeyE')}] ${text}` : null; // follows the keyboard layout
-    if (t === this._spotText) return;
+    if (t === this._spotText && icon === this._spotIcon) return;
     this._spotText = t;
+    this._spotIcon = t ? icon : null;
     this._renderPrompt();
   }
 
   _renderPrompt() {
     const t = this._chapterPrompt || this._spotText;
+    const icon = this._chapterPrompt ? null : this._spotIcon;
     if (t) {
-      if (this._promptShown !== t) {
-        this.promptEl.innerHTML = promptHtml(t);
-        this._log(t);
+      if (this._promptShown !== t || this._promptIcon !== icon) {
+        this.promptEl.innerHTML = promptHtml(t, icon);
+        if (this._promptShown !== t) this._log(t);
       }
       this.promptEl.classList.add('show');
     } else this.promptEl.classList.remove('show');
     this._promptShown = t;
+    this._promptIcon = icon;
   }
 
   /** Small transient tip at the top (e.g. "Hold Shift to jog"). */
@@ -931,14 +946,14 @@ export class UI {
     e.classList.add('show');
   }
 
-  /** Lap line in the language's decimal mark; a long one ('SEM. PRÉC. 212,4') is set tighter to clear the round screen. */
+  /** Lap line with a decimal comma; a long one ('SEM. PRÉC. 212,4') is set tighter to clear the round screen. */
   _renderLap(lap) {
     const e = this.watchEl.querySelector('.wlap');
     e.textContent = num(lap);
     e.classList.toggle('long', lap.length > 15);
   }
 
-  /** Face text in the language's decimal mark ('0,32 km'), a trailing unit drawn small. */
+  /** Face text with a decimal comma ('0,32 km'), a trailing unit drawn small. */
   _renderFace(face) {
     const s = num(String(face));
     const m = s.match(/^(.*?)(\s*(?:km|m|spm))$/);
@@ -1060,8 +1075,9 @@ export class UI {
 
   _nbRow(it, animate) {
     const li = document.createElement('li');
-    li.className = 'nb-row' + (it.hand === 'sami' ? ' sami' : '') + (it.struck ? ' struck' : '');
-    li.innerHTML = `<span class="nb-text"><span class="ink">${esc(it.text)}</span><span class="strike"></span></span><span class="nb-note">${it.note ? esc(it.note) : ''}</span>`;
+    li.className = 'nb-row' + (HANDS.has(it.hand) ? ` ${it.hand}` : '') + (it.struck ? ' struck' : '');
+    const noteHand = HANDS.has(it.noteHand) ? ` ${it.noteHand}` : '';
+    li.innerHTML = `<span class="nb-text"><span class="ink">${esc(it.text)}</span><span class="strike"></span></span><span class="nb-note${noteHand}">${it.note ? esc(it.note) : ''}</span>`;
     li.dataset.text = it.text;
     if (animate) {
       const ink = li.querySelector('.ink');
@@ -1072,7 +1088,7 @@ export class UI {
   }
 
   _nbFind(text) {
-    // An entry written before a language change still matches its key in the new language.
+    // An entry written before a re-resolve ('[W]' -> '[Z]') still matches its key.
     const i = this._nb.entries.findIndex((e) => e.text === text || retext(e.text) === retext(text));
     return { i, it: this._nb.entries[i], li: i >= 0 ? this.nbList.children[i] : null };
   }
@@ -1085,7 +1101,7 @@ export class UI {
 
   /**
    * Notebook foley (docs/assets/sfx.md, Global): the recorded pencil, eraser and exercise book on fx
-   * (loaded with Ch4 / Ch5's `sounds`). `scratch` (secs): the procedural pencil ticks when the file is
+   * (loaded with the workshop and Ch7 `sounds`). `scratch` (secs): the procedural pencil ticks when the file is
    * missing or not decoded yet; 0 = silent then. Returns the sfx handle or null.
    */
   _nbSound(name, opts = {}, scratch = 0) {
@@ -1094,17 +1110,26 @@ export class UI {
     return a.sfx(name, { bus: 'fx', jitter: 0.05, ...opts, fallback: scratch ? () => this._nbScratch(scratch) : false });
   }
 
-  /** Write a new line (animated). Opens the notebook for 3 s. Returns a Promise (~0.8 s). */
-  _nbAdd(text, { hand = 'hugo' } = {}) {
+  /**
+   * Write a new line (animated). Opens the notebook for 3 s. Returns a Promise (~0.8 s).
+   * opts: { hand: 'hugo' | 'sami' | 'jo', note, noteHand } (a note written with the line, as Jo's « (en cours) »).
+   */
+  _nbAdd(text, { hand = 'hugo', note, noteHand } = {}) {
+    if (this._nb.page !== 'skills') this._nbPage('skills', { auto: true });
     const it = { text, hand };
+    const nh = noteHand ?? (HANDS.has(hand) ? hand : undefined); // a note goes in the line's hand unless told
+    if (note) Object.assign(it, { note }, HANDS.has(nh) ? { noteHand: nh } : {});
     this._nb.entries.push(it);
     this._log(text);
+    this._log(note);
     const li = this._nbRow(it, true);
+    if (note) li.querySelector('.nb-note').classList.add('writing');
     this.nbList.appendChild(li);
     this._nbShow();
     this._nbOpen(3.2);
-    // Sami's "Teech." is slower and heavier (rate 0.85); Hugo's entries 0.9-1.1.
-    this._nbSound('pencil_write', hand === 'sami' ? { volume: 0.35, rate: 0.85, jitter: 0.02 } : { volume: 0.35, jitter: 0.1 }, 0.7);
+    this._nbReveal(li);
+    // Sami's "Teech." is slower and heavier (rate 0.85); Jo's felt-tip quicker; Hugo's entries 0.9-1.1.
+    this._nbSound('pencil_write', hand === 'sami' ? { volume: 0.35, rate: 0.85, jitter: 0.02 } : hand === 'jo' ? { volume: 0.3, rate: 1.2, jitter: 0.03 } : { volume: 0.35, jitter: 0.1 }, 0.7);
     return new Promise((r) => this._later(0.9, r));
   }
 
@@ -1129,14 +1154,20 @@ export class UI {
     return new Promise((r) => this._later(0.7, r));
   }
 
-  /** Append a small note after an entry ('Run.' -> 'Run. (some Sundays)'), written on. */
-  _nbAnnotate(text, note) {
+  /**
+   * Append a small note after an entry ('Run.' -> 'Run. (some Sundays)'), written on. opts: { hand } writes
+   * the note in another hand ('jo': « (mal) » under Hugo's « Tracer un trait fin. »; 'sami').
+   */
+  _nbAnnotate(text, note, { hand } = {}) {
     const { it, li } = this._nbFind(text);
     if (!it) return Promise.resolve();
     it.note = note || undefined;
+    if (HANDS.has(hand) && note) it.noteHand = hand;
+    else delete it.noteHand;
     this._log(note);
     if (li) {
       const n = li.querySelector('.nb-note');
+      n.className = 'nb-note' + (it.noteHand ? ` ${it.noteHand}` : '');
       n.textContent = note || '';
       n.classList.remove('writing');
       void n.offsetWidth;
@@ -1144,8 +1175,20 @@ export class UI {
     }
     this._nbShow();
     this._nbOpen(3);
+    if (li) this._nbReveal(li);
     if (note) this._nbSound('pencil_write', { volume: 0.32, rate: 1.05, jitter: 0.05 }, 0.5);
     return new Promise((r) => this._later(0.8, r));
+  }
+
+  /** The open page scrolls when the list is longer than the screen allows: keep the row being written in view. */
+  _nbReveal(li) {
+    const list = this.nbList;
+    if (!li || list.scrollHeight <= list.clientHeight + 1) return;
+    // By hand (scrollIntoView could also scroll the UI layer): row offsets are relative to the notebook.
+    const top = li.offsetTop - list.offsetTop;
+    const bottom = top + li.offsetHeight;
+    if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+    else if (top < list.scrollTop) list.scrollTop = top;
   }
 
   _nbShow() {
@@ -1172,6 +1215,7 @@ export class UI {
     this._nb.open = false;
     this._timers = this._timers.filter((t) => t.key !== 'nb-dock');
     this.notebookEl.classList.remove('open');
+    if (this._nb.auto) this._nbPage('skills'); // a page flipped for a new line goes back to the skills
   }
 
   /** Hide the notebook (entries are kept; set(null) clears them). */
@@ -1179,6 +1223,89 @@ export class UI {
     this._nb.shown = false;
     this._nbDock(true);
     this.notebookEl.classList.remove('show');
+  }
+
+  // ------------------------------------------------------------- notebook: L’AFFAIRE (the back pages)
+  // Tabs « CE QUE JE SAIS FAIRE » / « L’AFFAIRE » along the top once the case is open. A tab click opens the
+  // notebook on that page (until a second click on it docks it); the docked notebook shows the page it was
+  // left on, without the notes. New clues flip to the case for a few seconds, new skills back.
+
+  _nbTabsText() {
+    const L = this.L;
+    const [skills, cs] = this.notebookEl.querySelectorAll('.nb-tab');
+    skills.textContent = L.items?.ui?.notebook || L.notebook?.heading || '';
+    cs.textContent = this._nb.caseData?.title || L.items?.ui?.case || '';
+  }
+
+  _nbTab(page) {
+    if (this.paused) return;
+    if (page === this._nb.page && this._nb.open) return this._nbDock();
+    this._nbPage(page);
+    this._nbOpen(0); // until docked (a second click, a new line's timer, the chapter's dock())
+    // Read from the heading (a write-on scrolls to its clue); once open, when the page scrolls.
+    if (this._nb.page === 'case') requestAnimationFrame(() => (this.nbCase.scrollTop = 0));
+  }
+
+  /** Show page 'skills' or 'case'. opts: { open: secs (open full size, 0 = until dock), auto } */
+  _nbPage(name, { open, auto = false } = {}) {
+    const page = name === 'case' && this._nb.caseData?.open ? 'case' : 'skills';
+    if (page !== this._nb.page && this._nb.shown) this._nbSound('page_flip', { volume: 0.28 });
+    this._nb.page = page;
+    this._nb.auto = auto && page !== 'skills';
+    this.notebookEl.dataset.page = page;
+    for (const b of this.notebookEl.querySelectorAll('.nb-tab')) b.classList.toggle('on', b.dataset.page === page);
+    if (open !== undefined) {
+      this._nbShow();
+      this._nbOpen(open);
+    }
+  }
+
+  /**
+   * Render the case page. data: { open, title, labels: { clues, suspects }, clues: [{ id, name, note, icon }],
+   * suspects: [{ id, name, why, alibi, stamp, status }] }. opts: { write: clue id (pencil write-on, the
+   * notebook opens on the case for `secs`), writeHead (the heading written on), secs=3.4 }.
+   * Does not show a hidden notebook unless it writes.
+   */
+  _nbCaseSet(data, { write = null, writeHead = false, secs = 3.4 } = {}) {
+    const n = this._nb;
+    n.caseData = data && data.open ? data : null;
+    this.notebookEl.classList.toggle('has-case', !!n.caseData);
+    this._nbTabsText();
+    const e = this.nbCase;
+    if (!n.caseData) {
+      e.innerHTML = '';
+      if (n.page === 'case') this._nbPage('skills');
+      return;
+    }
+    const D = n.caseData;
+    const clue = (c) =>
+      `<li class="nb-clue${c.id === write ? ' new' : ''}" data-id="${esc(c.id)}">${c.icon ? `<img class="nb-ico" src="${esc(c.icon)}" alt="">` : ''}` +
+      `<span class="nb-cbody"><span class="ink">${esc(c.name)}</span><span class="nb-cnote">${esc(c.note || '')}</span></span></li>`;
+    const sus = (x) =>
+      `<li class="nb-sus" data-id="${esc(x.id)}"><span class="nb-cbody"><span class="ink">${esc(x.name)}</span>` +
+      `${x.stamp ? `<span class="nb-stamp ${esc(x.status || '')}">${esc(x.stamp)}</span>` : ''}` +
+      `<span class="nb-cnote">${esc([x.why, x.alibi].filter(Boolean).join(' · '))}</span></span></li>`;
+    e.innerHTML =
+      `<div class="nb-case-head${writeHead ? ' writing' : ''}">${esc(D.title || '')}</div>` +
+      (D.clues?.length ? `<div class="nb-sec clues"><div class="nb-sec-title">${esc(D.labels?.clues || '')}</div><ol>${D.clues.map(clue).join('')}</ol></div>` : '') +
+      (D.suspects?.length ? `<div class="nb-sec suspects"><div class="nb-sec-title">${esc(D.labels?.suspects || '')}</div><ol>${D.suspects.map(sus).join('')}</ol></div>` : '');
+    for (const c of D.clues || []) {
+      this._log(c.name);
+      this._log(c.note);
+    }
+    for (const x of D.suspects || []) for (const t of [x.name, x.why, x.alibi, x.stamp]) this._log(t);
+    if (write || writeHead) {
+      const ink = write ? e.querySelector(`.nb-clue.new .ink`) : e.querySelector('.nb-case-head');
+      if (ink) {
+        ink.classList.add('writing');
+        ink.style.animationDuration = `${Math.max(0.5, Math.min(1.1, 0.25 + (ink.textContent.length || 8) * 0.035))}s`;
+      }
+      if (write) requestAnimationFrame(() => (e.scrollTop = e.scrollHeight)); // the new clue is the last row
+      if (n.page !== 'case') this._nbPage('case', { auto: true });
+      this._nbShow();
+      this._nbOpen(secs);
+      this._nbSound('pencil_write', { volume: 0.35, jitter: 0.1 }, 0.7);
+    }
   }
 
   // ------------------------------------------------------------- gauge
@@ -1308,7 +1435,7 @@ export class UI {
     this._renderPause();
   }
 
-  /** Pause menu: Resume / Restart chapter / Options, or the Options rows (language, graphics) + Back. */
+  /** Pause menu: Resume / Restart chapter / Options, or the Options rows (voices, graphics) + Back. */
   _renderPause() {
     const k = this._pause;
     const p = this.pauseEl;
@@ -1382,7 +1509,7 @@ export class UI {
    */
   async endCard(E = this.L.ending) {
     if (E.lines?.length) await this.card(E.lines, { lineDelay: 2.4, hold: 3 });
-    // Ch5 ends on a white fade. Turn the layer under the closing card black, or the white shows
+    // Ch7 ends on a white fade. Turn the layer under the closing card black, or the white shows
     // through while the card fades out and the end screen fades in.
     this.fade(1, 0, '#000');
     const e = this.endEl;
@@ -1392,10 +1519,7 @@ export class UI {
     const credits = el('div', 'credits', e, esc(E.credits));
     this._end = { E, again, credits };
     [E.thanks, E.playAgain, E.credits].forEach((s) => this._log(s));
-    again.addEventListener('click', () => {
-      const lang = new URLSearchParams(location.search).get('lang');
-      location.href = location.pathname + (lang ? `?lang=${encodeURIComponent(getLang())}` : '');
-    });
+    again.addEventListener('click', () => (location.href = location.pathname));
     e.classList.remove('hidden');
     requestAnimationFrame(() => e.classList.add('show'));
     const big = e.querySelector('.big');
@@ -1445,7 +1569,7 @@ export class UI {
     this._voiceQueue.length = 0;
   }
 
-  // ------------------------------------------------------------- language
+  // ------------------------------------------------------------- text
 
   /** Debug text log (__game.debug.textLog): every string the UI shows, capped. */
   _log(s) {
@@ -1455,7 +1579,7 @@ export class UI {
     if (t.length > 2000) t.splice(0, t.length - 2000);
   }
 
-  /** After i18n.setLang: re-render everything on screen except a dialogue line or card already up. */
+  /** After L is re-resolved (key labels): re-render everything on screen except a dialogue line or card already up. */
   _relang() {
     const L = this.L;
     const $ = (sel, root = this.root) => root.querySelector(sel);
@@ -1464,6 +1588,7 @@ export class UI {
     const skip = $('.skip', this.cardEl);
     if (skip) skip.textContent = L.ui.next;
     $('.nb-head', this.notebookEl).textContent = L.notebook?.heading || '';
+    this._nbTabsText(); // the case page itself is re-rendered by its owner (Inventory.js)
     $('.mark', this.loadingEl).textContent = L.title?.name || '';
     if (this._title) this._renderTitle();
     if (this._optionsEl) this._renderOptions();

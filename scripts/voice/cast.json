@@ -47,7 +47,28 @@
   "hotOnsetHardDb": -20,
   "maxF0DevSt": 7,
   "maxF0DevStRemote": 4,
-  "remoteNote": "Takes from a remote worker (auriga, PyTorch/ROCm) get the tighter maxF0DevStRemote: the 2026-10-07 audit found auriga's Marco +5.9 st above his Mac median and its Benali clearly brighter, though ECAPA still matched. All kept clips are from the Mac since that audit."
+  "remoteNote": "Takes from a remote worker (auriga, PyTorch/ROCm) get the tighter maxF0DevStRemote: the 2026-10-07 audit found auriga's Gérard (then Marco) +5.9 st above his Mac median and its Benali clearly brighter, though ECAPA still matched. All kept clips are from the Mac since that audit.",
+  "verified": {
+   "672279ca6de5": {
+    "genHash": "7a7539c97507ac49",
+    "attempt": 0,
+    "heard": "C'est ce qu'il y a de plus sexy dans la rue. Puis la rue à Gérard.",
+    "why": "Jo (Chatterbox), 'C'est ce qu'il y a de plus sexy dans la rue. Pis la rue a Gérard.': Whisper (auriga) drops the 'C' of the clip-initial 'C'est' on all 4 takes ('est ce qu'il...'); with 1 s more lead silence the same take is heard 'C'est ce qu'il y a...' (all 4 takes, 2026-10-09; the docs/voice.md §12 edge effect)."
+   },
+   "dbec8d369612": {
+    "genHash": "dea15101e3bff0dd",
+    "attempt": 1,
+    "heard": "ah celle-là je l'ai gardée trois jours je l'ai faite en 1971 pour le père marshall j'étais apprenti chez le maire je n'avais pas encore ma boutique",
+    "why": "Durand, 'Je l'ai faite en dix-neuf cent soixante et onze': Whisper drops the slow year from the full-clip transcript on all 4 takes, but hears 'Je l'ai faite en 1971 pour' on the 3.6-7.5 s segment alone (2026-10-09). Heard = full transcript + that segment."
+   },
+   "51037ad4c542": {
+    "genHash": "29f3d12d47865a04",
+    "attempt": 0,
+    "heard": "trouvé le seau a eu peur",
+    "why": "Sami, 'Trouvé. Le seau a eu peur.': the full-clip transcript loses the first word (a known Whisper edge effect, docs/voice.md §12); the first 0.9 s alone, with 1 s of lead silence, is heard 'Trouver' on all 4 takes (2026-10-09)."
+   }
+  },
+  "verifiedNote": "Takes checked by hand: for that line's generation hash and attempt, 'heard' replaces the Whisper transcript in QA. Only for a Whisper miss confirmed on a segment of the same take."
  },
  "speakers": {
   "hugo": {
@@ -97,7 +118,7 @@
    "seed": 1,
    "post": []
   },
-  "ines": {
+  "lou": {
    "voice": "cml-tts/fr/5476_3103_000072-0001_enhanced.wav",
    "source": "CML-TTS fr speaker 5476, via kyutai/tts-voices",
    "licence": "CC BY 4.0",
@@ -107,7 +128,7 @@
    "seed": 1,
    "post": []
   },
-  "marco": {
+  "gerard": {
    "voice": "cml-tts/fr/4724_3731_000031-0001_enhanced.wav",
    "source": "CML-TTS fr speaker 4724 (older male reader, estimated ~64), via kyutai/tts-voices",
    "licence": "CC BY 4.0",
@@ -186,6 +207,39 @@
    "temp": 0.6,
    "seed": 1,
    "post": []
+  },
+  "jo": {
+   "engine": "chatterbox",
+   "model": "ResembleAI/chatterbox (Chatterbox Multilingual, T3 t3_mtl23ls_v3)",
+   "t3": "v3",
+   "lang": "fr",
+   "ref": "scripts/voice/refs/jo.wav",
+   "refHash": "sha256:85907f3591d7f68320b044784d6b1ecb8fd65bfcb8eae573ebc98e475b34bf3f",
+   "refSource": "Mozilla Common Voice French (CC0), anonymous contributor 34cf47070d (accent « Français du Canada », age band twenties): her 2 cleanest clips joined to 15 s at 24 kHz (scripts/voice/clone/refs.py), then Resemble Enhance denoise + enhance (MIT; scripts/voice/clone/enhance.py), 44.1 kHz. Same file as auriga:~/hairline-clone/refs2/enh/r1_34cf47070d_re-enhance.wav (audition option cb-qc1-clear).",
+   "host": "auriga",
+   "source": "Chatterbox Multilingual zero-shot clone of a Québécoise Common Voice contributor (audition cb-qc1-clear, docs/voice.md §13.2)",
+   "licence": "Chatterbox Multilingual: MIT (outputs carry Resemble's inaudible Perth watermark); reference recording: CC0 (Mozilla Common Voice); Resemble Enhance: MIT",
+   "why": "R4, chosen by the user after two cloning rounds (docs/voice.md §13.1-13.2): a real Québec accent (Canadian on all three accent classifiers, 5/5 audition takes) and a natural voice (UTMOS 3.85), estimated age ~33. Replaces the provisional Kyutai 2216 + Praat gender shift (UTMOS 2.5; its accent depended on the line). Settings are the model-card defaults used in the audition. No speaker post, no EQ.",
+   "exaggeration": 0.5,
+   "cfgWeight": 0.5,
+   "temp": 0.8,
+   "seed": 1,
+   "post": []
+  },
+  "durand": {
+   "voice": "cml-tts/fr/9834_9697_000150-0003_enhanced.wav",
+   "source": "CML-TTS fr speaker 9834 (low older male reader), via kyutai/tts-voices",
+   "licence": "CC BY 4.0",
+   "why": "R4, provisional (audition .cache/tts/audition-r4). Oldest-sounding free French man (est. age 57; others 22-49), F0 ~90 Hz, UTMOS 3.4. Nearest cast voice: Gérard 0.33. Slower delivery in post: Praat 'Lengthen (overlap-add)' x1.12, pitch kept. Runners-up: 4193_3103 (F0 ~76 Hz, TV 0.37), voice-donations/SSA150803 (CC0).",
+   "cfg": 2.0,
+   "temp": 0.6,
+   "seed": 1,
+   "post": [
+    {
+     "op": "lengthen",
+     "factor": 1.12
+    }
+   ]
   },
   "maman": {
    "voice": null,

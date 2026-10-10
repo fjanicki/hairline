@@ -98,7 +98,10 @@ ssh "$HOST" "cd $RRUN && if flock -n .lock true; then
 [[ "$MODE" == detach ]] && { echo "detached; later: $0 $JOBS $OUT [--status|--fetch]"; exit 0; }
 
 # 4. Wait, fetching incrementally, until DONE/FAILED.
-sleep 5
+# The waiting happens on auriga (rwait), not in a local `sleep`: a local sleep in a background job on the Mac can be
+# held for 10-15 minutes by macOS timer coalescing (seen 2026-10-09: `sleep 30` alive for 15 min).
+rwait() { ssh "$HOST" "cd $RRUN 2>/dev/null || exit 0; for i in \$(seq 1 $1); do grep -qE '^(DONE|FAILED)' status 2>/dev/null && break; sleep 1; done" || true; }
+rwait 5
 while :; do
   st="$(ssh "$HOST" "cat $RRUN/status 2>/dev/null" || echo "ssh-error")"
   fetch >/dev/null 2>&1 || true
@@ -107,5 +110,5 @@ while :; do
     DONE*) fetch; exit 0 ;;
     FAILED*) fetch; status; echo "remote run failed; re-run the same command to resume" >&2; exit 1 ;;
   esac
-  sleep 30
+  rwait 30
 done

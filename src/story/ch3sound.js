@@ -34,6 +34,7 @@ export const CH3_SOUNDS = [
   'crowd_cheer_pass',
   'crack_pencil_lead',
   'breath_tired',
+  'pawl_click', // R4: the old man's freewheel on the far kerb, Week 31 (scene3/oldman.js)
 ];
 
 export function runSound(ctx) {

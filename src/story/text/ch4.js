@@ -1,259 +1,185 @@
-// Ch4 "Measure Twice": the workshop, Day 5 to Week 7 in the boot. Owned by the Ch4 agent.
+// Ch4 « Mesurer deux fois »: the workshop, Day 5 and Day 8 in the boot. Owned by the Ch4 agent.
+// Revision 4 moved Week 4 to text/ch5.js (ch5.week4.*) and Week 7 to text/ch6.js (ch6.week7.*); oldSigns and
+// radio stay here and the Ch5 / Ch6 workshop scenes read them from L.ch4 (docs/SCRIPT-R4.md §0.3).
 // Source: docs/DESIGN.md. Notebook entries come from L.notebook.items (sand, measure, ...).
-import { think, hugo, odile, sami, stage } from './common.js';
+import { think, hugo, odile, stage } from './common.js';
 
 export default {
-  title: 'Measure Twice',
+  title: 'Mesurer deux fois',
   cards: {
-    day5: ['Day 5.'],
-    day8: ['Day 8.'],
-    week4: ['Week 4.'],
-    week7: ['Week 7.'],
-    week12: ['Week 12.'], // closes the chapter
+    day5: ['Jour 5.'],
+    day8: ['Jour 8.'],
   },
   objectives: {
-    day5: 'Get the sandpaper.',
-    sand: 'Sand the door.',
-    day8: 'Measure the frame.',
-    week4: 'Look at the bike.',
-    week7: 'See what Odile is doing.',
+    day5: 'Prendre le papier de verre.',
+    sand: 'Poncer la porte.',
+    day8: 'Mesurer l’encadrement.',
+    // R4 (SCRIPT-R4 §5)
+    day8Tape: 'Prendre le mètre.',
+    hook: 'Ranger le mètre.',
   },
   prompts: {
-    pegboard: 'Get the sandpaper',
-    door: 'Sand',
-    frame: 'Measure',
-    bike: 'Look at it',
-    bench: 'Watch',
-    oldSigns: 'Look',
-    radio: 'Listen',
+    pegboard: 'Prendre le papier de verre',
+    door: 'Poncer',
+    frame: 'Mesurer',
+    oldSigns: 'Regarder',
+    radio: 'Écouter',
+    // R4: the pegboard on Day 8 (take the tape; after the grey, hang it back)
+    tapeTake: 'Prendre le mètre',
+    hook: 'Ranger le mètre',
+  },
+
+  // R4: a hotspot that needs an item the pocket doesn't hold (SCRIPT-R4 §5).
+  needs: {
+    door: [think('Poncer à mains nues. J’ai connu des stages de préparation plus doux.')],
+    frame: [think('Mesurer à l’œil. Odile me tuerait. Deux fois.')],
   },
 
   signs: {
-    old: ['MARCHAL & FILLE', 'CAFÉ DU NORD', "DÉFENSE D'AFFICHER"],
+    old: ['MARCHAL & FILLE', 'CAFÉ DU NORD', 'DÉFENSE D’AFFICHER'],
     open: 'OPEN',
     initials: 'H.R.',
   },
 
   // Optional, every day.
   oldSigns: [
-    hugo('Marchal and daughter.'),
-    odile("Daughter's me. My father did the big letters, I did the hairlines. Then he died and I did both."),
+    hugo('Marchal et Fille.'),
+    odile('La fille, c’est moi. Mon père faisait les grandes lettres, moi les déliés. Puis il est mort et j’ai fait les deux.'),
   ],
-  radio: [odile("It gets one station. It's a man talking about fishing. I've learned a great deal about fishing.")],
+  radio: [odile('Elle capte une station. Un monsieur qui parle de pêche. J’ai beaucoup appris sur la pêche.')],
 
   // ------------------------------------------------------------ Day 5
   day5: {
     arrive: [
-      odile("You're early."),
-      hugo('I was up at four. I had the shoes on before I remembered.'),
-      odile('Shoe.'),
-      hugo('...Shoe.'),
+      odile('Vous êtes en avance.'),
+      hugo('Debout à quatre heures. J’avais mis mes chaussures avant de m’en souvenir.'),
+      odile('Votre chaussure.'),
+      hugo('…Ma chaussure.'),
     ],
     book: [
-      stage('She hands him a pencil and a school exercise book.'),
-      odile('Everyone who works here writes down what they can do. First day. So that later, they can see it wasn\'t always there.'),
-      hugo('How many people have worked here?'),
-      odile("Before you? Two. Me and my father. He wrote 'everything' and underlined it. He was a liar."),
+      stage('Elle lui tend un crayon et un cahier d’écolier.'),
+      odile('Tous ceux qui travaillent ici écrivent ce qu’ils savent faire. Le premier jour. Pour qu’on voie, plus tard, que ça n’a pas toujours été là.'),
+      hugo('Combien de personnes ont travaillé ici ?'),
+      odile('Avant toi ? Deux. Moi et mon père. Il avait écrit « tout » et il l’avait souligné. C’était un menteur.'),
     ],
     // Notebook: add ride, run.
     strike: [
-      odile('Can you do either of those this month?'),
-      hugo('...No.'),
-      odile("Then put a line through them. Lightly. It's a pencil, not a tattoo."),
+      odile('Tu peux faire l’un des deux, ce mois-ci ?'),
+      hugo('…Non.'),
+      odile('Alors tire un trait dessus. Légèrement. C’est un crayon, pas un tatouage.'),
     ],
     // Notebook: strike ride, run.
-    strikeThink: [think('Thirty-seven years. Two words. Both crossed out by ten past ten. Efficient, at least.')],
-    holdStill: [odile('You can stand still. I watched you do it. Write it down.')],
+    strikeThink: [think('Trente-sept ans. Deux mots. Barrés tous les deux à dix heures dix. Efficace, au moins.')],
+    holdStill: [odile('Tu sais ne pas bouger. Je t’ai vu faire. Écris-le.')],
     // Notebook: add hold.
-    door: [odile("Now the door. Nine coats of paint on it. I want to see wood by lunch. Sandpaper's on the board.")],
+    door: [odile('Maintenant, la porte. Neuf couches de peinture. Je veux voir le bois avant midi. Le papier de verre est au tableau.')],
     pegboard: [
-      think("Every tool's got its outline painted on the board, so you can see what's missing."),
-      think('My training log was like that. Every rest day, a gap I had to look at.'),
+      think('Chaque outil a sa silhouette peinte sur le tableau. Comme ça, on voit ce qui manque.'),
+      think('Mon carnet d’entraînement, c’était pareil. Chaque jour de repos, un trou qu’il fallait regarder.'),
     ],
-    grain: [odile("With the grain, the long way. Don't press. Let the paper do it.")],
+    grain: [odile('Dans le sens du fil, dans la longueur. Appuie pas. Laisse faire le papier.')],
     after: [
-      odile("You've done this before."),
-      hugo('Something like it. About fifty million times. I worked it out once. On a rest day.'),
-      odile("Write it down. If you can do it, it goes on the list. That's the only rule."),
+      odile('Tu as déjà fait ça, toi.'),
+      hugo('Un truc du genre. Dans les cinquante millions de fois. J’ai fait le calcul, un jour. Un jour de repos.'),
+      odile('Écris-le. Si tu sais le faire, ça va sur la liste. C’est la seule règle.'),
     ],
     // Notebook: add sand.
   },
 
   sanding: {
-    gauge: 'SANDING',
-    hint: 'Steady. Or hold the mouse button and drag back and forth.',
+    gauge: 'PONÇAGE',
+    hint: 'Régulier. Ou glisser d’un côté à l’autre, bouton de la souris enfoncé.',
     barks: {
       who: 'Odile',
-      mash: ["You're not sanding it, you're arguing with it.", "Slower. That wood's been here longer than you."],
-      cross: 'With the grain. Like stroking a cat, not starting a fight.',
+      mash: ['Tu la ponces pas, tu te disputes avec.', 'Plus lent. Ce bois était là bien avant toi.'],
+      cross: 'Dans le sens du fil. Un chat, ça se caresse dans le sens du poil.',
     },
-    buzz: 'ROWING DETECTED. START WORKOUT?',
-    buzzReply: 'No.',
+    buzz: 'AVIRON DÉTECTÉ. LANCER LA SÉANCE ?',
+    buzzReply: 'Non.',
   },
 
   // ------------------------------------------------------------ Day 8
   day8: {
-    start: [odile("Door goes back in the frame. It's eighty-two wide. Measure the frame.")],
+    start: [odile('La porte retourne sur ses gonds. Elle fait quatre-vingt-deux de large. Mesure l’encadrement.')],
     // Measure twice, with the tape (crafts/tape.js). Readings 80.5 .. 82.5 cm, index (cm - 80.5) / 0.5.
     tape: {
-      hint: 'Hold {Space} or the mouse button to pull. Let go at the jamb.',
+      hint: 'Maintenir {Space} ou le bouton de la souris pour tirer. Lâcher à l’encadrement.',
       readings: [
-        hugo('Eighty and a half.'),
-        hugo('Eighty-one.'),
-        hugo('Eighty-one and a half.'),
-        hugo('Eighty-two.'),
-        hugo('Eighty-two and a half.'),
+        hugo('Quatre-vingts et demi.'),
+        hugo('Quatre-vingt-un.'),
+        hugo('Quatre-vingt-un et demi.'),
+        hugo('Quatre-vingt-deux.'),
+        hugo('Quatre-vingt-deux et demi.'),
       ],
       again: [
-        hugo('...Eighty and a half.'),
-        hugo('...Eighty-one.'),
-        hugo('...Eighty-one and a half.'),
-        hugo('...Eighty-two.'),
-        hugo('...Eighty-two and a half.'),
+        hugo('…Quatre-vingts et demi.'),
+        hugo('…Quatre-vingt-un.'),
+        hugo('…Quatre-vingt-un et demi.'),
+        hugo('…Quatre-vingt-deux.'),
+        hugo('…Quatre-vingt-deux et demi.'),
       ],
-      twice: [odile('Measure twice.'), hugo('Again?'), odile('Yes.')],
+      twice: [odile('Mesure deux fois.'), hugo('Encore ?'), odile('Oui.')],
       differ: [
-        odile("Two numbers. The frame's only got one."),
-        odile('One of those is lying. Possibly both.'),
-        odile("Again. The frame's not going anywhere."),
+        odile('Deux mesures. L’encadrement n’en a qu’une.'),
+        odile('Il y en a une qui ment. Peut-être les deux.'),
+        odile('Encore. L’encadrement va pas s’envoler.'),
       ],
-      short: odile("That's not the frame, that's air."),
-      help: [odile("Hold still. I'll hold the end.")],
+      short: odile('Ça, c’est pas l’encadrement, c’est de l’air.'),
+      help: [odile('Bouge pas. Je tiens le bout.')],
       cut: [
-        odile("Doors lie. Frames lie worse. So a centimetre and a half comes off the hinge side. Plane's on the wall."),
-        odile("Doors lie. Frames lie worse. So a centimetre comes off the hinge side. Plane's on the wall."),
-        odile("Doors lie. Frames lie worse. So half a centimetre comes off the hinge side. Plane's on the wall."),
-        odile("Doors lie. Frames lie worse. This one's telling the truth, apparently. Hang it as it is."),
-        odile("Doors lie. Frames lie worse. Half a centimetre of air on the hinge side. We'll call it ventilation."),
+        odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un centimètre et demi côté charnières. Le rabot est au mur.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un centimètre côté charnières. Le rabot est au mur.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Donc on enlève un demi-centimètre côté charnières. Le rabot est au mur.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Celui-là dit la vérité, apparemment. On la pose telle quelle.'),
+        odile('Les portes mentent. Les encadrements, c’est pire. Un demi-centimètre de jour côté charnières. On appellera ça l’aération.'),
       ],
     },
     // Notebook: add measure.
-    grey: [odile('Now. Colour. I want a grey.'), hugo('Easy.'), odile("A grey that isn't sad.")],
+    grey: [odile('Maintenant. La couleur. Je veux un gris.'), hugo('Facile.'), odile('Un gris pas triste.')],
     // The colour toy (crafts/mixer.js): tins in key order 1-5.
     mixer: {
-      intro: [stage('Five tins: white, black, ochre, blue, red oxide. One pot.')],
-      tins: ['White', 'Black', 'Ochre', 'Blue', 'Red oxide'],
-      hint: '1 – 5 or click a tin: one drop · {KeyT} tip it out · {KeyE} done',
-      tip: 'Tip it out',
-      done: 'Done',
-      full: odile("Pot's full. It's not a bath."),
+      intro: [stage('Cinq pots : blanc, noir, ocre, bleu, rouge oxyde. Une seule gamelle.')],
+      tins: ['Blanc', 'Noir', 'Ocre', 'Bleu', 'Rouge oxyde'],
+      hint: '1 – 5 ou cliquer sur un pot : une goutte · {KeyT} vider · {KeyE} terminer',
+      tip: 'Vider',
+      done: 'Terminer',
+      full: odile('Pleine. C’est pas une baignoire.'),
       verdicts: {
-        waiting: [odile("That's not a grey. That's a waiting room.")],
-        light: [odile("Now it's a sad grey pretending to be fine. I know the type.")],
-        dark: [odile("That's a funeral. It's a door, not a hearse.")],
-        ochre: [odile("That's not grey. That's custard.")],
-        blue: [odile("Too cold. That grey's waiting for a bus.")],
-        red: [odile("That's gone pink. A pink door. The street would talk.")],
-        mud: [odile("That's mud. Honest mud, but mud. Tip it out.")],
-        target: [odile("...There. Now it's a grey that's been somewhere.")],
+        waiting: [odile('Ça, c’est pas un gris. C’est une salle d’attente.')],
+        light: [odile('Là, c’est un gris triste qui fait semblant d’aller bien. Je connais le genre.')],
+        dark: [odile('Un enterrement. C’est une porte, pas un corbillard.')],
+        ochre: [odile('Ça, c’est pas du gris. C’est du flan.')],
+        blue: [odile('Trop froid. Ce gris-là attend le bus.')],
+        red: [odile('Ça vire au rose. Une porte rose. Toute la rue en jaserait.')],
+        mud: [odile('De la boue. Honnête, mais de la boue. Vide-moi ça.')],
+        target: [odile('…Voilà. Ça, c’est un gris qui a vécu.')],
       },
       hints: [
-        odile('White first. Then black, a drop at a time. Like gossip.'),
-        odile('Five white, one black. Two ochre. One blue, to calm it down.'),
+        odile('Le blanc d’abord. Puis le noir, goutte à goutte. Comme les ragots.'),
+        odile('Cinq de blanc, une de noir. Deux d’ocre. Une de bleu, pour le calmer.'),
       ],
       // Instead of hints[0] when he's already got a plain grey (waiting / light).
-      warm: odile("The grey's there. Now a drop of ochre. Warm, not yellow."),
-      give: [odile('Give it here.'), stage('She tips it out and does it in four moves, without looking.')],
+      warm: odile('Le gris y est. Maintenant, une goutte d’ocre. Chaud, pas jaune.'),
+      give: [odile('Donne-moi ça.'), stage('Elle vide la gamelle et refait tout en quatre gestes, sans regarder.')],
     },
     // Stage beat after the first "I know the type" verdict (she looks at him).
-    greyLook: stage('She looks at him while she says it.'),
+    greyLook: stage('Elle le regarde en disant ça.'),
     paintColor: '#8d877c',
-    painted: [think("It's grey. I'd swear to it in court. It's grey."), odile("Of course it's grey. Stop staring at it, it'll get ideas.")],
+    painted: [think('C’est gris. Je le jurerais devant un tribunal. C’est gris.'), odile('Évidemment que c’est gris. Arrête de la fixer, elle va se faire des idées.')],
     // Notebook: add grey.
-  },
 
-  // ------------------------------------------------------------ Week 4
-  week4: {
-    sami: [
-      sami("Odile! It's doing the noise again. The *zhhh, zhhh*. Mr Durand gave it me when he shut. He said find a wheel man."),
-      odile("Don't look at me. Ask him. He did bicycles for a living."),
-      hugo('I spent twelve years pulling other men up mountains.'),
-      sami('Why?'),
-      hugo('So they could win.'),
-      sami("That's stupid."),
-      hugo('They paid me.'),
-      sami("...That's less stupid."),
-    ],
-    bike: [think("Rear wheel's out of true. One spoke's gone slack, so the rim wanders and kisses the brake pad once a turn.")],
-    hold: [hugo("Hold the bike. Both hands. Don't help."), sami("Holding's not helping?"), hugo("Holding's my whole career.")],
-    // Truing by ear (crafts/truing.js). hint, gauge and pitch are shared with Ch5's wheel.
-    truing: {
-      hint: '{KeyA} / {KeyD} turn · {Space} pluck · {KeyW} / {KeyS} tighten / loosen · or drag, click, scroll',
-      gauge: 'PITCH',
-      pitch: { flat: 'FLAT', sharp: 'SHARP', true: 'TRUE' },
-      flat: "There. That one's flat.", // Hugo's thought, with the chalk mark (assist)
-      barks: {
-        who: 'Sami',
-        clunk: 'Was it meant to go clunk?',
-        hitting: "Odile, he's hitting it.",
-        notFixed: "Is it fixed? It's not fixed.",
-        ping: 'It went ping. Is ping good?',
-        higher: "It's getting higher.",
-      },
-      assisted: { who: 'Sami', text: "Is it fixed? ...It's fixed." },
-    },
-    after: [
-      sami("It's straight! How did you know where?"),
-      hugo('You listen. It tells you where it rubs.'),
-      sami("Why've you got a ski boot on?"),
-      hugo("It's a medical boot. I broke my leg running."),
-      sami('Running from what?'),
-    ],
-    laughStage: [stage('Hugo laughs. It comes out rusty, like something left in a shed.')],
-    laugh: [think("Huh. A laugh. I'd have logged it, if there was a field for it.")],
-    wrap: [
-      hugo('I could always do that one. Before the team I built my own wheels. Mechanics were for people who won.'),
-      odile('Write it down, then.'),
-    ],
-    // Notebook: add wheel.
-  },
-
-  // ------------------------------------------------------------ Week 7
-  week7: {
-    // As Week 7 opens: the race bike from his flat is on the stand.
-    raceBike: [think('Brought the old bike down off its hook. Chain first. Then everything else.')],
-    stage: [stage('Odile lifts the brush. The tip shivers. She puts it down.')],
-    intro: [
-      odile("Forty years, I could pull a line thinner than that. Big letters I can still bully. It's the thin ones."),
-      hugo('Thinner than a hair.'),
-      odile('Thinner than a hair. You pull it all the way through. No stopping halfway to admire it.'),
-      think('Last person who said that to me was holding an X-ray.'),
-      odile('I need someone to—'),
-      odile('...Hold this board.'),
-      stage('He takes it. Neither of them mentions it.'),
-      odile('You held a scaffold. You can hold a brush. Same job. Stand still, then move once.'),
-      odile("The door sign. O, P, E, N. The O's impossible and the N's a trap."),
-    ],
-    lettering: {
-      paint: '#a3392b',
-      tiers: {
-        good: [odile("Clean. Don't tell anyone I said so.")],
-        middle: [odile("It's got character. Nobody wants a sign with no character.")],
-        poor: [odile("It's a bit drunk. Drunk letters still say OPEN.")],
-      },
-    },
-    signMenu: {
-      who: 'Odile',
-      prompt: "Odile taps the bottom corner. 'Sign it.'",
-      options: [
-        { text: 'Big. Across the bottom.', correct: false, reply: "It's a shop sign, not a birthday cake." },
-        {
-          text: "I'd rather not.",
-          correct: false,
-          reply: "Twelve years you did the work and somebody else's name went on top. Not in my workshop.",
-        },
-        { text: 'Small. In the corner.', correct: true, reply: 'Smaller. So only the trade will find it.' },
-      ],
-    },
-    signThink: [think('Twelve years. The first thing with my name on it says OPEN.')],
-    // Notebook: add sign.
-    buzz: "TIME TO MOVE! You've been still for 3 hr 12 min.",
-    buzzReply: '...Three hours?',
-    wrap: [
-      odile("STRIDE aren't renewing the billboard. In a month there's twenty metres of nothing in the middle of all that ugly."),
-      hugo('...You want to paint it.'),
-      odile("I can hold a chalk. The street can hold the brushes. You're doing the line."),
-      hugo('What line?'),
+    // R4: the pegboard before the frame (item+ tape).
+    tapeTake: [think('Le mètre a sa silhouette, lui aussi. Si je le prends, ça se verra. C’est le principe.')],
+    // R4: after the grey (objective `hook`), Hugo at the pegboard. The chapter's last lines.
+    hook: [
+      odile('Garde-le. Quelqu’un qui mesure deux fois a droit à son mètre.'),
+      stage('Sur le tableau, juste à côté de la place du mètre, une silhouette vide. Une clé à rayons.'),
+      hugo('Il manque la clé à rayons.'),
+      odile('Je sais.'),
+      odile('Quelqu’un m’a emprunté ma clé à rayons. Personne n’emprunte chez moi. Les gens ont peur de moi. J’y ai beaucoup travaillé.'),
+      hugo('Ça se voit.'),
+      odile('Merci.'),
+      think('Une silhouette vide. Ce soir-là, je n’ai pas dormi. Rien de nouveau. Mais pour une fois, je ne pensais pas à ma jambe.'),
     ],
   },
 };

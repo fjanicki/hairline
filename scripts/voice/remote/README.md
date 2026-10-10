@@ -29,7 +29,7 @@
 
   Speaker similarity used ECAPA cosine similarity, comparing each auriga line with the Mac version
   of the same line:
-  - auriga vs Mac, same line: **0.85** (min 0.57, on Ines's 1.4 s line, which is too short for a
+  - auriga vs Mac, same line: **0.85** (min 0.57, on Lou's (then Ines's) 1.4 s line, which is too short for a
     stable embedding).
   - Mac vs Mac, same character on different lines: 0.82.
   - Different characters: 0.10.
@@ -161,3 +161,12 @@ The test set files are named `<n>-<character>.wav`.
   `cat /sys/class/drm/card1/device/mem_info_vram_used`.
 - Candidate C (Fish S2 Pro) was not set up. It was dropped on request, and the worker rejects
   `model != "A"`.
+
+## Chatterbox (engine=chatterbox speakers: Jo)
+
+`auriga_cb.sh <jobs.json> <out_dir> [--name N] [--host H] [--t3 v3]` is called by `generate.py` for the speakers
+whose `cast.json` entry has `"engine": "chatterbox"` (docs/voice.md §15). It uses `~/hairline-clone` on auriga, set up
+for the cloning audition (`scripts/voice/clone/remote/setup_auriga.sh`: `venv-cb` = Chatterbox on torch ROCm,
+`venv-qa` = transformers Whisper). It syncs `scripts/voice/clone/cb_worker.py` and `asr_remote.py` to
+`~/hairline-clone/bin/`, the reference to `refs/game/<name>-<sha12>.wav`, and the jobs to `runs/game/<run>/`. It
+generates the takes, transcribes them on auriga, and waits on auriga (not with a local `sleep`). Re-running it is safe.

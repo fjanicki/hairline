@@ -242,6 +242,43 @@ export async function dress(ctx, group, surf) {
     sandpaper.name = 'sandpaper';
     group.add(sandpaper);
   }
+  // R4 (SCRIPT-R4 §5): Odile's tape on its outline (Ch4 shows it, then Day 8 takes it: scene4 setPegTape), and the
+  // spoke key on the outline right beside it, missing until Ch5 hangs it back (setSpokeKey). Both start hidden:
+  // every later build has the tape in Hugo's pocket.
+  const pegTape = tapeCase.clone();
+  pegTape.name = 'peg-tape';
+  {
+    const t = PEG_TOOLS.find((k) => k.id === 'tape');
+    const [x, y] = at(t.u, t.v);
+    pegTape.rotation.set(0, 0, 0.04);
+    pegTape.position.set(x, y, pz + 0.022);
+    // Centre the scan's bounds on the outline (its origin is not at its middle).
+    pegTape.updateMatrixWorld(true);
+    const c = new THREE.Box3().setFromObject(pegTape).getCenter(new THREE.Vector3());
+    if (Number.isFinite(c.x)) pegTape.position.set(x + (x - c.x), y + (y - c.y), pz + 0.022);
+    pegTape.visible = false;
+    group.add(pegTape);
+  }
+  const spokeKey = new THREE.Group();
+  spokeKey.name = 'peg-spoke-key';
+  {
+    const t = PEG_TOOLS.find((k) => k.id === 'spokeKey');
+    const [x, y] = at(t.u, t.v);
+    const steel = new THREE.MeshStandardMaterial({ color: '#8c8f93', metalness: 0.85, roughness: 0.35 });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0065, 8, 20), steel);
+    spokeKey.add(ring);
+    for (let k = 0; k < 4; k++) {
+      const a = (k * Math.PI) / 2 + Math.PI / 4;
+      const lug = new THREE.Mesh(new THREE.BoxGeometry(0.011, 0.011, 0.008), steel);
+      lug.position.set(Math.cos(a) * 0.022, Math.sin(a) * 0.022, 0);
+      lug.rotation.z = a;
+      spokeKey.add(lug);
+    }
+    spokeKey.traverse((o) => o.isMesh && (o.castShadow = false));
+    spokeKey.position.set(x, y, pz + 0.012);
+    spokeKey.visible = false;
+    group.add(spokeKey);
+  }
 
   // ------------------------------------------------------------ the bench top: vice, drill, a spanner, the board blanks
   place(vice, -0.98, top - 0.086, BENCH.z1 - 0.02, 0);
@@ -521,7 +558,7 @@ export async function dress(ctx, group, surf) {
   tape.visible = false;
   group.add(tape);
 
-  return { sandpaper, stool, tape, toolbox, drill, peg, atLocal: at, tins: tinInst, discs };
+  return { sandpaper, stool, tape, toolbox, drill, peg, atLocal: at, tins: tinInst, discs, pegTape, spokeKey };
 }
 
 /** A chipped enamel kettle on a little two-ring hotplate. */

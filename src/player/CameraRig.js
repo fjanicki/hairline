@@ -208,7 +208,7 @@ export class CameraRig {
     const { player, ui, engine, cam } = this;
     if (!this.enabled || !d || d.state !== 'play') return false;
     if (engine.paused || ui.paused || ui.pauseEl) return false;
-    if (!player || player.frozen || player.scripted || player.inputAllowed?.() === false) return false;
+    if (!player || player.frozen || player.held > 0 || player.scripted || player.inputAllowed?.() === false) return false;
     if (ui.modal || ui._gauge || ui._drive) return false; // dialogue / choices / card, minigame gauge, timing ring
     if ((ui.fadeValue ?? 0) > 0.5) return false;
     if (cam.mode !== 'follow' || cam._tween) return false; // a cinematic owns the camera

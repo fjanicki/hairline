@@ -36,11 +36,21 @@ export function addLamp(batch, { side, z, y = 4.75, reach = 1.2, glassKey = 'lam
   return _v.set(0, -0.39, reach).applyMatrix4(parent).clone();
 }
 
-/** The cast-iron bench with wet timber slats, along Z, the sitter facing +X. seat: {x, z}. */
-export function addBench(batch, { x, z, len = 1.8 }) {
+export const BENCH_SLATS = 22; // seat slats across the bench, 50 cm each (DESIGN-R4: Durand's new ones are 52)
+export const BENCH_FIXED = [6, 7, 8]; // the three he replaces (Ch5 Week 3), left of where Hugo sits
+
+/**
+ * The cast-iron bench with wet timber slats, along Z, the sitter facing +X. seat: {x, z}. The seat is
+ * BENCH_SLATS slats laid across two rails; the slots listed in `gap` are left out (scene2/fixes.js puts
+ * the rotten or the new slats there). Returns { seatY, slot(i) -> [x, y, z] (centre of slot i), pitch }.
+ */
+export function addBench(batch, { x, z, len = 1.8, gap = [] }) {
   const y0 = SIDEWALK_Y;
   const seatY = y0 + 0.43;
-  for (let i = 0; i < 4; i++) batch.add('timber', cbox(0.088, 0.034, len), { pos: [x - 0.205 + i * 0.137, seatY, z] });
+  const pitch = len / BENCH_SLATS;
+  const slot = (i) => [x, seatY, z - len / 2 + pitch * (i + 0.5)];
+  for (let i = 0; i < BENCH_SLATS; i++) if (!gap.includes(i)) batch.add('timber', cbox(0.5, 0.034, pitch - 0.014), { pos: slot(i) });
+  for (const dx of [-0.19, 0.19]) batch.add('iron', cbox(0.045, 0.035, len - 0.1), { pos: [x + dx, seatY - 0.035, z] }); // rails under the slats
   for (let i = 0; i < 3; i++) batch.add('timber', cbox(0.028, 0.095, len), { pos: [x - 0.3 - i * 0.03, seatY + 0.18 + i * 0.13, z], rot: [0, 0, 0.22] });
   for (const dz of [-len / 2 + 0.14, len / 2 - 0.14]) {
     const zz = z + dz;
@@ -52,6 +62,7 @@ export function addBench(batch, { x, z, len = 1.8 }) {
     batch.add('iron', cbox(0.12, 0.03, 0.09), { pos: [x + 0.2, y0 + 0.015, zz] }); // feet
     batch.add('iron', cbox(0.12, 0.03, 0.09), { pos: [x - 0.22, y0 + 0.015, zz] });
   }
+  return { seatY, pitch, slot };
 }
 
 /** A municipal dumpster against a facade (long axis along Z), one lid ajar. */
